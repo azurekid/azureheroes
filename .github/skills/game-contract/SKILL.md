@@ -10,6 +10,11 @@ description: Use before any game code change. Defines the shared interfaces for 
 - HUD reads only from game state, never changes it.
 - No agent may change this contract without updating this file first.
 - All sprites must be drawn in art/sprites.js, no inline sprite code elsewhere.
+- Community workflow: [game-orchestrator](../game-orchestrator/SKILL.md).
+  Every change also follows [game-security](../game-security/SKILL.md).
+- Extend this contract before consumers. Prefer optional fields with explicit defaults;
+  preserve old levels, guest play, saved progress and stable level IDs. Update all affected
+  skills, implementations, tests and player-facing controls together.
 
 ## Contract revisions
 
@@ -55,7 +60,9 @@ Runtime state shape read by the HUD (`scene.snapshot()`):
 `{levelId, levelName, health, score, mfa, credits, lives, time, boost, blastReady, hack, boss, mode}`.
 
 Input contract: Arrows/WASD move, Space jump (press again in the air = double jump),
-F Azure Blast, Shift Flight Boost, E / S / Down = MFA Shield, P pause, R restart, M mute.
+F Azure Blast (low while ducking), Shift Flight Boost, E = MFA Shield,
+S / Down = duck (moving starts a slide attack), P pause, R restart, M mute.
+Touch run controls include DUCK and SHIELD separately.
 
 ## Level generation addendum
 - `AH.Levels.make(id)` returns a freshly randomised level in the Level format, with extra fields `region`, `regionName`, `city`, `landmarks`, `hint`, `tint`, `mode`.
@@ -81,3 +88,16 @@ F Azure Blast, Shift Flight Boost, E / S / Down = MFA Shield, P pause, R restart
 - `AH.Online` (`systems/online.js`) is only active when `/api/health` answers. Otherwise the game is in guest mode and nothing breaks. `save()` pushes progress when logged in. `submitScore(score, level, city)` returns `{best, rank}` or `null`.
 - Server API (`server.js`, see README): `health`, `leaderboard`, `register`, `login`, `me`, `logout`, `progress` (merge: unlocks never go backwards; newer `updated` wins for resume), `score`. Names: 3-15 chars `A-Z 0-9`. Locations are limited to the pixel font charset (max 20 chars).
 - Every on-screen string must use the pixel font charset: A-Z, 0-9, space and `- . ! ' : / + , ?`.
+
+### Cloud challenge and low combat revision
+- Additional two-hit enemy types: `bug` (pipeline hopper), `image` (vulnerable container charger),
+  `rbac` (overprivileged role shooter), `endpoint` (stationary exposed-endpoint turret),
+  `guest` (stale guest-account crawler). Shared textures/animations use the type as prefix.
+- Player additions: `ducking`, `sliding` booleans. Ducking shrinks the collision body while
+  preserving feet position; standing is blocked under solid ceilings. Slides hit each low
+  enemy once per slide; F fires at feet height while ducking.
+- Pipe zones additionally expose `theme` (`pipelines`, `aks`, `actions`, `docker`), `name`,
+  `hint`, `stages: [{x, name, tip}]`, `powerups: [{kind,x,y}]` and `timeBonus` seconds.
+  Their disjoint bounds accommodate rooms up to 3840px. Each zone grants its time bonus once.
+- Optional platform `cloudKind` selects a cloud challenge tile; `lowTunnel` marks a
+  duck-height overhead beam. Street obstacle `herring` is an Amsterdam haring stand.

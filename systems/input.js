@@ -52,6 +52,7 @@
       } else {
         this.addButton(44, 288, '<', 'left', 1, { ts: 3 });
         this.addButton(116, 288, '>', 'right', 1, { ts: 3 });
+        this.addButton(190, 288, 'DUCK', 'down', 0.85);
         this.addButton(592, 286, 'JUMP', 'jump', 1);
       }
       this.addButton(520, 296, 'BLAST', 'attack', 1);
@@ -79,7 +80,7 @@
         jumpHeld: k.SPACE.isDown || k.UP.isDown || k.W.isDown,
         fire: J(k.F) || this.tFire,
         boost: k.SHIFT.isDown || t.boost,
-        shield: !this.opts.fly && (k.E.isDown || k.S.isDown || k.DOWN.isDown || t.shield),
+        shield: !this.opts.fly && (k.E.isDown || t.shield),
         pause: J(k.P) || this.tPause,
         restart: J(k.R),
         esc: J(k.ESC),

@@ -7,7 +7,7 @@ Design goal: every world must feel like its own place at a glance, the way each 
 
 ## Region identity checklist (all required for a new world)
 1. **Azure region**: real region id, e.g. `westeurope`, plus a city. One row in the `WORLDS` table in `levels/worlds.js` (`id, region, regionName, city, name, mode, theme, tint, landmarks, hint, opt, boss`).
-2. **Landmarks**: 3-4 recognisable skyline pieces in the far layer, plus a tinted sky and near layer (`SKIES`, `PAL`, `farLayer`, `bg_near_<region>` in `art/sprites.js`).
+2. **Landmarks**: recognisable pieces in the scenery strip, plus a tinted sky and landmark-free far/near layers (`SKIES`, `PAL`, `bg_farp_<region>`, `bg_near_<region>` in `art/sprites.js`).
 2b. **Scenery strip**: 6+ local landmark pieces `sc_<prefix>_<name>` plus Microsoft billboards, listed in `sceneryKeys`. Far layers used in levels (`bg_farp_<region>`) must contain NO landmarks; landmarks only live in the strip, which never shows the same key twice on screen. Give run levels a matching `ground`/`water` style (quays, promenades, piers) instead of plain rooftops.
 3. **Local enemies**: a skin for each enemy type the level uses (`robot` = walker, `drone` = flyer, `spider` = crawler). Textures `en_<region>_<type>_0/1`. Behaviour and stats never change, only the look. Every enemy still takes 2 hits and drops 1 Azure Credit.
 4. **Local pickups**: regional currency glyph on the Azure Credit (`coin_<region>0..3`).
@@ -17,11 +17,12 @@ Design goal: every world must feel like its own place at a glance, the way each 
 
 ## Generation rules
 - Layouts come from `AH.Levels.make(id)`; nothing in a level is hand-placed. Every call must give a new layout.
-- Use `makeRun` (rooftops), `makeFly` (flight) or `makeDataCenter`. Tune with `opt` only.
-- Run: gaps 100-195px, gaps over 130px need a double jump, rise <= 20 when the gap is over 140px.
+- Read [game-contract](../game-contract/SKILL.md), [game-security](../game-security/SKILL.md) and [level-builder](../level-builder/SKILL.md). Coordinate cross-file work via [game-orchestrator](../game-orchestrator/SKILL.md).
+- Reuse `makeRun` (streets), `makeFly` (flight) or `makeDataCenter`; prefer tuning `opt`. Extend shared generators only when the requested mechanic cannot be expressed by existing options.
+- Unspanned run gaps: 100-195px, gaps over 130px need a double jump, rise <= 20 when the gap is over 140px. Wider boat/bridge gaps need a reachable carrier/deck.
 - Fly: gap height >= 132px, successive gap centres differ by <= 120px.
 - Length 8,000-13,000px so levels stay challenging. The timer scales with width.
-- Spawn hazards, enemies, coins, MFA tokens and props from the shuffled free list so they never overlap checkpoints or the boss arena.
+- Reserve pipe entrances/returns and checkpoints first. Place hazards and enemies from shuffled eligible areas; keep the boss arena clear.
 - Always end with a boss arena. Run arena: flat 760px platform. Fly arena: the last 640px, where scrolling stops.
 - Output must still follow the game-contract Level format.
 
@@ -36,3 +37,6 @@ Design goal: every world must feel like its own place at a glance, the way each 
 - Appending a world keeps existing players' `unlocked` counts valid. Inserting one in the middle shifts level ids.
 - Landmarks can come from the whole country (e.g. Colosseum and Pisa for Italy), not only the region's city.
 - Optional: `ambient` moving objects, `opt.secret` theme, and `opt.pipes` warp pipes (see game-contract).
+- Preserve the shared cloud challenge pool, meaningful height variation, local street objects
+  and accessible low combat routes. New country content must be welcoming, not stereotypes
+  that demean people. Teach Microsoft/Azure secure practices through configuration threats.

@@ -41,6 +41,11 @@
       this.shielding = false;
       this.boosting = false;
       this.onGround = false;
+      this.ducking = false;
+      this.sliding = false;
+      this.slideT = 0;
+      this.slideCd = 0;
+      this.slideHits = new Set();
     }
 
     get x() { return this.sprite.x; }
@@ -71,7 +76,7 @@
       this.boost -= AH.BLAST_COST;
       this.blastCd = 0.3;
       this.attackT = 0.22;
-      this.scene.spawnBlast(this.x + this.facing * 20, this.y - (this.mode === 'fly' ? 0 : 6), this.facing);
+      this.scene.spawnBlast(this.x + this.facing * 20, this.ducking ? this.body.bottom - 10 : this.y - (this.mode === 'fly' ? 0 : 6), this.facing);
       AH.Audio.play('blast');
       return true;
     }
@@ -111,12 +116,37 @@
     }
 
     respawn(x, y) {
+      this.setDucking(false);
+      this.sliding = false;
+      this.slideT = this.slideCd = 0;
       this.sprite.setPosition(x, y);
       this.sprite.setVelocity(0, 0);
       this.health = 100;
       this.boost = 100;
       this.invuln = 1.6;
       this.jumps = 0;
+    }
+
+    setDucking(value) {
+      if (this.ducking === value) return;
+      const b = this.body;
+      const bottom = b.bottom;
+      b.setSize(14 * AH.Art.D, (value ? 20 : 40) * AH.Art.D, false);
+      b.setOffset(9 * AH.Art.D, (value ? 27 : 7) * AH.Art.D);
+      // Resizing is not movement; keep Arcade's post-update delta unchanged.
+      const dy = bottom - b.height - b.y;
+      b.position.y += dy;
+      b.prev.y += dy;
+      b.prevFrame.y += dy;
+      b.updateCenter();
+      this.ducking = value;
+    }
+
+    canStand() {
+      const b = this.body;
+      return !this.scene.rects.some((r) => r.active && !r.hazard &&
+        b.right > r.x && b.x < r.x + r.w &&
+        b.bottom - 40 < r.y + r.h && b.y > r.y);
     }
 
     update(dt, cmd) {
@@ -126,6 +156,8 @@
       this.blastCd = Math.max(0, this.blastCd - dt);
       this.attackT = Math.max(0, this.attackT - dt);
       this.onGround = b.blocked.down || b.touching.down;
+      this.slideT = Math.max(0, this.slideT - dt);
+      this.slideCd = Math.max(0, this.slideCd - dt);
       this.boosting = false;
 
       if (this.mode === 'fly') {
@@ -150,18 +182,27 @@
         this.shielding = !!cmd.shield && this.onGround;
         let dir = (cmd.right ? 1 : 0) - (cmd.left ? 1 : 0);
         if (dir !== 0) this.facing = dir;
-        const speed = (this.shielding ? RUN * 0.2 : RUN) * this.speedMul;
-        const target = dir * speed;
+        if (cmd.down && dir && this.onGround && !this.riding && !this.shielding && this.slideCd <= 0) {
+          this.slideT = 0.42;
+          this.slideCd = 0.85;
+          this.slideHits.clear();
+        }
+        this.sliding = this.slideT > 0 && this.onGround && !this.riding && !this.shielding;
+        const wantDuck = !this.riding && !this.shielding && (this.sliding || (cmd.down && this.onGround));
+        this.setDucking(wantDuck || (this.ducking && !this.canStand()));
+        if (this.ducking) this.shielding = false;
+        const speed = (this.shielding ? RUN * 0.2 : this.ducking ? RUN * 0.32 : RUN) * this.speedMul;
+        const target = this.sliding ? this.facing * 310 : dir * speed;
         const vx = b.velocity.x;
         const acc = this.onGround ? 2400 : 1500;
         const step = acc * dt;
         s.setVelocityX(Math.abs(target - vx) <= step ? target : vx + Math.sign(target - vx) * step);
 
-        if (cmd.jumpPressed && !this.shielding) {
+        if (cmd.jumpPressed && !this.shielding && !this.ducking) {
           if (this.onGround || this.coyote > 0) this.jump();
           else this.doubleJump();
         }
-        if (cmd.boost && this.boost > 1 && !this.shielding) {
+        if (cmd.boost && this.boost > 1 && !this.shielding && !this.ducking) {
           this.boosting = true;
           this.fly(0, -1, dt);
           this.boost = Math.max(0, this.boost - 30 * dt);
@@ -169,7 +210,8 @@
         }
         if (cmd.fire && !this.shielding) this.azureBlast();
 
-        if (this.attackT > 0) s.setTexture(this.pre + 'attack');
+        if (this.ducking) s.setTexture(this.pre + (this.sliding ? 'slide' : 'duck'));
+        else if (this.attackT > 0) s.setTexture(this.pre + 'attack');
         else if (this.shielding) s.setTexture(this.pre + 'shield');
         else if (this.riding && this.onGround) s.setTexture(this.pre + 'idle');
         else if (!this.onGround) s.setTexture(this.pre + 'jump');

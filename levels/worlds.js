@@ -33,7 +33,8 @@
     for (let i = 1; i <= o.count; i++) {
       const prev = P[P.length - 1];
       const r = Math.random();
-      let kind = i > 1 && r < o.stepRate ? 'step' : i > 1 && r < o.stepRate + o.dropRate ? 'drop' : 'gap';
+      let kind = i > 1 && r < Math.max(0.28, o.stepRate) ? 'step' : i > 1 && r < Math.max(0.28, o.stepRate) + Math.max(0.24, o.dropRate) ? 'drop' : 'gap';
+      if (i === 1) kind = 'step';
       if (o.water && i > 1 && i < o.count) {
         const r2 = Math.random();
         if (r2 < o.boatRate) kind = 'boat';
@@ -42,12 +43,12 @@
       let gap = 0, ny = y;
       if (kind === 'bridge') { gap = ri(120, 190); ny = y; }
       if (kind === 'boat') { gap = ri(240, 300); ny = clamp(y + ri(-20, 20), 250, 300); }
-      if (kind === 'step') { ny = y - ri(35, 62); if (ny < 195) kind = 'drop'; }
+      if (kind === 'step') { ny = y - (i === 1 ? ri(64, 68) : ri(42, 68)); if (ny < 178) kind = 'drop'; }
       if (kind === 'drop') { gap = ri(50, 110); ny = y + ri(40, 90); if (ny > 300) kind = 'gap'; }
       if (kind === 'gap') {
         gap = ri(o.gapMin, o.gapMax);
         const maxRise = gap > 140 ? 20 : 30;
-        ny = clamp(y + ri(-maxRise, 40), 195, 300);
+        ny = clamp(y + ri(-maxRise, 40), 178, 300);
       }
       y = ny;
       const w = i === o.count ? 480 : ri(o.minW, o.maxW);
@@ -64,6 +65,14 @@
     cpIdx.push(n - 1);
     const free = [];
     for (let i = 2; i < n - 1; i++) if (cpIdx.indexOf(i) < 0) free.push(i);
+    const pipeAt = {}, pipePairs = [];
+    const want = o.pipes === undefined ? 2 : o.pipes;
+    free.filter((i) => i < n * 0.7).forEach((i) => {
+      if (pipePairs.length >= want || pipeAt[i] || pipePairs.some((q) => Math.abs(q[0] - i) < 6)) return;
+      const j = free.find((j) => j >= i + 4 && j <= i + 9 && !pipeAt[j]);
+      if (j !== undefined) { pipePairs.push([i, j]); pipeAt[i] = pipeAt[j] = 1; }
+    });
+    for (let i = free.length - 1; i >= 0; i--) if (pipeAt[free[i]]) free.splice(i, 1);
     shuffle(free);
 
     const lasers = [], enemies = [], used = {};
@@ -100,9 +109,9 @@
     const floaters = [], coins = [];
     for (let i = 1; i < n - 1; i++) {
       const p = P[i];
-      if (used[i] || cpIdx.indexOf(i) >= 0 || p.w < 230 || Math.random() > o.floatRate) continue;
-      const fw = ri(70, 110), fy = p.y - ri(66, 76);
-      if (fy < 120) continue;
+      if (pipeAt[i] || lasered[i] || cpIdx.indexOf(i) >= 0 || p.w < 230 || (i % 3 !== 0 && Math.random() > o.floatRate)) continue;
+      const fw = ri(90, 130), fy = p.y - ri(70, 88);
+      if (fy < 90) continue;
       const fx = Math.round(p.x + p.w * rnd(0.3, 0.45));
       floaters.push({ x: fx, y: fy, w: fw, h: 14, float: true });
       if (p.w >= 300 && Math.random() < 0.55) {
@@ -111,6 +120,10 @@
       }
     }
     floaters.forEach((f) => { if (f.w >= 80 && Math.random() < (o.floatEnemyRate || 0)) enemies.push({ type: 'robot', x: Math.round(f.x + f.w / 2), y: f.y, range: Math.round(f.w / 2 - 22), shoot: shoot() }); });
+    shuffle(free.filter((i) => !lasered[i])).slice(0, Math.ceil(free.length * 0.65)).forEach((i, j) => {
+      const p = P[i], type = ['bug', 'guest', 'rbac', 'endpoint', 'image'][j % 5];
+      enemies.push({ type, x: Math.round(p.x + p.w * 0.25), y: p.y, range: type === 'endpoint' ? 0 : 24 });
+    });
     for (let i = 1; i < n; i++) {
       const gs = P[i - 1].x + P[i - 1].w, ge = P[i].x;
       if (span[i]) continue;
@@ -146,21 +159,13 @@
     let sx = null;
     if (secret !== undefined) sx = { x: Math.round(P[secret].x + P[secret].w * 0.78), y: P[secret].y };
     // warp pipes (Azure Pipelines): entry pipe -> underground stage -> exit pipe further ahead
-    const pipeAt = {}, pipePairs = [];
-    const want = o.pipes === undefined ? 2 : o.pipes;
-    open.filter((i) => i !== secret && i >= 2 && i < n * 0.7).sort((a, b) => a - b).forEach((i) => {
-      if (pipePairs.length >= want || pipePairs.some((q) => Math.abs(q[0] - i) < 6)) return;
-      for (let j = i + 4; j <= Math.min(i + 9, n - 2); j++) {
-        if (j !== secret && !used[j] && !lasered[j] && P[j].w >= 200 && !pipeAt[j]) { pipePairs.push([i, j]); pipeAt[i] = pipeAt[j] = 1; break; }
-      }
-    });
     open.forEach((i) => {
       if (i === secret || pipeAt[i]) return;
       const p = P[i];
       if (vehicles.length < (o.bikes || 0) && i < n * 0.75) { vehicles.push({ kind: 'bike', x: Math.round(p.x + p.w * 0.3), y: p.y }); return; }
       if (oc < Math.round(open.length * (o.obstacleRate || 0))) {
         oc++;
-        const kind = pick(o.obstacles), sz = (AH.Art && AH.Art.obSize && AH.Art.obSize[kind]) || OB_SIZE[kind];
+        const kind = m.region === 'westeurope' && oc === 1 ? 'herring' : pick(o.obstacles), sz = (AH.Art && AH.Art.obSize && AH.Art.obSize[kind]) || OB_SIZE[kind];
         const ox = Math.round(p.x + p.w * rnd(0.3, 0.6) - sz[0] / 2);
         obstacles.push({ kind: kind, x: ox, y: p.y - sz[1], w: sz[0], h: sz[1] });
         coins.push({ x: ox + sz[0] / 2, y: p.y - sz[1] - 26 });
@@ -178,19 +183,27 @@
     P.push(arena);
     const width = arena.x + arena.w;
     const pipes = [], pipeZones = [], pipeSolids = [];
+    const zoneThemes = shuffle(['pipelines', 'aks', 'actions', 'docker']);
     pipePairs.forEach((q, k) => {
       const a = P[q[0]], b = P[q[1]];
       const ex = Math.round(a.x + a.w * 0.62 - 22), bx = Math.round(b.x + b.w * 0.4 - 22);
       pipeSolids.push({ x: ex, y: a.y - 46, w: 44, h: 46, pipe: true }, { x: bx, y: b.y - 46, w: 44, h: 46, pipe: true });
       for (let c = 0; c < 3; c++) coins.push({ x: ex + 22, y: a.y - 70 - c * 22 });
-      const Z = makePipeZone(width + 1200 + k * 1800, m);
+      // Reserve enough space for the longest room; rooms must never overlap each other.
+      const Z = makePipeZone(width + 1200 + k * 4400, zoneThemes[k % zoneThemes.length]);
       Z.back = { x: bx + 22, y: b.y - 46 };
       pipes.push({ x: ex + 22, y: a.y - 46, zone: k });
       pipeZones.push(Z);
       Z.coins.forEach((c) => coins.push(c));
       Z.enemies.forEach((e) => enemies.push(e));
       Z.lasers.forEach((l) => lasers.push(l));
+      Z.powerups.forEach((p) => powerups.push(p));
       mfaTokens.push(Z.token);
+      for (let i = enemies.length - 1; i >= 0; i--) {
+        const e = enemies[i];
+        if ((Math.abs(e.x - ex - 22) < 80 && Math.abs(e.y - a.y) < 60) ||
+            (Math.abs(e.x - bx - 22) < 80 && Math.abs(e.y - b.y) < 60)) enemies.splice(i, 1);
+      }
     });
     return {
       pipes: pipes, pipeZones: pipeZones,
@@ -204,7 +217,7 @@
     };
   }
 
-  const OB_SIZE = { bus: [96, 56], cab: [48, 28], flowers: [56, 34], bikes: [60, 24], icecream: [64, 38], lifeguard: [34, 52] };
+  const OB_SIZE = { bus: [96, 56], cab: [72, 42], flowers: [56, 34], bikes: [84, 34], herring: [88, 62], icecream: [64, 38], lifeguard: [34, 52], vespa: [68, 44], fiat: [78, 44], cafe: [78, 40], kiosk: [44, 64], gelato: [68, 38], pickup: [88, 44], schoolbus: [96, 56], taxi: [72, 42] };
 
   // Secret bonus room: one screen of floating platforms over a themed floor, packed with credits.
   // Themes: cloud (Bliss hill), retro (classic desktop), xbox (Game Pass arena).
@@ -227,41 +240,48 @@
     };
   }
 
-  // Underground Azure Pipelines stage: BUILD > TEST > DEPLOY. Brick walls, floating blocks, lasers and walkers
-  // guard a long trail of credits and one MFA token. The exit pipe returns the hero further along the level.
-  function makePipeZone(x0, m) {
-    const W = 1440, F = 300, platforms = [{ x: x0, y: F, w: W, h: 100, pipeFloor: true }], coins = [], enemies = [], lasers = [];
-    platforms.push({ x: x0, y: -60, w: W, h: 90, pipeFloor: true, ceil: true });
-    let x = x0 + 200;
-    const blocks = [];
-    while (x < x0 + W - 260) {
-      const kind = Math.random();
-      if (kind < 0.4) {
-        const h = ri(36, 84);
-        platforms.push({ x: x, y: F - h, w: 48, h: h, brick: true });
-        for (let c = 0; c < 4; c++) coins.push({ x: x - 30 + c * 36, y: F - h - 26 - Math.round(Math.sin(c / 3 * Math.PI) * 30) });
-        x += ri(170, 220);
-      } else if (kind < 0.75) {
-        const y = ri(196, 222), w = ri(96, 144);
-        platforms.push({ x: x, y: y, w: w, h: 16, brick: true });
-        blocks.push({ x: x, y: y, w: w });
-        for (let c = 0; c < Math.floor(w / 24); c++) coins.push({ x: x + 12 + c * 24, y: y - 22 });
-        if (Math.random() < 0.6) enemies.push({ type: Math.random() < 0.35 ? 'phish' : 'spider', x: Math.round(x + w / 2 + 40), y: F, range: 60 });
-        x += w + ri(90, 130);
+  const CHALLENGES = {
+    pipelines: { name: 'AZURE PIPELINES', hint: 'FIX BUGS. TEST BEFORE YOU DEPLOY.', stages: ['BUILD', 'TEST', 'SCAN', 'APPROVE', 'DEPLOY'], tips: ['COMPILE CLEAN', 'CATCH PIPELINE BUGS', 'DEFENDER FOR CLOUD', 'REVIEW PERMISSIONS', 'SHIP WITH AZURE'], threats: ['bug', 'bug', 'image', 'rbac', 'endpoint'] },
+    aks: { name: 'AKS CONTAINER CLUSTER', hint: 'CLIMB PODS AND SECURE THE CLUSTER.', stages: ['NODE POOL', 'POD HOP', 'RBAC', 'INGRESS', 'HEALTH CHECK'], tips: ['SCALE WITH AKS', 'ISOLATE WORKLOADS', 'LEAST PRIVILEGE', 'USE PRIVATE LINK', 'AZURE MONITOR'], threats: ['image', 'bug', 'rbac', 'endpoint', 'guest'] },
+    actions: { name: 'GITHUB ACTIONS', hint: 'RACE RUNNERS. REVIEW GUEST ACCESS.', stages: ['CHECKOUT', 'RUNNER', 'UNIT TEST', 'IDENTITY', 'RELEASE'], tips: ['REVIEW YOUR CODE', 'HOSTED RUNNERS', 'FIX FAILING TESTS', 'ENTRA ACCESS REVIEWS', 'DEPLOY TO AZURE'], threats: ['guest', 'bug', 'bug', 'rbac', 'endpoint'] },
+    docker: { name: 'DOCKER IMAGE DOCK', hint: 'CLIMB CONTAINERS. PATCH UNSAFE IMAGES.', stages: ['DOCKERFILE', 'BUILD IMAGE', 'SCAN IMAGE', 'REGISTRY', 'CONTAINER APPS'], tips: ['SMALL TRUSTED BASE', 'REBUILD AND PATCH', 'DEFENDER FOR CLOUD', 'AZURE CONTAINER REGISTRY', 'RUN ON AZURE'], threats: ['image', 'bug', 'image', 'endpoint', 'rbac'] }
+  };
+  function makePipeZone(x0, theme) {
+    const C = CHALLENGES[theme], bay = ri(600, 700), W = bay * 5 + 320, F = 300;
+    const platforms = [{ x: x0, y: F, w: W, h: 100, pipeFloor: true, cloudKind: theme },
+      { x: x0, y: -60, w: W, h: 90, pipeFloor: true, ceil: true }];
+    const coins = [], enemies = [], lasers = [], stages = [], powerups = [];
+    C.stages.forEach((name, i) => {
+      const x = x0 + 200 + i * bay;
+      const top = theme === 'docker' ? ri(176, 196) : theme === 'pipelines' ? ri(184, 200) : ri(204, 220);
+      stages.push({ x: x, name, tip: C.tips[i] });
+      if (theme === 'aks' || theme === 'docker') {
+        platforms.push({ x: x + 30, y: 252, w: 70, h: 48, cloudKind: theme },
+          { x: x + 100, y: top, w: 110, h: F - top, cloudKind: theme },
+          { x: x + 210, y: 252, w: 70, h: 48, cloudKind: theme });
       } else {
-        lasers.push({ x: x + 30, y: F - 56, w: 6, h: 56, on: ri(1000, 1400), off: ri(900, 1200), phase: ri(0, 1500) });
-        for (let c = 0; c < 3; c++) coins.push({ x: x + 6 + c * 24, y: F - 96 - (c === 1 ? 12 : 0) });
-        x += ri(160, 200);
+        if (theme === 'pipelines') platforms.push({ x: x + 20, y: 260, w: 70, h: 40, cloudKind: theme });
+        platforms.push({ x: x + 90, y: top, w: 140, h: 16, cloudKind: theme });
+        if (theme === 'actions') platforms.push({ x: x + 240, y: top - 60, w: 90, h: 16, cloudKind: theme });
+        lasers.push({ x: x + 250, y: 244, w: 6, h: 56, on: ri(1000, 1400), off: ri(1100, 1600), phase: ri(0, 1500) });
       }
-    }
-    for (let e = 0; e < 2; e++) enemies.push({ type: 'robot', x: Math.round(x0 + 420 + e * 520 + ri(0, 80)), y: F, range: 50, shoot: e === 1 });
-    const hi = blocks.length ? blocks[Math.floor(blocks.length / 2)] : { x: x0 + 700, y: 220, w: 80 };
-    platforms.push({ x: hi.x + 10, y: hi.y - 64, w: 64, h: 14, brick: true });
+      // A low service duct is an alternate route: duck below it or jump onto its roof.
+      platforms.push({ x: x + 350, y: 254, w: 140, h: 20, cloudKind: theme, lowTunnel: true });
+      for (let c = 0; c < 5; c++) coins.push({ x: x + 40 + c * 38, y: top - 24 });
+      for (let c = 0; c < 4; c++) coins.push({ x: x + 360 + c * 36, y: 289 });
+      enemies.push({ type: C.threats[i], x: x + 540, y: F, range: 24 });
+      enemies.push({ type: i % 2 ? 'guest' : 'bug', x: x + 420, y: F, range: 36 });
+      if (theme === 'aks' || theme === 'docker') enemies.push({ type: 'endpoint', x: x + 155, y: top, range: 0 });
+      if (i === 1 || i === 3) powerups.push({ kind: i === 1 ? 'defender' : 'teams', x: x + 300, y: 270 });
+    });
+    const tx = x0 + 200 + 2 * bay;
+    platforms.push({ x: tx + 100, y: 146, w: 100, h: 14, cloudKind: theme });
     platforms.push({ x: x0 + W - 112, y: F - 46, w: 44, h: 46, pipe: true });
     return {
-      x: x0, w: W, platforms: platforms, coins: coins, enemies: enemies, lasers: lasers,
-      token: { x: hi.x + 42, y: hi.y - 92 },
-      entry: { x: x0 + 70, y: 120 }, exit: { x: x0 + W - 90, y: F - 46 }
+      x: x0, w: W, theme, name: C.name, hint: C.hint, stages, powerups,
+      timeBonus: Math.ceil(W / 150) + 60, platforms, coins, enemies, lasers,
+      token: { x: tx + 150, y: 120 },
+      entry: { x: x0 + 70, y: 250 }, exit: { x: x0 + W - 90, y: F - 46 }
     };
   }
 
@@ -348,10 +368,10 @@
       if (s.i > 0) checkpoints.push({ x: s.x + 60, y: F });
       if (s.boss) { checkpoints.push({ x: bossLeft - 280, y: F }); s.occ.push([bossLeft - 360, bossLeft - 200], [bossLeft - 60, end]); }
 
-      const en = s.boss ? 2 : ri(3, 5);
+      const en = s.boss ? 3 : ri(5, 7);
       for (let e = 0; e < en; e++) {
-        const t = pick(['spider', 'spider', 'robot', 'drone', 'phish', 'ram']);
-        const range = t === 'drone' ? 0 : ri(60, 100);
+        const t = pick(['spider', 'robot', 'drone', 'bug', 'rbac', 'endpoint', 'guest', 'image']);
+        const range = t === 'drone' || t === 'endpoint' ? 0 : ri(40, 70);
         const ex = take(s, 36, s.x + 260, limit);
         if (ex !== null) enemies.push({ type: t, x: ex, y: t === 'drone' ? ri(180, 230) : F, range: range, shoot: t === 'robot' && Math.random() < 0.4 });
       }

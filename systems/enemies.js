@@ -11,7 +11,12 @@
     spider: { tex: 'spider_0', anim: 'spider_crawl', body: [26, 12, 3, 8], gravity: true, speed: 55, origin: 1 },
     phish: { tex: 'phish_0', anim: 'phish_swim', body: [24, 16, 4, 6], gravity: true, speed: 95, origin: 1 },
     ram: { tex: 'ram_0', anim: 'ram_run', body: [26, 20, 3, 8], gravity: true, speed: 35, origin: 1 },
-    botnet: { tex: 'botnet_0', anim: 'botnet_float', body: [26, 16, 3, 3], gravity: false, speed: 70, origin: 0.5 }
+    botnet: { tex: 'botnet_0', anim: 'botnet_float', body: [26, 16, 3, 3], gravity: false, speed: 70, origin: 0.5 },
+    bug: { tex: 'bug_0', anim: 'bug_move', body: [26, 16, 3, 6], gravity: true, speed: 85, origin: 1, behaviour: 'phish', fix: 'PIPELINE BUG FIXED - TEST WITH GITHUB ACTIONS' },
+    image: { tex: 'image_0', anim: 'image_move', body: [26, 20, 3, 8], gravity: true, speed: 40, origin: 1, behaviour: 'ram', fix: 'IMAGE PATCHED - SCAN WITH DEFENDER FOR CLOUD' },
+    rbac: { tex: 'rbac_0', anim: 'rbac_move', body: [20, 34, 6, 3], gravity: true, speed: 40, origin: 1, behaviour: 'robot', fix: 'RBAC FIXED - USE LEAST PRIVILEGE IN ENTRA' },
+    endpoint: { tex: 'endpoint_0', anim: 'endpoint_move', body: [26, 20, 3, 8], gravity: true, speed: 0, origin: 1, behaviour: 'robot', fix: 'ENDPOINT SECURED - USE AZURE PRIVATE LINK' },
+    guest: { tex: 'guest_0', anim: 'guest_move', body: [26, 12, 3, 8], gravity: true, speed: 65, origin: 1, behaviour: 'spider', fix: 'GUEST REVIEWED - ENTRA ACCESS REVIEWS' }
   };
 
   AH.Enemy = class Enemy {
@@ -28,7 +33,7 @@
       this.dead = false;
       this.flash = 0;
       this.phase = Math.random() * 6;
-      this.shoot = !!def.shoot && def.type === 'robot';
+      this.shoot = (def.type === 'rbac' || def.type === 'endpoint') || (!!def.shoot && def.type === 'robot');
       this.shootCd = 1 + Math.random() * 1.5;
       this.act = 0;
       this.mode = 'walk';
@@ -48,14 +53,14 @@
 
     update(dt, player) {
       if (this.dead) return;
-      const s = this.sprite, b = s.body, sp = this.spec.speed;
+      const s = this.sprite, b = s.body, sp = this.spec.speed, type = this.spec.behaviour || this.type;
       this.phase += dt;
       if (this.flash > 0) {
         this.flash -= dt;
         if (this.flash <= 0) s.clearTint();
         return;
       }
-      if (this.type === 'robot') {
+      if (type === 'robot') {
         if (s.x > this.homeX + this.range) this.dir = -1;
         else if (s.x < this.homeX - this.range) this.dir = 1;
         if (b.blocked.left) this.dir = 1;
@@ -71,10 +76,10 @@
             s.setFlipX(d > 0);
             s.setTint(0xffa080);
             this.scene.time.delayedCall(120, () => { if (!this.dead) s.clearTint(); });
-            this.scene.spawnEnemyBolt(s.x + d * 14, s.y - 22, d);
+            this.scene.spawnEnemyBolt(s.x + d * 14, s.y - (this.type === 'endpoint' ? 16 : 22), d);
           }
         }
-      } else if (this.type === 'spider') {
+      } else if (type === 'spider') {
         const near = Math.abs(player.x - s.x) < 170 && Math.abs(player.y - s.y) < 90;
         const lim = this.range + (near ? 60 : 0);
         if (near) this.dir = player.x < s.x ? -1 : 1;
@@ -83,7 +88,7 @@
         const out = (this.dir > 0 && s.x > this.homeX + lim) || (this.dir < 0 && s.x < this.homeX - lim);
         b.setVelocityX(out ? 0 : this.dir * (near ? sp * 1.8 : sp));
         s.setFlipX(this.dir < 0);
-      } else if (this.type === 'phish') {
+      } else if (type === 'phish') {
         // waits on the ground, then leaps at the hero like a lure
         const onGround = b.blocked.down || b.touching.down;
         const dx = player.x - s.x;
@@ -100,7 +105,7 @@
             s.setFlipX(d < 0);
           }
         } else if ((this.dir > 0 && s.x > this.homeX + this.range + 20) || (this.dir < 0 && s.x < this.homeX - this.range - 20)) b.setVelocityX(0);
-      } else if (this.type === 'ram') {
+      } else if (type === 'ram') {
         // patrols slowly, lowers its horns, then charges across its rooftop
         const dx = player.x - s.x;
         const lo = this.homeX - this.range - 30, hi = this.homeX + this.range + 30;
@@ -162,7 +167,7 @@
       this.flash = 0.12;
       s.body.setVelocityX((dir || 1) * 140);
       if (this.spec.gravity) s.body.setVelocityY(-120);
-      if (this.type === 'ram') { this.mode = 'walk'; this.act = 1; }
+      if ((this.spec.behaviour || this.type) === 'ram') { this.mode = 'walk'; this.act = 1; }
       this.scene.burst(s.x, s.y - 10, 'spark', 5, 100);
       return true;
     }

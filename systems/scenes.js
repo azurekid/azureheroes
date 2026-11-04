@@ -600,6 +600,8 @@
         return;
       } else if (p.pipe) {
         this.add.image(p.x - 0.5, p.y, 'pipe').setOrigin(0).setDisplaySize(p.w + 1, p.h).setDepth(12);
+      } else if (p.cloudKind) {
+        this.add.tileSprite(p.x, p.y, p.w, p.h, 'cloud_tile_' + p.cloudKind).setOrigin(0).setDepth(10);
       } else if (p.pipeFloor || p.brick) {
         const top = p.ceil ? p.y + p.h - 8 : p.y;
         this.add.tileSprite(p.x, top, p.w, 8, 'pbrick_top').setOrigin(0).setDepth(10).setFlipY(!!p.ceil);
@@ -708,7 +710,7 @@
     ambCar(kind) {
       const dir = Math.random() < 0.5 ? -1 : 1, cam = this.cameras.main, sf = 0.5;
       const x = cam.scrollX * sf + (dir < 0 ? 720 : -80);
-      const img = this.add.image(x, AMB_ROAD_Y + 7 - (dir < 0 ? 0 : 2), 'amb_car_' + kind).setOrigin(0.5, 1).setScrollFactor(sf).setDepth(dir < 0 ? -17.4 : -17.5).setFlipX(dir > 0).setScale(0.62 / AH.Art.D);
+      const img = this.add.image(x, AMB_ROAD_Y + 7 - (dir < 0 ? 0 : 2), 'amb_car_' + kind).setOrigin(0.5, 1).setScrollFactor(sf).setDepth(dir < 0 ? -17.4 : -17.5).setFlipX(dir > 0).setScale(0.95 / AH.Art.D);
       this.ambAdd(img, { vx: dir * (kind === 'cyclist' ? 30 : kind === 'tram' || kind.indexOf('bus') >= 0 ? 45 : 70 + Math.random() * 30), life: 40 });
     }
     ambBall(kind) {
@@ -758,14 +760,14 @@
         return { def: m, z, img };
       });
       (L.obstacles || []).forEach((o) => {
-        this.add.image(o.x, o.y, 'ob_' + o.kind).setOrigin(0).setDepth(12);
+        this.add.image(o.x, o.y, 'ob_' + o.kind).setOrigin(0).setDisplaySize(o.w, o.h).setDepth(12);
         const z = this.add.zone(o.x + o.w / 2, o.y + 4 + (o.h - 4) / 2, o.w - 4, o.h - 4);
         this.solids.add(z);
         this.rects.push({ x: o.x + 2, y: o.y + 4, w: o.w - 4, h: o.h - 4, active: true });
       });
       this.bikes = (L.vehicles || []).map((v) => {
-        const spr = this.add.sprite(v.x, v.y, 'bike_ride0').setOrigin(0.5, 1).setDepth(14);
-        const tag = T(this, v.x, v.y - 40, 'BIKE', { scale: 1, color: '#7fe8ff', ox: 0.5 }).setDepth(21);
+        const spr = this.add.sprite(v.x, v.y, 'bike_ride0').setOrigin(0.5, 1).setDisplaySize(58, 38).setDepth(14);
+        const tag = T(this, v.x, v.y - 50, 'BIKE', { scale: 1, color: '#7fe8ff', ox: 0.5 }).setDepth(21);
         this.tweens.add({ targets: [spr, tag.img], alpha: 0.6, yoyo: true, repeat: -1, duration: 450 });
         return { spr, tag, def: v, taken: false };
       });
@@ -786,18 +788,24 @@
       }
     }
 
-    /* Azure Pipelines warp pipes: stand on an entry pipe and press DOWN (or stand still) to drop into the underground stage */
+    /* Cloud challenge pipes: Down (or standing still) enters and returns from a room. */
     buildPipes() {
       const L = this.L;
       this.pipes = (L.pipes || []).map((q) => {
         const tag = T(this, q.x, q.y - 30, 'V', { scale: 2, color: '#7fe8ff', ox: 0.5 }).setDepth(21);
+        T(this, q.x, q.y - 44, L.pipeZones[q.zone].name, { scale: 1, color: '#ffe14a', ox: 0.5 }).setDepth(21);
         this.tweens.add({ targets: tag.img, y: q.y - 24, yoyo: true, repeat: -1, duration: 420 });
         return { def: q, tag, t: 0, used: false, Z: L.pipeZones[q.zone] };
       });
       (L.pipeZones || []).forEach((Z) => {
-        for (let i = 0; i * 640 < Z.w; i++) this.add.image(Z.x + i * 640, 0, 'pipe_bg_' + Math.min(i, 2)).setOrigin(0).setDepth(-17);
-        T(this, Z.x + 320, 92, 'BONUS STAGE: AZURE PIPELINES', { scale: 2, color: '#ffffff', shadow: '#0a3a9a', ox: 0.5 }).setDepth(21);
-        T(this, Z.x + 320, 112, 'BUILD, TEST, DEPLOY - THEN TAKE THE EXIT PIPE', { scale: 1, color: '#7fe8ff', ox: 0.5 }).setDepth(21);
+        for (let i = 0; i * 640 < Z.w; i++) this.add.image(Z.x + i * 640, 0, 'challenge_bg_' + Z.theme).setOrigin(0).setDepth(-17);
+        T(this, Z.x + 320, 60, Z.name, { scale: 2, color: '#ffffff', ox: 0.5 }).setDepth(21);
+        T(this, Z.x + 320, 82, Z.hint, { scale: 1, color: '#7fe8ff', ox: 0.5 }).setDepth(21);
+        Z.stages.forEach((s) => {
+          T(this, s.x + 160, 102, s.name, { scale: 2, color: '#ffe14a', ox: 0.5 }).setDepth(21);
+          T(this, s.x + 160, 124, s.tip, { scale: 1, color: '#7fe8ff', ox: 0.5 }).setDepth(21);
+          T(this, s.x + 420, 238, 'DUCK OR SLIDE', { scale: 1, color: '#7fe8ff', ox: 0.5 }).setDepth(21);
+        });
         const et = T(this, Z.exit.x, Z.exit.y - 30, 'V', { scale: 2, color: '#7dff7a', ox: 0.5 }).setDepth(21);
         this.tweens.add({ targets: et.img, y: Z.exit.y - 24, yoyo: true, repeat: -1, duration: 420 });
       });
@@ -823,7 +831,11 @@
           p.sprite.setVelocity(0, zone ? 0 : -420);
           cam.fadeIn(260, 0, 10, 40);
           this.warping = false;
-          if (zone) { this.toast('AZURE PIPELINES: BONUS STAGE!'); this.achieve('CI/CD CHAMPION', 'pipe'); }
+          if (zone) {
+            if (!zone.timeGranted) { this.timeLeft += zone.timeBonus; zone.timeGranted = true; }
+            this.toast(zone.name + ' - SECURE AND DEPLOY!');
+            this.achieve('CLOUD CHALLENGER', 'pipe');
+          }
         });
       });
     }
@@ -1177,6 +1189,7 @@
       const air = !e.spec.gravity;
       this.burst(e.x, e.y - (air ? 0 : 14), 'spark_y', 12, 160);
       this.spawnCoin(e.x, e.y - (air ? 4 : 18), true);
+      if (e.spec.fix) this.toast(e.spec.fix);
     }
 
     snapshot() {
@@ -1680,6 +1693,12 @@
           e.hit(p.facing);
           if (!e.dead) e.hit(p.facing);
           this.cameras.main.shake(80, 0.004);
+        } else if (p.sliding && er.h <= 28 && (e.x - p.x) * p.facing >= -8) {
+          if (!p.slideHits.has(e)) {
+            p.slideHits.add(e);
+            e.hit(p.facing);
+            this.burst(p.x, pb.bottom - 8, 'spark_c', 5, 100, 0.25);
+          }
         } else if (falling) {
           e.hit(p.facing);
           pb.setVelocityY(-320);
@@ -1708,10 +1727,10 @@
       const pr = { x: p.body.x, y: p.body.y, w: p.body.width, h: p.body.height };
       this.bikes.forEach((b) => {
         if (b.taken || this.riding) return;
-        if (ov(pr, { x: b.def.x - 18, y: b.def.y - 26, w: 36, h: 26 })) this.mountBike(b);
+        if (ov(pr, { x: b.def.x - 27, y: b.def.y - 38, w: 54, h: 38 })) this.mountBike(b);
       });
       if (this.riding) {
-        this.bikeImg.setPosition(p.x - p.facing * 2, p.body.bottom + 3).setFlipX(p.facing < 0);
+        this.bikeImg.setDisplaySize(58, 38).setPosition(p.x - p.facing * 2, p.body.bottom + 3).setFlipX(p.facing < 0);
         this.bikeImg.anims.timeScale = Math.abs(p.body.velocity.x) > 20 ? 1 : 0;
       }
       const S = this.secret;

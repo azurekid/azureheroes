@@ -94,3 +94,48 @@ Headless Chrome, 1280x720. One browser process per level.
 | Static host / file:// | PASS | No `/api/health`, so the game stays in guest mode with no account menu and no errors. |
 
 Not tested: real phones and mobile Safari, App Service itself (only the same Node server locally), and many concurrent users.
+
+## 2026-11-04: cloud challenges, low combat and community framework
+
+Local Node server and isolated headless Chrome processes; 1280x720 screenshots reviewed.
+These results supersede earlier sections only for the checks listed here.
+
+| Check | Result | Evidence |
+|-------|--------|----------|
+| Random generation | PASS | 800 seeded world generations; street worlds reserve two different, disjoint cloud rooms, have at least 60px height spread and upper routes. Tests check unspanned gaps/rises, room bounds, duct clearances, safe pipe pairs and reward integration. |
+| All ten worlds | PASS - smoke | Each loaded to `play` in a separate Chrome process with no page errors. Boss death was tested with forced stuns/blasts, not an unassisted fight. |
+| Duck and low Blast | PASS | Actual Down and F keyboard events: body shrinks from 40px to 20px without moving feet off the floor; shot originates 10px above feet. Releasing Down restores standing clearance. |
+| MFA Shield | PASS | E still shields independently; Down no longer shields. |
+| Slide attack | PASS | Moving + Down hits a guest crawler once per slide and does not damage the hero during that contact. |
+| Low ceiling | PASS | Releasing Down beneath a solid beam keeps the hero crouched rather than expanding into the ceiling. |
+| Pipe round trip | PASS | Actual Down input enters and returns; room-specific name, expanded bounds and one-time time grant verified. Test setup teleported to entry/exit pipes; traversal was tested separately below. |
+| Underground traversal | PASS - assisted | Eight rooms across four deterministic seeds, covering Pipelines, AKS, Actions and Docker. Bot used real Arcade collision frames, jump/double-jump, duck/slide and auto-fire; it reached each exit approach in 970-1154 frames. Invulnerability was enabled: this verifies routes, not combat balance. No traversal teleports or Boost refills. |
+| Touch controls | PASS - pointer emulation | Forced-touch layout includes separate Duck and Shield buttons, plus existing movement/jump/Blast/Boost. Pointer holds on Duck and Shield verified independently in Chrome; real touch devices were not exercised. |
+| Amsterdam stands and vehicle dimensions | PASS - data/render integration | Seeded tests require a haring stand; its street rendering was inspected in Chrome. Obstacle art sizes drive physical sizes. Bikes, taxis, small cars and road traffic are enlarged. Unassisted street play and real-device visual balance remain manual checks. |
+| Community skill framework | PASS | All eight skills have matching discovery metadata, valid local references and security routing; the orchestration skill links every specialist. |
+| Security-boundary regression tests | PASS | Private APIs reject missing/invalid/revoked sessions; malformed JSON rejected; public profiles/leaderboard omit credential fields; source/data/config paths remain inaccessible. These tests are not a vulnerability audit or proof of no backdoors. |
+| CI and CDN safeguards | PASS - local checks | Workflow actions pinned to verified upstream commits; unprivileged PR workflow has no secrets; versioned Phaser SRI boots in Chrome. Hosted branch/environment protections were not changed or verified. |
+| Regression suite | PASS | `npm test`: 8 test groups pass. Changed JS passes `node --check`; diff passes whitespace checks. |
+
+### Bugs found and fixed in this pass
+
+- Level: all run levels.
+  Steps: hold Down while standing on a platform.
+  Expected: feet stay on the platform.
+  Actual before fix: Arcade post-update treated body resizing as movement and pushed
+  the hero through the floor.
+  File suspected: `systems/player.js`.
+  Fix verified: preserve body position deltas (`prev` and `prevFrame`) while resizing;
+  real keyboard/physics test and a focused regression both pass.
+- Level: generated streets.
+  Steps: generate many random runs.
+  Expected: two safe, different cloud rooms and meaningful terrain variation.
+  Actual before fix: hazard allocation could leave only one room, and some runs stayed flat.
+  File suspected: `levels/worlds.js`.
+  Fix verified: reserve pipe platforms before hazards; guarantee an opening elevation change;
+  seeded generation tests pass.
+
+Not signed off: unassisted full-level difficulty, extended combat balance, all touch
+interactions, real phones/Safari, audio quality or low-end-device performance. The skill
+framework is guidance plus local checks; maintainers still need to enable the hosted
+protections documented in `SECURITY.md`.

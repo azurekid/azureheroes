@@ -14,7 +14,7 @@ To play with accounts and the high score dashboard, run the server (Node.js 18 o
 
 ```bash
 npm start            # http://localhost:8080 (PORT and DATA_DIR env vars are optional)
-npm test             # API tests
+npm test             # gameplay, skills, security boundaries and API tests
 ```
 
 ## World map
@@ -43,7 +43,7 @@ The game remembers where you left off. **C: Continue** on the title screen or ma
 
 Levels are generated at random each time a level starts, so platforms, lasers, enemies, coins, power-ups and MFA tokens land in new places on every run. Run levels mix gaps, steps up, drops and floating platforms at different heights, and every region has its own coins, enemy skins, scenery props, traffic, birds and sky objects (planes, balloons, blimps, helicopters). Each run also gets a random time of day, from sunrise to night.
 
-Every region also has cyber-threat enemies: **Phishing hoppers** leap at you, **Ransomware chargers** wind up and dash, and **DDoS botnet clouds** follow you and drop bombs.
+Every region also has cyber-threat enemies: **Phishing hoppers** leap at you, **Ransomware chargers** wind up and dash, and **DDoS botnet clouds** follow you and drop bombs. Street and data-center levels also feature pipeline bugs, vulnerable container images, overprivileged RBAC robots, exposed-endpoint turrets and stale guest-account crawlers. Defeating them reveals tips about GitHub Actions, Defender for Cloud, Entra access reviews, least privilege and Azure Private Link.
 
 ### Streets, water and secrets
 
@@ -51,7 +51,9 @@ Run levels are not just rooftops. The ground matches the city: canal quays and b
 
 - **Azure Bike** (Amsterdam, London): run into it to ride. It is faster and rams enemies, but one hit knocks you off.
 - **Secret phone box** (London): stand inside for a moment to warp to a bonus room full of credits.
-- **Shooting enemies**: some walkers fire bolts back at you, and each level has around 15-20 enemies.
+- **Shooting enemies**: some walkers fire bolts back at you. Streets have denser patrols, including low cloud threats that can be slide-attacked or blasted while ducking.
+- **Vertical routes**: taller steps, deeper drops and more upper walkways reward jumping between street and rooftop routes. Pipe entrances and returns are reserved before hazards are placed.
+- **Amsterdam street life**: look for Hollandse Haring stands, larger bicycles and more legible small-car traffic.
 - **No repeats**: a scenery strip of local landmarks and Microsoft billboards scrolls behind the street. The same landmark never shows twice on screen.
 
 Microsoft touches: the Microsoft logo in the HUD and title, Microsoft HQ and Azure/Copilot/Xbox signs in the scenery, a Bliss-style hill, a Blue Screen game over and an Azure portal "Deployment succeeded" level-complete panel.
@@ -70,7 +72,16 @@ Every level ends in an arena with that region's boss. Ground bosses must be bloc
 
 Clippy warns you when health is low, and Xbox-style achievements pop up for firsts. Open the **Hero Lab** on the title screen with **H** to choose a male or female hero, skin tone, hair style, hair colour and suit colour, plus **local wardrobe** from the game's regions: a Texas cowboy hat, Mexican sombrero, London bowler, Paris beret, Dutch King's Day crown, Japanese hachimaki, Australian cork hat, Venetian gondolier hat, Rio carnaval plumes, a Redmond Azure cap or a Virginia tricorn, and extras such as Dutch wooden clogs, a football scarf, a serape, a flower garland or a bandana. The choice is saved and shows in every pose, including flight.
 
-Some levels have **Azure Pipelines** warp pipes: press Down (or stand still) on a pipe to drop into an underground bonus zone with extra coins and enemies, then take the exit pipe back up further along the level.
+Street levels have two warp pipes into different randomly selected **cloud challenges**. Press Down (or stand still) on a pipe to enter; its label names the destination. Each underground room is 3,320-3,820 pixels long with five sections, 10-15 enemies, upper rewards, low service ducts, an MFA token and two power-ups:
+
+| Challenge | Route and mission |
+|-----------|-------------------|
+| Azure Pipelines | Build, test, scan, approve and deploy through steps and timed lasers; fix pipeline bugs. |
+| AKS Container Cluster | Climb node pools and pods; clear RBAC issues and exposed ingress. |
+| GitHub Actions | Follow upper runner platforms over lasers; review guest identities before release. |
+| Docker Image Dock | Climb container stacks, patch unsafe images and ship through Azure Container Registry to Container Apps. |
+
+Duck or slide under ducts, or jump onto their roofs. Each room grants extra time once on entry. The exit pipe returns you farther along the street and sets a checkpoint.
 
 Collect 5 MFA tokens for an extra life. Every enemy takes 2 hits and drops an Azure Credit. Best score, unlocked levels and the resume point are stored in `localStorage`, and synced to your account when you are logged in.
 
@@ -82,7 +93,9 @@ Collect 5 MFA tokens for an extra life. Every enemy takes 2 hits and drops an Az
 | Jump / Double jump | Space (double-tap for double jump), Up, W | Jump button |
 | Azure Blast (costs Boost) | F | Attack button |
 | Flight Boost | Shift | - |
-| MFA Shield (blocks boss attacks) | E, S or Down | - |
+| Duck / Slide attack | S or Down; hold while moving to slide | Duck + direction |
+| Low Azure Blast | F while ducking | Duck + Blast |
+| MFA Shield (blocks boss attacks) | E | Shield button |
 | Pause / Restart / Mute | P / R / M | Pause button |
 | Enter pipe | Down on a pipe | Stand still on the pipe |
 | Continue / High scores / Log in | C / B / L (title and map) | Tap the menu item |
@@ -101,9 +114,21 @@ ui/hud.js           read-only HUD
 levels/worlds.js    Azure region worlds and random level generators (see the game-contract skill)
 systems/            audio and save, online accounts, input, player, enemies, boss, scenes
 server.js           optional Node.js server: static files + accounts + leaderboard API
-tests/              API tests (npm test) and the QA report
+tests/              API and gameplay regression tests (npm test), plus the QA report
 docs/               article and screenshots
 ```
+
+## Community development
+
+Start with [CONTRIBUTING.md](CONTRIBUTING.md) and the shared
+[game-orchestrator skill](.github/skills/game-orchestrator/SKILL.md). It coordinates
+contract-first changes across level design, regions, gameplay, art, QA and security.
+All skills are repository-local and can also be followed manually.
+
+[AGENTS.md](AGENTS.md) defines architecture and contribution boundaries.
+[SECURITY.md](SECURITY.md) covers private reporting, backdoor prevention and the GitHub
+protections maintainers must enable. PR CI checks tests, skill metadata/links and
+security-sensitive hosting/workflow invariants; skills alone cannot guarantee security.
 
 ## High scores and accounts
 

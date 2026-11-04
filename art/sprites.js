@@ -486,7 +486,7 @@
       }
     };
   }
-  const HERO_FRAMES = ['idle', 'run0', 'run1', 'run2', 'run3', 'jump', 'attack', 'shield', 'fly'];
+  const HERO_FRAMES = ['idle', 'run0', 'run1', 'run2', 'run3', 'jump', 'attack', 'shield', 'fly', 'duck', 'slide'];
   function regHero(P, look) {
     applyLook(look);
     const BK = [[10, 16], [9, 22], [10.4, 28]];
@@ -502,6 +502,19 @@
     reg2(P + 'jump', 32, 48, hero({ flare: 6, capeLen: 42, legs: [[13, 8, 36, 9, 42], [19, 24, 34, 22, 43]], back: [[10, 16], [7, 12], [8, 7]], front: [[22.6, 16], [25, 11], [26.4, 5]], fist: true }));
     reg2(P + 'attack', 32, 48, hero({ flare: 5, capeLen: 40, legs: [[13, 8, 38, 6.4, 47], [19, 24, 38, 26, 47]], back: [[10, 16], [8, 20], [11, 21]], front: [[22.6, 16.4], [26.4, 18], [30.6, 17.6]], fist: true, hx: 1, punchFx: 17.6 }));
     reg2(P + 'shield', 32, 48, hero({ flare: 0, capeLen: 42, legs: [[13, 12, 38, 9, 47], [19, 21.6, 38, 24, 47]], back: [[10, 16], [8, 22], [11, 26]], front: [[22.6, 16], [26, 15.4], [28.6, 15.8]], fist: true, hx: 0 }));
+    ['duck', 'slide'].forEach(function (pose) {
+      reg2(P + pose, 32, 48, function (g) {
+        g.save();
+        g.translate(pose === 'slide' ? 2 : 0, 25);
+        g.scale(0.9, 0.46);
+        hero({ flare: 5, capeLen: 40, legs: [[13, 9, 37, 5, 47], [19, 25, 38, 30, 47]], back: BK, front: [[22.6, 16], [26, 20], [30, 25]], fist: true })(g);
+        g.restore();
+        if (pose === 'slide') {
+          line(g, 1, 44, 9, 44, 1, '#7fe8ff');
+          line(g, 0, 47, 7, 47, 1, '#27e0ff');
+        }
+      });
+    });
     reg2(P + 'fly', 32, 48, function (g) {
       // horizontal superhero flight pose facing right
       poly(g, [[14, 18], [2, 14], [0.8, 20], [1.6, 26], [14, 26]], lg(g, 0, 14, 14, 26, [[0, H.capeD], [0.5, H.cape], [1, H.capeL]]));
@@ -589,6 +602,46 @@ const CL = GEAR === 'clogs' ? (y0, y1) => lg(g, 0, y0, 0, y1, [[0, '#fff090'], [
   }
   reg2('robot_0', 32, 37, robotFrame(0), { shade: 0.5 });
   reg2('robot_1', 32, 37, robotFrame(1), { shade: 0.5 });
+
+  function registerCloudEnemies() {
+    ['bug', 'image', 'rbac', 'endpoint', 'guest'].forEach(function (kind, ki) {
+      const height = kind === 'rbac' ? 37 : kind === 'guest' || kind === 'bug' ? 24 : 28;
+      for (let f = 0; f < 2; f++) reg2(kind + '_' + f, 32, height, function (g, w, h) {
+        const col = ['#ff7a50', '#f0b040', '#c090ff', '#ff507a', '#70e0c0'][ki];
+        if (kind === 'rbac') {
+          robotFrame(f)(g);
+          rrect(g, 6, 15, 20, 13, 2, '#4a2080');
+          txt(g, 'RBAC', 7, 18, 0.7, '#ffffff');
+          poly(g, [[7, 2], [10, 6], [16, 0], [22, 6], [25, 2], [24, 9], [8, 9]], '#ffd23f');
+        } else {
+          for (let i = 0; i < 3; i++) {
+            const x = 6 + i * 9, d = (f + i) % 2 ? 2 : 0;
+            line(g, x, h - 9, x - 4, h - 2 - d, 2, col);
+            line(g, x, h - 9, x + 3, h - 2 + d, 2, col);
+          }
+          rrect(g, 3, 5, 26, h - 8, 3, '#182844');
+          g.strokeStyle = col; g.lineWidth = 1.5; g.strokeRect(4, 6, 24, h - 10);
+          if (kind === 'image') {
+            for (let x = 7; x < 27; x += 6) line(g, x, 8, x, 21, 1, col);
+            txt(g, '!', 14, 11, 1, '#ff507a');
+          } else if (kind === 'endpoint') {
+            ell(g, 16, 14, 7, 7, col);
+            line(g, 8, 14, 24, 14, 1, '#182844');
+            line(g, 16, 7, 16, 21, 1, '#182844');
+            line(g, 25, 10 + f * 3, 31, 10 + f * 3, 3, col);
+          } else if (kind === 'guest') {
+            ell(g, 12, 11, 3, 3, col);
+            rrect(g, 7, 15, 10, 4, 1, col);
+            txt(g, '?', 21, 10, 1, '#ff507a');
+          } else {
+            ell(g, 12, 12, 2, 2, col); ell(g, 21, 12, 2, 2, col);
+            line(g, 11, 4, 8, 0, 1, col); line(g, 23, 4, 26, 0, 1, col);
+            txt(g, '!', 15, 16, 0.7, '#ffffff');
+          }
+        }
+      }, { shade: 0.4 });
+    });
+  }
 
   function droneFrame(f) {
     return function (g) {
@@ -2049,11 +2102,13 @@ const CL = GEAR === 'clogs' ? (y0, y1) => lg(g, 0, y0, 0, y1, [[0, '#fff090'], [
       poly(g, [[6, 17], [18, 17], [16, 25.6], [8, 25.6]], lg(g, 0, 17, 0, 26, [[0, '#e0804a'], [1, '#8a3a1a']]));
       [[7, 5, '#ff2a6a'], [12, 2, '#ffd23f'], [17, 5, '#ff7a2a']].forEach((t) => { line(g, t[0], 17, t[0], t[1] + 3, 1.2, '#2fa84a'); poly(g, [[t[0] - 3, t[1] - 1], [t[0] - 1.6, t[1] + 4], [t[0], t[1] + 1], [t[0] + 1.6, t[1] + 4], [t[0] + 3, t[1] - 1], [t[0], t[1] + 5.6]], t[2]); });
     }],
-    bike: [32, 20, function (g) {
+    bike: [48, 30, function (g) {
+      g.save(); g.scale(1.5, 1.5);
       [[7, 14], [25, 14]].forEach((w) => { g.lineWidth = 1.4; g.strokeStyle = '#14062a'; g.beginPath(); g.arc(w[0], w[1], 5.4, 0, 7); g.stroke(); g.lineWidth = 0.5; g.strokeStyle = '#c4e6ff'; g.beginPath(); g.arc(w[0], w[1], 3, 0, 7); g.stroke(); });
       line(g, 7, 14, 14, 6, 1.4, '#ff7a2a'); line(g, 14, 6, 22, 6, 1.4, '#ff7a2a'); line(g, 14, 6, 17, 14, 1.4, '#ff7a2a'); line(g, 17, 14, 7, 14, 1.4, '#ff7a2a'); line(g, 22, 6, 25, 14, 1.4, '#ff7a2a'); line(g, 17, 14, 22, 6, 1.4, '#ff7a2a');
       line(g, 21, 6, 22.6, 2.6, 1.2, '#14062a'); line(g, 20, 2.6, 25, 2.6, 1.2, '#14062a'); rrect(g, 11.4, 3, 6, 1.8, 0.8, '#14062a');
       rrect(g, 20.6, 8, 6.6, 4.6, 1, '#8a5a2a');
+      g.restore();
     }],
     phone: [14, 28, function (g) {
       rrect(g, 1, 3, 12, 25, 1.4, lg(g, 1, 3, 13, 28, [[0, '#ff5a5a'], [1, '#a81818']])); rrect(g, 0, 0.8, 14, 3.6, 1.2, '#c81a1a');
@@ -2348,8 +2403,33 @@ const CL = GEAR === 'clogs' ? (y0, y1) => lg(g, 0, y0, 0, y1, [[0, '#fff090'], [
   };
   const obSize = {};
   // solid street obstacle ob_<name> (w x h); the generator reads the size from AH.Art.obSize
-  function regOb(k, w, h, fn) { obSize[k] = [w, h]; reg2('ob_' + k, w, h, fn, { shade: 0.45 }); }
+  function regOb(k, w, h, fn) {
+    const scale = { cab: 1.5, taxi: 1.5, bikes: 1.4, vespa: 1.3, fiat: 1.3 }[k] || 1;
+    obSize[k] = [Math.round(w * scale), Math.round(h * scale)];
+    reg2('ob_' + k, obSize[k][0], obSize[k][1], function (g) {
+      g.save(); g.scale(scale, scale); fn(g, w, h); g.restore();
+    }, { shade: 0.45 });
+  }
   Object.keys(OBST).forEach(function (k) { regOb(k, OBST[k][0], OBST[k][1], OBST[k][2]); });
+  regOb('herring', 88, 62, function (g) {
+    rrect(g, 3, 26, 82, 31, 2, '#e8e4d8');
+    g.fillStyle = '#194a9a'; g.fillRect(4, 41, 80, 14);
+    [6, 80].forEach(function (x) { g.fillStyle = '#d4d8e0'; g.fillRect(x, 8, 2, 35); });
+    for (let x = 0; x < 88; x += 11) {
+      g.fillStyle = x % 22 ? '#ffffff' : '#2168ba';
+      g.fillRect(x, 8, 11, 9);
+    }
+    rrect(g, 8, 0, 72, 10, 1, '#194a9a');
+    txt(g, 'HOLLANDSE HARING', 11, 2, 0.7, '#ffffff');
+    txt(g, 'VERSE VIS', 19, 44, 1, '#ffffff');
+    for (let x = 14; x < 76; x += 18) {
+      ell(g, x, 30, 6, 2, '#75a9c5');
+      poly(g, [[x + 5, 30], [x + 9, 27], [x + 9, 33]], '#a8d8e8');
+    }
+    ell(g, 46, 22, 5, 5, '#d6a078');
+    g.fillStyle = '#ffffff'; g.fillRect(40, 15, 12, 3);
+    [15, 73].forEach(function (x) { ell(g, x, 58, 4, 4, '#182844'); });
+  });
 
   /* ---- ride-on Azure bike (40x26), two wheel frames */
   function bikeArt(f) {
@@ -2467,7 +2547,7 @@ const CL = GEAR === 'clogs' ? (y0, y1) => lg(g, 0, y0, 0, y1, [[0, '#fff090'], [
     g.fillStyle = 'rgba(125,255,122,0.45)'; g.fillRect(2, 15, 76, 1);
     for (let i = 0; i < 4; i++) { ell(g, 14 + i * 17, 10, 3, 3, ['#7dff7a', '#ff4a4a', '#4ab4ff', '#ffd23f'][i]); }
   }, { shade: 0.3, glow: '#7dff7a' });
-  /* ---- Azure Pipelines warp pipe + underground BUILD > TEST > DEPLOY stage */
+  /* ---- Azure warp pipe and themed underground cloud challenges */
   reg2('pipe', 44, 46, function (g) {
     const body = lg(g, 4, 0, 40, 0, [[0, '#0a3a9a'], [0.25, '#5ac8ff'], [0.45, '#2a8af0'], [1, '#0a2a7a']]);
     g.fillStyle = body; g.fillRect(4, 13, 36, 33);
@@ -2493,27 +2573,42 @@ const CL = GEAR === 'clogs' ? (y0, y1) => lg(g, 0, y0, 0, y1, [[0, '#fff090'], [
       g.fillStyle = 'rgba(138,216,255,0.35)'; g.fillRect(x + 0.6, y + 0.6, 14.8, 0.8);
     }
   }, FLAT);
-  ['BUILD', 'TEST', 'DEPLOY'].forEach(function (stage, si) {
-    reg2('pipe_bg_' + si, 640, 360, function (g) {
-      g.fillStyle = lg(g, 0, 0, 0, 360, [[0, '#040a24'], [0.6, '#0a1a48'], [1, '#06102e']]); g.fillRect(0, 0, 640, 360);
-      g.fillStyle = 'rgba(39,120,255,0.08)'; for (let x = 0; x < 640; x += 32) g.fillRect(x, 0, 1, 360); for (let y = 0; y < 360; y += 32) g.fillRect(0, y, 640, 1);
-      [70, 96, 262].forEach(function (y, k) {
-        g.fillStyle = lg(g, 0, y, 0, y + 10, [[0, '#2a8af0'], [0.4, '#8ae0ff'], [1, '#0a3a9a']]); g.fillRect(0, y, 640, 10);
-        for (let x = 40 + k * 30; x < 640; x += 120) { g.fillStyle = '#0a2a7a'; g.fillRect(x, y - 2, 8, 14); }
-      });
-      const r = rng(70 + si);
-      for (let i = 0; i < 26; i++) { g.fillStyle = 'rgba(127,232,255,' + (0.3 + r() * 0.5) + ')'; g.fillRect(r() * 640, 110 + r() * 140, 6 + r() * 20, 1.2); }
-      for (let k = 0; k < 4; k++) {
-        const x = 40 + k * 160;
-        rrect(g, x, 128, 110, 60, 4, 'rgba(10,20,60,0.85)'); g.strokeStyle = 'rgba(39,224,255,0.5)'; g.lineWidth = 1; g.strokeRect(x + 0.5, 128.5, 109, 59);
-        txt(g, stage + ' #' + (si * 4 + k + 1), x + 8, 134, 1, '#7fe8ff');
-        for (let l = 0; l < 4; l++) { g.fillStyle = l === 3 ? '#7dff7a' : 'rgba(200,220,255,0.55)'; g.fillRect(x + 8, 150 + l * 8, 30 + r() * 60, 3); }
-        ell(g, x + 98, 140, 5, 5, si === 2 && k === 3 ? '#ffd23f' : '#107c10'); line(g, x + 95.4, 140, x + 97.4, 142.2, 1, '#ffffff'); line(g, x + 97.4, 142.2, x + 101, 137.6, 1, '#ffffff');
+  registerCloudEnemies();
+  ['pipelines', 'aks', 'actions', 'docker'].forEach(function (theme, i) {
+    const col = ['#27a8ff', '#58c8ff', '#b89aff', '#48d8c8'][i];
+    reg2('cloud_tile_' + theme, 48, 32, function (g) {
+      g.fillStyle = ['#153c78', '#193c56', '#392958', '#164f60'][i]; g.fillRect(0, 0, 48, 32);
+      g.strokeStyle = col; g.lineWidth = 1; g.strokeRect(1, 1, 46, 30);
+      if (theme === 'docker' || theme === 'aks') {
+        for (let x = 6; x < 46; x += 8) line(g, x, 5, x, 27, 1, col);
+      } else {
+        line(g, 7, 16, 40, 16, 2, col);
+        [10, 24, 38].forEach(function (x) { ell(g, x, 16, 3, 3, '#7fe8ff'); });
       }
-      const label = 'AZURE PIPELINES - ' + stage;
-      rrect(g, 320 - txtW(label, 1) / 2 - 18, 206, txtW(label, 1) + 30, 20, 4, 'rgba(10,40,120,0.9)');
-      msLogo(g, 320 - txtW(label, 1) / 2 - 12, 211, 9);
-      txt(g, label, 320 - txtW(label, 1) / 2 + 2, 212, 1, '#ffffff');
+    }, FLAT);
+    reg2('challenge_bg_' + theme, 640, 360, function (g) {
+      g.fillStyle = lg(g, 0, 0, 0, 360, [[0, '#060a20'], [1, ['#102650', '#0b3040', '#241638', '#0d353b'][i]]]);
+      g.fillRect(0, 0, 640, 360);
+      for (let x = 20; x < 640; x += 120) {
+        line(g, x, 40, x, 310, 2, col);
+        if (theme === 'aks') {
+          for (let y = 160; y < 300; y += 42) {
+            rrect(g, x + 14, y, 80, 30, 3, '#183e58');
+            txt(g, 'POD', x + 24, y + 10, 1, col);
+          }
+        } else if (theme === 'docker') {
+          for (let y = 170; y < 300; y += 48) {
+            g.strokeStyle = col; g.lineWidth = 1; g.strokeRect(x + 10, y, 90, 40);
+            for (let k = 20; k < 100; k += 12) line(g, x + k, y + 3, x + k, y + 36, 1, col);
+          }
+        } else {
+          rrect(g, x + 12, 168, 92, 82, 3, '#10182e');
+          txt(g, theme === 'actions' ? 'RUNNER' : 'CI/CD', x + 18, 180, 1, col);
+          for (let y = 200; y < 240; y += 10) {
+            g.fillStyle = y === 220 ? '#ff7a50' : col; g.fillRect(x + 20, y, 68 - (y % 30), 3);
+          }
+        }
+      }
     }, FLAT);
   });
   reg2('cloud_plat', 80, 20, function (g) {
@@ -5260,6 +5355,7 @@ const CL = GEAR === 'clogs' ? (y0, y1) => lg(g, 0, y0, 0, y1, [[0, '#fff090'], [
       mk('phish_swim', ['phish_0', 'phish_1'], 6);
       mk('ram_run', ['ram_0', 'ram_1'], 8);
       mk('botnet_float', ['botnet_0', 'botnet_1'], 3);
+      ['bug', 'image', 'rbac', 'endpoint', 'guest'].forEach((k) => mk(k + '_move', [k + '_0', k + '_1'], 6));
       skinKeys.forEach((k) => mk(k, [k + '_0', k + '_1'], k.slice(-5) === 'drone' ? 16 : k.slice(-6) === 'spider' ? 8 : 5));
       Object.keys(COINS).forEach((r) => mk('coin_' + r, [0, 1, 2, 3].map((i) => 'coin_' + r + i), 8));
       mk('hero_run', ['hero_run0', 'hero_run1', 'hero_run2', 'hero_run3'], 12);
