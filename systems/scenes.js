@@ -51,6 +51,7 @@
       setHero(AH.Save.data.hero === 'f' ? 'f' : 'm');
       this.hero.setInteractive({ useHandCursor: true }).on('pointerdown', () => { AH.Audio.init(); AH.Audio.play('select'); setHero(AH.Save.data.hero === 'f' ? 'm' : 'f'); });
       const W = 10;
+      this.add.image(10, 21, 'ms_logo').setOrigin(0).setDisplaySize(22, 22);
       T(this, 24 + W, 20, 'MICROSOFT', { scale: 4, color: '#ffffff', shadow: '#2a8cff' });
       T(this, 24, 54, 'AZURE', { scale: 10, color: '#7fe8ff', shadow: '#3a1fb0' });
       T(this, 24, 130, 'HEROES', { scale: 9, color: '#ffffff', shadow: '#5a2fd0' });
@@ -95,7 +96,8 @@
     defender: { time: 8, msg: 'DEFENDER SHIELD! INVINCIBLE' },
     actions: { time: 9, msg: 'GITHUB ACTIONS! TURBO SPEED' },
     powerbi: { time: 12, msg: 'POWER BI! COIN MAGNET + 2X SCORE' },
-    teams: { time: 0, msg: 'TEAMS CALL! +30 HEALTH' }
+    teams: { time: 0, msg: 'TEAMS CALL! +30 HEALTH' },
+    bike: { time: 20, msg: 'AZURE BIKE! RIDE THROUGH ENEMIES' }
   };
   const KIND = { run: 'RUN AND JUMP', fly: 'FLIGHT PURSUIT', rack: 'HACK + BOSS FIGHT' };
   const COLS = 3;
@@ -196,12 +198,17 @@
       this.exitActive = !L.boss;
       this.dyingT = 0;
       this.overlayItems = [];
+      this.draws = [];
+      this.achQ = [];
+      this.ach = {};
+      this.drawTip = false;
+      this.warping = false;
 
       this.physics.world.gravity.y = 1100;
       this.physics.world.setBounds(0, -400, L.width, 1200);
       this.physics.world.setBoundsCollision(true, true, false, false);
 
-      const bg = ['bg_sky_' + L.region, 'bg_far_' + L.region, L.theme === 'rack' ? 'bg_dc_near' : 'bg_near_' + L.region];
+      const bg = ['bg_sky_' + L.region, this.textures.exists('bg_farp_' + L.region) ? 'bg_farp_' + L.region : 'bg_far_' + L.region, L.theme === 'rack' ? 'bg_dc_near' : 'bg_near_' + L.region];
       this.add.image(0, 0, bg[0]).setOrigin(0).setScrollFactor(0).setDepth(-30);
       this.far = this.add.tileSprite(0, 360 - (L.mode === 'run' ? 54 : 0) - this.textures.get(bg[1]).getSourceImage().height / AH.Art.D, 640, this.textures.get(bg[1]).getSourceImage().height / AH.Art.D, bg[1]).setOrigin(0).setScrollFactor(0).setDepth(-20);
       this.near = this.add.tileSprite(0, 360 - this.textures.get(bg[2]).getSourceImage().height / AH.Art.D, 640, this.textures.get(bg[2]).getSourceImage().height / AH.Art.D, bg[2]).setOrigin(0).setScrollFactor(0).setDepth(-19);
@@ -209,6 +216,8 @@
       this.solids = this.physics.add.staticGroup();
       this.rects = []; // solid / hazard rectangles used for blasts and rock damage
       L.platforms.forEach((p) => this.addPlatform(p));
+      this.buildScenery();
+      this.buildStreet();
       this.buildGates();
       this.buildHazards();
       this.buildPickups();
@@ -216,9 +225,14 @@
 
       this.player = new AH.Player(this, L.spawn.x, L.spawn.y, this.mode);
       this.physics.add.collider(this.player.sprite, this.solids);
+      this.boats.forEach((b) => this.physics.add.collider(this.player.sprite, b.z));
       this.enemies = [];
       L.enemies.forEach((d) => this.enemies.push(new AH.Enemy(this, d)));
       this.blasts = [];
+      this.ebolts = [];
+      this.riding = false;
+      this.inBonus = false;
+      this.bikeImg = this.add.sprite(0, 0, 'bike_ride0').setOrigin(0.5, 1).setDepth(52).setVisible(false);
 
       const cam = this.cameras.main;
       if (this.mode === 'run') {
@@ -246,6 +260,7 @@
       this.powers = {};
       this.pal = 0;
       this.clippyAt = 0;
+      this.clippyImg = this.add.image(0, 118, 'clippy').setScrollFactor(0).setDepth(951).setVisible(false);
       this.buildIntro();
       AH.Audio.music('main');
       this.cameras.main.fadeIn(350, 10, 7, 32);
@@ -269,11 +284,208 @@
         void body;
         return;
       }
-      this.add.tileSprite(p.x, p.y, p.w, 8, th + '_top').setOrigin(0).setDepth(10).setTint(L.tint);
-      this.add.tileSprite(p.x, p.y + 8, p.w, Math.min(p.h - 8, 220), th).setOrigin(0).setDepth(9).setTint(L.tint);
+      if (p.bridge && p.draw) {
+        this.buildDrawbridge(p);
+        return;
+      } else if (p.bridge) {
+        this.add.image(p.x, p.y - 30, 'bridge_' + L.region).setOrigin(0).setDisplaySize(p.w, 100).setDepth(10);
+      } else if (p.cloud) {
+        this.add.image(p.x, p.y - 2, 'cloud_plat').setOrigin(0).setDisplaySize(p.w, 20).setDepth(10);
+      } else if (p.bliss || L.ground) {
+        const g = p.bliss ? 'grass' : L.ground;
+        this.add.tileSprite(p.x, p.y, p.w, 8, g + '_top').setOrigin(0).setDepth(10);
+        this.add.tileSprite(p.x, p.y + 8, p.w, Math.min(p.h - 8, 220), g).setOrigin(0).setDepth(9);
+        if (L.rail && !p.bliss && p.h >= 60 && p.w >= 64) {
+          const rh = this.textures.get('rail_' + L.rail).getSourceImage().height / AH.Art.D;
+          this.add.tileSprite(p.x + 4, p.y - rh, p.w - 8, rh, 'rail_' + L.rail).setOrigin(0).setDepth(11).setAlpha(0.95);
+        }
+      } else {
+        this.add.tileSprite(p.x, p.y, p.w, 8, th + '_top').setOrigin(0).setDepth(10).setTint(L.tint);
+        this.add.tileSprite(p.x, p.y + 8, p.w, Math.min(p.h - 8, 220), th).setOrigin(0).setDepth(9).setTint(L.tint);
+      }
       const z = this.add.zone(p.x + p.w / 2, p.y + p.h / 2, p.w, p.h);
       this.solids.add(z);
       this.rects.push({ x: p.x, y: p.y, w: p.w, h: p.h, active: true });
+    }
+
+    /* parallax strip of regional landmarks and Microsoft billboards (scroll factor 0.5) */
+    buildScenery() {
+      const L = this.L, keys = (AH.Art.sceneryKeys[L.region] || []).slice(), bills = AH.Art.billKeys;
+      if (L.theme === 'rack') return;
+      const sf = 0.5, end = Math.max(0, L.width - 640) * sf + 700;
+      const base = L.mode === 'fly' ? 362 : 336;
+      // every piece keeps a minimum distance from its last copy so no landmark shows twice in one frame
+      const lastAt = {}, wOf = (k) => this.textures.get(k).getSourceImage().width / AH.Art.D;
+      const choose = (list, x) => {
+        const ok = list.filter((k) => lastAt[k] === undefined || x - lastAt[k] > 680 + wOf(k));
+        return ok.length ? ok[Math.floor(Math.random() * ok.length)] : null;
+      };
+      let x = -40, sinceBill = 0, nextBill = 2 + Math.floor(Math.random() * 2);
+      while (x < end) {
+        let key;
+        if (!keys.length || sinceBill >= nextBill) { key = choose(bills, x); sinceBill = 0; nextBill = 2 + Math.floor(Math.random() * 2); }
+        else { key = choose(keys, x); sinceBill++; }
+        if (!key) { x += 40; continue; }
+        lastAt[key] = x;
+        const img = this.add.image(x, base - (key.indexOf('bb_') === 0 ? 4 : 0), key).setOrigin(0, 1).setScrollFactor(sf).setDepth(-18);
+        x += img.displayWidth + 6 + Math.floor(Math.random() * 34);
+      }
+    }
+
+    /* water, boats, street obstacles, bikes and the London phone box */
+    buildStreet() {
+      const L = this.L;
+      this.water = null;
+      if (L.water && this.textures.exists('water_' + L.region)) {
+        this.water = this.add.tileSprite(0, 304, 640, 56, 'water_' + L.region).setOrigin(0).setScrollFactor(0).setDepth(8);
+      }
+      (L.deco || []).forEach((d) => {
+        const img = this.add.image(d.x, d.y, d.key).setOrigin(0.5, 1).setDepth(8.5);
+        this.tweens.add({ targets: img, y: d.y + 2, yoyo: true, repeat: -1, duration: 1300, ease: 'Sine.easeInOut' });
+      });
+      this.boats = (L.movers || []).map((m) => {
+        const z = this.add.zone(m.x0 + m.w / 2, m.y + 5, m.w, 10);
+        this.physics.add.existing(z);
+        z.body.setAllowGravity(false).setImmovable(true);
+        z.body.checkCollision.down = z.body.checkCollision.left = z.body.checkCollision.right = false;
+        z.body.setVelocityX(m.speed);
+        const img = this.add.image(z.x, m.y - 6, 'boat_' + L.region).setOrigin(0.5, 0).setDepth(9.5);
+        return { def: m, z, img };
+      });
+      (L.obstacles || []).forEach((o) => {
+        this.add.image(o.x, o.y, 'ob_' + o.kind).setOrigin(0).setDepth(12);
+        const z = this.add.zone(o.x + o.w / 2, o.y + 4 + (o.h - 4) / 2, o.w - 4, o.h - 4);
+        this.solids.add(z);
+        this.rects.push({ x: o.x + 2, y: o.y + 4, w: o.w - 4, h: o.h - 4, active: true });
+      });
+      this.bikes = (L.vehicles || []).map((v) => {
+        const spr = this.add.sprite(v.x, v.y, 'bike_ride0').setOrigin(0.5, 1).setDepth(14);
+        const tag = T(this, v.x, v.y - 40, 'BIKE', { scale: 1, color: '#7fe8ff', ox: 0.5 }).setDepth(21);
+        this.tweens.add({ targets: [spr, tag.img], alpha: 0.6, yoyo: true, repeat: -1, duration: 450 });
+        return { spr, tag, def: v, taken: false };
+      });
+      this.secret = null;
+      if (L.secret && L.bonus) {
+        const S = L.secret, B = L.bonus;
+        const booth = this.add.image(S.x, S.y, 'booth').setOrigin(0.5, 1).setDepth(13);
+        const label = T(this, S.x, S.y - 74, '?', { scale: 2, color: '#ffe14a', ox: 0.5 }).setDepth(21);
+        this.tweens.add({ targets: label.img, y: S.y - 80, yoyo: true, repeat: -1, duration: 500 });
+        this.add.image(B.x, 0, 'bonus_bg').setOrigin(0).setDepth(-17);
+        T(this, B.x + 320, 92, 'SECRET LEVEL: CLOUD NINE', { scale: 2, color: '#ffffff', shadow: '#0a3a8a', ox: 0.5 }).setDepth(21);
+        T(this, B.x + 320, 112, 'GRAB EVERYTHING, THEN RING THE PHONE BOX HOME', { scale: 1, color: '#0a2a6a', shadow: '#ffffff', ox: 0.5 }).setDepth(21);
+        this.addPlatform(B.floor);
+        B.clouds.forEach((c) => this.addPlatform(c));
+        const exitBooth = this.add.image(B.exit.x, B.exit.y, 'booth').setOrigin(0.5, 1).setDepth(13);
+        this.secret = { booth, label, exitBooth, used: false, t: 0, tipped: false };
+      }
+    }
+
+    /* Amsterdam pull-up bridge: two leaves lift on a timer, the deck is only solid while it is down */
+    buildDrawbridge(p) {
+      const half = p.w / 2, y = p.y;
+      const gl = this.add.image(p.x - 6, y + 14, 'draw_gantry').setOrigin(0.5, 1).setDepth(9.6);
+      const gr = this.add.image(p.x + p.w + 6, y + 14, 'draw_gantry').setOrigin(0.5, 1).setDepth(9.6).setFlipX(true);
+      const left = this.add.tileSprite(p.x, y + 5, half, 10, 'draw_leaf').setOrigin(0, 0.5).setDepth(10);
+      const right = this.add.tileSprite(p.x + p.w, y + 5, half, 10, 'draw_leaf').setOrigin(1, 0.5).setDepth(10);
+      const lamps = [gl, gr];
+      const z = this.add.zone(p.x + p.w / 2, y + 7, p.w, 14);
+      this.solids.add(z);
+      const r = { x: p.x, y: y, w: p.w, h: 14, active: true };
+      this.rects.push(r);
+      const cycle = 7200, up = 2200;
+      this.draws.push({ p, left, right, z, r, lamps, cycle, up, phase: Math.floor(Math.random() * cycle), down: true });
+    }
+
+    updateDraws(p) {
+      if (!this.draws) return;
+      const now = this.time.now;
+      this.draws.forEach((d) => {
+        const t = (now + d.phase) % d.cycle, open = d.cycle - d.up;
+        let ang = 0;
+        if (t > open) { const k = (t - open) / d.up; ang = Math.sin(Math.min(1, k * 2.2) * Math.PI / 2) * (k > 0.8 ? Math.max(0, (1 - k) / 0.2) : 1) * 1.25; }
+        const warn = t > open - 1100 && t <= open;
+        d.left.setRotation(-ang);
+        d.right.setRotation(ang);
+        d.lamps.forEach((l) => l.setTint(warn && Math.floor(now / 160) % 2 ? 0xff8080 : 0xffffff));
+        const down = ang < 0.12;
+        if (down !== d.down) {
+          d.down = down;
+          d.z.body.enable = down;
+          d.r.active = down;
+          if (!down && Math.abs(p.x - (d.p.x + d.p.w / 2)) < 400) AH.Audio.play('bike');
+        }
+        if (warn && !this.drawTip && Math.abs(p.x - d.p.x) < 300) { this.drawTip = true; this.toast('CLIPPY: BRIDGE GOING UP! WAIT OR DOUBLE JUMP'); }
+      });
+    }
+
+    spawnEnemyBolt(x, y, dir) {
+      const s = this.add.image(x, y, 'ebolt').setDepth(54).setFlipX(dir < 0);
+      this.ebolts.push({ s, dir, dist: 0 });
+      const cam = this.cameras.main;
+      if (x > cam.scrollX - 20 && x < cam.scrollX + 660) AH.Audio.play('zap');
+    }
+
+    mountBike(b) {
+      b.taken = true;
+      b.spr.destroy();
+      b.tag.destroy();
+      this.riding = true;
+      this.player.riding = true;
+      this.powers.bike = POWERS.bike.time;
+      this.bikeImg.setVisible(true).play('bike_ride');
+      AH.Audio.play('bike');
+      this.toast(POWERS.bike.msg);
+      this.achieve('PEDAL POWER', 'bike');
+    }
+
+    dismount() {
+      if (!this.riding) return;
+      this.riding = false;
+      this.player.riding = false;
+      delete this.powers.bike;
+      this.bikeImg.setVisible(false).stop();
+      this.burst(this.player.x, this.player.y + 16, 'spark_c', 8, 120);
+    }
+
+    enterBonus() {
+      const B = this.L.bonus, p = this.player, cam = this.cameras.main;
+      this.secret.used = true;
+      this.warping = true;
+      AH.Audio.play('secret');
+      cam.fadeOut(260, 255, 255, 255);
+      cam.once('camerafadeoutcomplete', () => {
+        this.inBonus = true;
+        this.physics.world.setBounds(B.x, -400, B.w, 1200);
+        cam.setBounds(B.x, 0, B.w, 360);
+        p.sprite.setPosition(B.x + 60, 250);
+        p.sprite.setVelocity(0, 0);
+        cam.fadeIn(300, 255, 255, 255);
+        this.warping = false;
+        this.toast('CLIPPY: IT LOOKS LIKE YOU FOUND A SECRET!');
+        this.achieve('PHONE A FRIEND', 'secret');
+      });
+    }
+
+    leaveBonus(fade) {
+      const S = this.L.secret, p = this.player, cam = this.cameras.main, L = this.L;
+      const back = () => {
+        this.inBonus = false;
+        this.physics.world.setBounds(0, -400, L.width, 1200);
+        cam.setBounds(0, 0, L.width, 360);
+        this.secret.booth.setTint(0x777799);
+        this.secret.label.setVisible(false);
+        this.warping = false;
+      };
+      if (!fade) { back(); return; }
+      this.warping = true;
+      AH.Audio.play('secret');
+      cam.fadeOut(260, 255, 255, 255);
+      cam.once('camerafadeoutcomplete', () => {
+        back();
+        p.sprite.setPosition(S.x + 34, S.y - 30);
+        p.sprite.setVelocity(0, 0);
+        cam.fadeIn(300, 255, 255, 255);
+      });
     }
 
     buildGates() {
@@ -340,6 +552,16 @@
         this.tweens.add({ targets: spr, y: u.y - 6, yoyo: true, repeat: -1, duration: 700, ease: 'Sine.easeInOut' });
         return { spr, def: u, taken: false };
       });
+      if (L.bonus && L.secret) {
+        const B = L.bonus;
+        B.coins.forEach((c) => this.spawnCoin(c.x, c.y));
+        const spr = this.add.image(B.token.x, B.token.y, 'mfa').setDepth(35);
+        this.tweens.add({ targets: spr, y: B.token.y - 5, yoyo: true, repeat: -1, duration: 600, ease: 'Sine.easeInOut' });
+        this.tokens.push({ spr, taken: false });
+        const ps = this.add.image(B.power.x, B.power.y, 'pu_' + B.power.kind).setDepth(36);
+        this.tweens.add({ targets: ps, y: B.power.y - 6, yoyo: true, repeat: -1, duration: 700, ease: 'Sine.easeInOut' });
+        this.pups.push({ spr: ps, def: B.power, taken: false });
+      }
       this.flags = (L.checkpoints || []).map((c) => ({
         def: c, hit: false, spr: this.add.image(c.x, c.y, 'flag_off').setOrigin(0.5, 1).setDepth(15)
       }));
@@ -405,14 +627,32 @@
       this.ach = this.ach || {};
       if (this.ach[key]) return;
       this.ach[key] = true;
-      const t = T(this, 320, 56, 'ACHIEVEMENT UNLOCKED: ' + name, { scale: 1, color: '#7dffa0', ox: 0.5 }).setScrollFactor(0).setDepth(960);
-      this.tweens.add({ targets: t.img, alpha: 0, delay: 2600, duration: 500, onComplete: () => t.destroy() });
+      this.achQ = this.achQ || [];
+      this.achQ.push(name);
+      if (this.achQ.length === 1) this.showAch(name);
+    }
+
+    showAch(name) {
+      AH.Audio.play('achieve');
+      const w = Math.max(170, name.length * 6 + 64), x = 320 - w / 2, y = 52;
+      const g = this.add.graphics().setScrollFactor(0).setDepth(960);
+      g.fillStyle(0x101010, 0.92).fillRoundedRect(x, y, w, 30, 15);
+      g.lineStyle(1, 0x107c10, 1).strokeRoundedRect(x, y, w, 30, 15);
+      g.fillStyle(0x107c10, 1).fillCircle(x + 15, y + 15, 13);
+      const icon = this.add.image(x + 15, y + 15, 'ach_icon').setScrollFactor(0).setDepth(961);
+      const t1 = T(this, x + 34, y + 6, 'ACHIEVEMENT UNLOCKED', { scale: 1, color: '#9be09b', shadow: '#000000' }).setScrollFactor(0).setDepth(961);
+      const t2 = T(this, x + 34, y + 17, '50G - ' + name, { scale: 1, color: '#ffffff', shadow: '#000000' }).setScrollFactor(0).setDepth(961);
+      const all = [g, icon, t1.img, t2.img];
+      all.forEach((o) => o.setAlpha(0));
+      this.tweens.add({ targets: all, alpha: 1, duration: 200 });
+      this.tweens.add({ targets: all, alpha: 0, delay: 2800, duration: 500, onComplete: () => { g.destroy(); icon.destroy(); t1.destroy(); t2.destroy(); this.achQ.shift(); if (this.achQ.length) this.showAch(this.achQ[0]); } });
     }
 
     updatePowers(dt, p) {
       const pw = this.powers;
       Object.keys(pw).forEach((k) => { pw[k] -= dt; if (pw[k] <= 0) delete pw[k]; });
-      this.player.speedMul = pw.actions ? 1.35 : 1;
+      if (this.riding && !pw.bike) this.dismount();
+      this.player.speedMul = (pw.actions ? 1.35 : 1) * (this.riding ? 1.45 : 1);
       this.player.defender = pw.defender ? 1 : 0;
       this.player.sprite.setAlpha(pw.defender ? 0.55 + 0.3 * Math.sin(this.time.now / 60) : 1);
       if (pw.copilot) {
@@ -443,6 +683,9 @@
     toast(msg) {
       this.toastText.setText(msg).setVisible(true).setAlpha(1);
       this.toastT = 2.2;
+      const clippy = msg.indexOf('CLIPPY') === 0;
+      this.clippyImg.setVisible(clippy).setAlpha(1);
+      if (clippy) this.clippyImg.setX(320 - this.toastText.img.displayWidth / 2 - 16);
     }
 
     onEnemyKilled(e) {
@@ -492,8 +735,10 @@
       }
     }
 
-    showPanel(title, col, lines, buttons) {
+    showPanel(title, col, lines, buttons, style) {
       this.clearPanel();
+      if (style === 'bsod') return this.showBsod(lines, buttons);
+      if (style === 'azure') return this.showDeploy(title, lines, buttons);
       const g = this.add.graphics().setScrollFactor(0).setDepth(1400);
       g.fillStyle(0x0a0720, 0.82).fillRect(0, 0, 640, 360);
       g.fillStyle(0x0b0830, 1).fillRect(90, 96, 460, 190);
@@ -514,6 +759,52 @@
       });
     }
 
+    /* Game over in the style of a Windows stop screen */
+    showBsod(lines, buttons) {
+      const add = (t) => { this.overlayItems.push(t); return t; };
+      const g = add(this.add.graphics().setScrollFactor(0).setDepth(1400));
+      g.fillStyle(0x0078d7, 1).fillRect(0, 0, 640, 360);
+      const txt = (x, y, s, sc, c) => add(T(this, x, y, s, { scale: sc, color: c || '#ffffff', shadow: '#00509a' }).setScrollFactor(0).setDepth(1450));
+      add(T(this, 60, 40, ':(', { scale: 10, color: '#ffffff', shadow: '' }).setScrollFactor(0).setDepth(1450));
+      txt(60, 122, 'YOUR HERO RAN INTO A PROBLEM AND', 2);
+      txt(60, 142, 'NEEDS TO RESTART. GAME PROGRESS:', 2);
+      txt(60, 168, '100% COMPLETE', 2);
+      lines.forEach((l, i) => txt(60, 196 + i * 16, l, 1, '#cfe8ff'));
+      g.fillStyle(0xffffff, 1).fillRect(60, 240, 40, 40);
+      g.fillStyle(0x0078d7, 1);
+      for (let i = 0; i < 64; i++) { const qx = i % 8, qy = (i / 8) | 0; if ((qx * 7 + qy * 13 + qx * qy) % 3 === 0) g.fillRect(64 + qx * 4, 244 + qy * 4, 4, 4); }
+      [[64, 244], [88, 244], [64, 268]].forEach((c) => { g.fillRect(c[0], c[1], 8, 8); g.fillStyle(0xffffff, 1).fillRect(c[0] + 2, c[1] + 2, 4, 4); g.fillStyle(0x0078d7, 1); });
+      txt(112, 242, 'FOR MORE INFO, VISIT AKA.MS/AZUREHEROES', 1, '#cfe8ff');
+      txt(112, 256, 'STOP CODE: HERO_OUT_OF_LIVES', 1);
+      buttons.forEach((b, i) => add(AH.UI.button(this, 200 + i * 240, 310, b[0], b[1], { scale: 2, color: '#ffffff' })));
+    }
+
+    /* Level complete in the style of an Azure portal deployment */
+    showDeploy(title, lines, buttons) {
+      const add = (t) => { this.overlayItems.push(t); return t; };
+      const g = add(this.add.graphics().setScrollFactor(0).setDepth(1400));
+      g.fillStyle(0x0a0720, 0.7).fillRect(0, 0, 640, 360);
+      g.fillStyle(0xf3f2f1, 1).fillRect(80, 64, 480, 236);
+      g.fillStyle(0x0078d4, 1).fillRect(80, 64, 480, 22);
+      g.fillStyle(0xffffff, 1).fillRect(80, 86, 480, 46);
+      g.fillStyle(0x107c10, 1).fillCircle(112, 109, 14);
+      g.lineStyle(4, 0xffffff, 1).beginPath().moveTo(104, 109).lineTo(110, 115).lineTo(121, 102).strokePath();
+      g.lineStyle(1, 0xc8c6c4, 1).strokeRect(80, 64, 480, 236);
+      add(this.add.image(90, 75, 'ms_logo').setScrollFactor(0).setDepth(1450).setDisplaySize(12, 12));
+      const txt = (x, y, s, sc, c, ox) => add(T(this, x, y, s, { scale: sc, color: c, shadow: '', ox: ox || 0 }).setScrollFactor(0).setDepth(1450));
+      txt(102, 71, 'MICROSOFT AZURE   HOME > DEPLOYMENTS', 1, '#ffffff');
+      txt(136, 92, title, 3, '#107c10');
+      txt(136, 119, 'RESOURCE GROUP: RG-HEROES-' + this.L.region.toUpperCase(), 1, '#605e5c');
+      lines.forEach((l, i) => txt(100, 146 + i * 20, l, (l.length * 12 > 440 ? 1 : 2), '#323130'));
+      g.fillStyle(0xe1dfdd, 1).fillRect(80, 252, 480, 1);
+      buttons.forEach((b, i) => {
+        const bx = 200 + i * 240;
+        g.fillStyle(i === 0 ? 0x0078d4 : 0xffffff, 1).fillRect(bx - 90, 262, 180, 26);
+        g.lineStyle(1, 0x0078d4, 1).strokeRect(bx - 90, 262, 180, 26);
+        add(AH.UI.button(this, bx, 275, b[0], b[1], { scale: 2, color: i === 0 ? '#ffffff' : '#0078d4', shadow: '' }));
+      });
+    }
+
     clearPanel() {
       this.overlayItems.forEach((o) => (o.destroy ? o.destroy() : null));
       this.overlayItems = [];
@@ -530,6 +821,7 @@
       p.sprite.setVisible(false);
       p.shieldFx.setVisible(false);
       p.sprite.body.enable = false;
+      this.bikeImg.setVisible(false);
       this.cameras.main.flash(250, 255, 60, 90);
       if (reason === 'time') this.toast('TIME UP!');
       this.time.delayedCall(950, () => {
@@ -548,6 +840,10 @@
         cam.startFollow(p.sprite, true, 0.12, 0.12, -40, 0);
         AH.Audio.music('main');
       }
+      if (this.inBonus) this.leaveBonus(false);
+      this.dismount();
+      this.ebolts.forEach((b) => b.s.destroy());
+      this.ebolts = [];
       p.sprite.body.enable = true;
       p.sprite.setVisible(true);
       if (this.mode === 'fly') {
@@ -568,10 +864,10 @@
       AH.Audio.music(null);
       AH.Audio.play('lose');
       AH.Save.recordScore(this.levelId, AH.Run.score);
-      this.showPanel('GAME OVER', '#ff2a4a', ['SCORE ' + AH.UI.pad(AH.Run.score, 6), 'BEST  ' + AH.UI.pad(AH.Save.data.best, 6)], [
+      this.showPanel('GAME OVER', '#ff2a4a', ['GAME OVER  -  SCORE ' + AH.UI.pad(AH.Run.score, 6) + '   BEST ' + AH.UI.pad(AH.Save.data.best, 6), 'REGION: ' + this.L.regionName.toUpperCase()], [
         ['RETRY', () => this.restart()],
         ['LEVEL SELECT', () => this.scene.start('Select')]
-      ]);
+      ], 'bsod');
     }
 
     levelComplete() {
@@ -590,7 +886,7 @@
       const next = LEVEL_IDS[idx + 1];
       const lines = [
         'SCORE ' + AH.UI.pad(AH.Run.score, 6) + '  TIME BONUS ' + bonus,
-        'DEPLOYED TO ' + this.L.regionName.toUpperCase(),
+        'HERO DEPLOYED TO ' + this.L.regionName.toUpperCase(),
         'CREDITS ' + this.player.credits + '  MFA ' + this.stats.mfa + '  KO ' + this.stats.kills
       ];
       const buttons = [];
@@ -606,7 +902,7 @@
         this.nextAction = () => this.scene.start('Select');
       }
       buttons.push(['LEVEL SELECT', () => this.scene.start('Select')]);
-      this.showPanel('LEVEL COMPLETE', '#4dff7a', lines.slice(0, 3), buttons);
+      this.showPanel(next ? 'DEPLOYMENT SUCCEEDED' : 'ALL REGIONS SECURED', '#4dff7a', lines.slice(0, 3), buttons, 'azure');
     }
 
     restart() {
@@ -637,7 +933,7 @@
       this.portal.setVisible(true);
       AH.Audio.music(null);
       AH.Audio.play('win');
-      this.toast('BOSS DEFEATED! ENTER THE EXIT PORTAL');
+      this.toast('THREAT REMEDIATED BY DEFENDER! ENTER THE EXIT');
       void B;
     }
 
@@ -679,6 +975,7 @@
       }
       this.far.tilePositionX = cam.scrollX * 0.15 * AH.Art.D;
       this.near.tilePositionX = cam.scrollX * 0.35 * AH.Art.D;
+      if (this.water) { this.water.tilePositionX = (cam.scrollX + this.time.now * 0.012) * AH.Art.D; this.water.tilePositionY = Math.sin(this.time.now / 600) * 2 * AH.Art.D; }
 
       if (this.state === 'dying') { this.hud.update(this.snapshot(), dt); return; }
 
@@ -691,9 +988,18 @@
         if (p.sprite.x < B.left + 16) { p.sprite.x = B.left + 16; p.sprite.body.setVelocityX(0); }
         if (p.sprite.x > B.right - 16) { p.sprite.x = B.right - 16; p.sprite.body.setVelocityX(0); }
       }
+      if (this.mode === 'run' && this.water && p.y > 340) {
+        this.burst(p.x, 306, 'spark_c', 16, 180, 0.5);
+        AH.Audio.play('splash');
+        this.toast('SPLASH! WATCH THE WATER');
+        this.loseLife('fall');
+        return;
+      }
       if (this.mode === 'run' && p.y > 430) { this.loseLife('fall'); return; }
-      if (L.boss && !this.boss && !this.bossDone && p.x > L.boss.trigger) this.startBoss();
+      if (L.boss && !this.boss && !this.bossDone && !this.inBonus && !this.warping && p.x > L.boss.trigger) this.startBoss();
 
+      this.updateDraws(p);
+      this.updateStreet(dt, p);
       this.updateWorld(dt, p);
       if (this.state === 'play' && p.health <= 0) this.loseLife('hit');
       if (this.boss) this.boss.update(dt, p);
@@ -834,6 +1140,25 @@
         if (kill) { b.s.destroy(); this.blasts.splice(i, 1); }
       }
 
+      // enemy bolts
+      for (let i = this.ebolts.length - 1; i >= 0; i--) {
+        const b = this.ebolts[i];
+        b.s.x += b.dir * 170 * dt;
+        b.dist += 170 * dt;
+        const br = { x: b.s.x - 6, y: b.s.y - 3, w: 12, h: 6 };
+        let kill = b.dist > 420;
+        if (!kill && ov(pr, br)) {
+          kill = true;
+          if (p.shielding && b.dir * p.facing < 0) {
+            AH.Audio.play('block');
+            this.burst(b.s.x, b.s.y, 'spark_c', 6, 120, 0.3);
+            this.addScore(50, b.s.x, b.s.y - 12);
+          } else p.hurt(10, b.s.x);
+        }
+        if (!kill) for (const r of this.rects) { if (r.active && ov(br, r)) { kill = true; break; } }
+        if (kill) { b.s.destroy(); this.ebolts.splice(i, 1); }
+      }
+
       // enemies
       for (let i = this.enemies.length - 1; i >= 0; i--) {
         const e = this.enemies[i];
@@ -844,7 +1169,11 @@
         const er = rectOf(e.sprite.body);
         if (!ov(pr, er)) continue;
         const falling = this.mode === 'run' && pb.velocity.y > 60 && pb.bottom < er.y + er.h * 0.65;
-        if (falling) {
+        if (this.riding && !falling) {
+          e.hit(p.facing);
+          if (!e.dead) e.hit(p.facing);
+          this.cameras.main.shake(80, 0.004);
+        } else if (falling) {
           e.hit(p.facing);
           pb.setVelocityY(-320);
           p.jumps = 1;
@@ -859,6 +1188,41 @@
       // exit
       const ex = this.L.exit;
       if (this.exitActive && ov(pr, { x: ex.x, y: ex.y, w: ex.w, h: ex.h })) this.levelComplete();
+    }
+
+    /* boats, bike pickup + riding, phone box secret */
+    updateStreet(dt, p) {
+      this.boats.forEach((b) => {
+        const z = b.z, m = b.def, body = z.body;
+        if (body.x <= m.x0) { body.x = m.x0; body.setVelocityX(m.speed); }
+        else if (body.x >= m.x1) { body.x = m.x1; body.setVelocityX(-m.speed); }
+        b.img.setPosition(z.x, m.y - 6).setFlipX(body.velocity.x < 0);
+      });
+      const pr = { x: p.body.x, y: p.body.y, w: p.body.width, h: p.body.height };
+      this.bikes.forEach((b) => {
+        if (b.taken || this.riding) return;
+        if (ov(pr, { x: b.def.x - 18, y: b.def.y - 26, w: 36, h: 26 })) this.mountBike(b);
+      });
+      if (this.riding) {
+        this.bikeImg.setPosition(p.x - p.facing * 2, p.body.bottom + 3).setFlipX(p.facing < 0);
+        this.bikeImg.anims.timeScale = Math.abs(p.body.velocity.x) > 20 ? 1 : 0;
+      }
+      const S = this.secret;
+      if (S && !this.warping) {
+        const sec = this.L.secret, B = this.L.bonus;
+        if (!this.inBonus && !S.used) {
+          const near = Math.abs(p.x - sec.x) < 15 && p.onGround && Math.abs(p.body.bottom - sec.y) < 6;
+          if (!S.tipped && Math.abs(p.x - sec.x) < 160) { S.tipped = true; this.toast('CLIPPY: STEP INTO THE PHONE BOX...'); }
+          S.t = near ? S.t + dt : 0;
+          S.booth.setTint(near ? 0xfff0a0 : 0xffffff);
+          if (S.t > 0.45) { S.t = 0; this.enterBonus(); }
+        } else if (this.inBonus) {
+          const near = Math.abs(p.x - B.exit.x) < 15 && p.onGround;
+          S.t = near ? S.t + dt : 0;
+          S.exitBooth.setTint(near ? 0xfff0a0 : 0xffffff);
+          if (S.t > 0.45) { S.t = 0; this.leaveBonus(true); }
+        }
+      }
     }
 
     completeHack(t) {

@@ -10,7 +10,37 @@ Method: headless Chrome (puppeteer) drove the game with a bot that sets the same
 | Level 3 Sky Canyon Pursuit | PASS | Bot completed it in about 61s, health 16% at the end. No errors. |
 | Level 4 Data Center + boss | PASS | Bot completed it, defeating the boss in about 51s after the fix below. No errors. |
 
+## Street, scenery and secrets (latest pass)
+
+| Check | Result | Evidence |
+|-------|--------|----------|
+| All 6 levels load | PASS | No console errors. |
+| No duplicate landmark on screen | PASS | Levels 1-5 scanned every 40px of camera travel. 0 frames had the same scenery key twice (before the fix: London 4, Tokyo 3, Sydney 13, Rio 14). |
+| Amsterdam pull-up bridge | PASS | Leaves lift (rotation -1.24), the collider turns off while up and back on when down, and a warning flashes first. |
+| Canal boats carry the player | PASS | The player rides at boat speed and does not slide. |
+| Water death | PASS | Falling below the quay costs a life and respawns at the checkpoint. |
+| Azure Bike | PASS | Mount, ram enemy, dismount on hit. |
+| London phone box secret | PASS | Enter the bonus room and return to the level. |
+| BSOD game over / Deployment succeeded panel | PASS | Screenshots reviewed. |
+
 ## Bugs found
+
+### Bug 2 - FIXED
+- Level: 2 (London)
+- Steps: Run past Big Ben.
+- Expected: One Big Ben on screen.
+- Actual: Two Big Bens: one in the far skyline layer, one in the scenery strip.
+- File suspected: `art/sprites.js` (`bg_far_*`), `systems/scenes.js` (`buildScenery`).
+- Fix: landmark-free `bg_farp_*` far layers for levels, plus width-aware spacing in the strip.
+
+### Bug 3 - FIXED
+- Level: any, second attempt
+- Steps: Play a level, then restart.
+- Expected: Fresh drawbridges and achievements.
+- Actual: State from the previous run survived the scene restart.
+- File suspected: `systems/scenes.js` (`create`).
+- Fix: reset `draws`, `achQ`, `warping` in `create`.
+
 
 ### Bug 1 - FIXED
 - Level: 4 (boss)

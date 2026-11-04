@@ -31,6 +31,18 @@ format. Levels that do not need them omit them or leave them empty.
 | terminals | `[{id,x,y}]` | Data Center |
 | gates | `[{id,x,y,w,h}]` (opened by terminal with same id) | Data Center |
 | boss | `{trigger,left,right,floor}` | Data Center |
+| ground | `'quay'`, `'embank'`, `'pier'` | street run levels (ground tile style) |
+| water | `true` | street run levels: water below y=304, falling in costs a life |
+| rail | style string | railing drawn on ground platforms |
+| movers | `[{x0,x1,y,w,speed}]` | boats / ferries that carry the player |
+| obstacles | `[{kind,x,y,w,h}]` | street obstacles (solid) |
+| vehicles | `[{kind:'bike',x,y}]` | rideable Azure Bike |
+| deco | `[{key,x,y}]` | non-solid street props |
+| secret | `{x,y}` | phone box that warps to `bonus` |
+| bonus | `{x,w,floor,clouds,coins,token,power,exit}` | bonus room past the level end |
+
+Extra platform flags: `bridge:true`, `draw:true` (pull-up bridge that lifts on a cycle), `cloud`, `bliss`.
+Extra enemy flag: `shoot:true` (walker fires bolts).
 
 Shapes of the base keys:
 - platform `{x,y,w,h}` (y = top edge). In fly mode platforms are rock hazards (damage on touch).

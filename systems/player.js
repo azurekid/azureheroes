@@ -13,6 +13,7 @@
       this.pre = AH.Save.data.hero === 'f' ? 'hero_f_' : 'hero_';
       this.speedMul = 1;
       this.defender = 0;
+      this.riding = false;
       this.sprite = scene.physics.add.sprite(x, y, this.pre + (mode === 'fly' ? 'fly' : 'idle')).setDepth(50);
       const b = this.sprite.body;
       if (mode === 'fly') {
@@ -91,6 +92,14 @@
 
     hurt(amount, srcX) {
       if (this.invuln > 0 || this.defender > 0 || this.health <= 0) return false;
+      if (this.riding) {
+        // a hit while on the bike only knocks the hero off it
+        this.invuln = 1.1;
+        this.scene.dismount();
+        this.sprite.setVelocity((this.x < srcX ? -1 : 1) * 160, -260);
+        AH.Audio.play('hit');
+        return true;
+      }
       this.health = Math.max(0, this.health - amount);
       this.invuln = 1.1;
       const dir = this.x < srcX ? -1 : 1;
@@ -162,6 +171,7 @@
 
         if (this.attackT > 0) s.setTexture(this.pre + 'attack');
         else if (this.shielding) s.setTexture(this.pre + 'shield');
+        else if (this.riding && this.onGround) s.setTexture(this.pre + 'idle');
         else if (!this.onGround) s.setTexture(this.pre + 'jump');
         else if (Math.abs(b.velocity.x) > 20) {
           this.runT += dt * 12;

@@ -17,14 +17,25 @@ python3 -m http.server 8080
 
 | Level | Azure region | World | Local enemies | Boss | Mode |
 |-------|--------------|-------|---------------|------|------|
-| 1 | `westeurope` | Amsterdam Canal Run: windmill, canal houses, Westerkerk | clog bots, windmill drones, cheese crawlers | Windmill Titan | Run |
-| 2 | `uksouth` | London Thames Run: Big Ben, Tower Bridge, London Eye, the Shard | bearskin guards, ravens, black-cab crawlers | Bearskin Sentinel | Run |
+| 1 | `westeurope` | Amsterdam Canal Run: gabled canal houses, Centraal Station, Schiphol, Microsoft HQ Schiphol, Amstel Hotel, red-light district lanterns, pull-up bridges | clog bots, windmill drones, cheese crawlers | Windmill Titan | Run |
+| 2 | `uksouth` | London Thames Run: Thames promenade, Big Ben, Tower Bridge, London Eye, Buckingham Palace, Tower of London, a secret phone box | bearskin guards, ravens, black-cab crawlers | Bearskin Sentinel | Run |
 | 3 | `japaneast` | Tokyo Skyway Pursuit: Mount Fuji, Tokyo Tower, torii, pagoda | sushi drones | Sumo Shogun (hovering) | Flight |
 | 4 | `australiaeast` | Sydney Harbour Run: Opera House, Harbour Bridge | emus, cockatoos, crocodiles | Boxing Roo | Run |
 | 5 | `brazilsouth` | Rio Sugarloaf Pursuit: Christ the Redeemer, Sugarloaf | macaw drones | Carnaval Rei (hovering) | Flight |
 | 6 | `eastus` | Virginia Data Center: Capitol, Washington Monument, hack terminals, Sec Gates | Minutemen, bald eagles, crabs | High-Risk CyberGuardian | Data center |
 
 Levels are generated at random each time a level starts, so platforms, lasers, enemies, coins, power-ups and MFA tokens land in new places on every run. Each level is 7,500 to 13,500 px long. Run levels mix gaps, steps up, drops and floating upper platforms at different heights, and every region has its own coins (EUR, GBP, JPY, AUD, BRL, USD) and scenery props.
+
+### Streets, water and secrets
+
+Run levels are not just rooftops. The ground matches the city: canal quays and brick bridges in Amsterdam, the Thames embankment promenade in London and harbour piers in Sydney. Fall in the water and you lose a life. Canal boats and ferries carry you across. Amsterdam's pull-up bridges lift on a timer, so watch for the flashing warning before you cross.
+
+- **Azure Bike** (Amsterdam, London): run into it to ride. It is faster and rams enemies, but one hit knocks you off.
+- **Secret phone box** (London): stand inside for a moment to warp to a bonus room full of credits.
+- **Shooting enemies**: some walkers fire bolts back at you, and each level has around 15-20 enemies.
+- **No repeats**: a scenery strip of local landmarks and Microsoft billboards scrolls behind the street. The same landmark never shows twice on screen.
+
+Microsoft touches: the Microsoft logo in the HUD and title, Microsoft HQ and Azure/Copilot/Xbox signs in the scenery, a Bliss-style hill, a Blue Screen game over and an Azure portal "Deployment succeeded" level-complete panel.
 
 Every level ends in an arena with that region's boss. Ground bosses must be blocked with the MFA Shield until they are stunned. Hovering bosses (Tokyo, Rio) cannot be blocked: dodge their volleys, then blast them while they are exposed. The exit opens when the boss is down.
 
@@ -81,6 +92,9 @@ The site is static, so no build configuration is needed.
 ![Female hero on the title screen](docs/screenshots/title-female.png)
 ![Level select](docs/screenshots/select.png)
 ![World 1](docs/screenshots/world1.png)
+![Amsterdam landmarks](docs/screenshots/amsterdam-landmarks.png)
+![Amsterdam pull-up bridge](docs/screenshots/amsterdam-drawbridge.png)
+![London Thames](docs/screenshots/london-thames.png)
 ![World 2](docs/screenshots/world2.png)
 ![World 3](docs/screenshots/world3.png)
 ![World 4](docs/screenshots/world4.png)

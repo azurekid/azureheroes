@@ -8,6 +8,7 @@ Design goal: every world must feel like its own place at a glance, the way each 
 ## Region identity checklist (all required for a new world)
 1. **Azure region**: real region id, e.g. `westeurope`, plus a city. One row in the `WORLDS` table in `levels/worlds.js` (`id, region, regionName, city, name, mode, theme, tint, landmarks, hint, opt, boss`).
 2. **Landmarks**: 3-4 recognisable skyline pieces in the far layer, plus a tinted sky and near layer (`SKIES`, `PAL`, `farLayer`, `bg_near_<region>` in `art/sprites.js`).
+2b. **Scenery strip**: 6+ local landmark pieces `sc_<prefix>_<name>` plus Microsoft billboards, listed in `sceneryKeys`. Far layers used in levels (`bg_farp_<region>`) must contain NO landmarks; landmarks only live in the strip, which never shows the same key twice on screen. Give run levels a matching `ground`/`water` style (quays, promenades, piers) instead of plain rooftops.
 3. **Local enemies**: a skin for each enemy type the level uses (`robot` = walker, `drone` = flyer, `spider` = crawler). Textures `en_<region>_<type>_0/1`. Behaviour and stats never change, only the look. Every enemy still takes 2 hits and drops 1 Azure Credit.
 4. **Local pickups**: regional currency glyph on the Azure Credit (`coin_<region>0..3`).
 5. **Local props**: 2 decorative objects per world (`prop_<name>`), placed at random along the level, never solid.

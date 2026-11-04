@@ -17,7 +17,16 @@ There are no sprite sheets. `art/sprites.js` draws each sprite on an offscreen c
 
 Backgrounds are layered parallax skylines with neon signs, a sun with a halo, clouds and stars. Text uses a custom 5x7 bitmap font, so the HUD looks the same everywhere.
 
-![Rooftop Run](screenshots/world2.png)
+![London Thames promenade](screenshots/london-thames.png)
+
+## Cities you can recognise
+
+Each run level has ground that matches the city. In Amsterdam you run along canal quays, ride canal boats, cross pull-up bridges that lift on a timer and can grab an Azure Bike. Behind you scroll gabled canal houses with step, bell, neck and spout gables, Centraal Station, Schiphol, the Microsoft office at Schiphol, the Amstel Hotel and the red lanterns of the old centre. London has the Thames promenade, Big Ben, Buckingham Palace and the Tower of London, and a red phone box that hides a bonus room.
+
+The scenery strip never shows the same landmark twice on one screen. The far skyline layer has no landmarks, so landmarks can't repeat there either.
+
+![Amsterdam landmarks](screenshots/amsterdam-landmarks.png)
+![Amsterdam pull-up bridge](screenshots/amsterdam-drawbridge.png)
 
 ## Three levels, three ways to play
 

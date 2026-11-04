@@ -1,4 +1,5 @@
-/* Enemies: patrol robot, drone, spider bot. Every enemy dies in 2 hits and drops 1 Azure Credit. */
+/* Enemies: patrol robot, drone, spider bot. Every enemy dies in 2 hits and drops 1 Azure Credit.
+   Some patrol robots (def.shoot) fire slow energy bolts at the hero; the MFA Shield blocks them. */
 (function () {
   'use strict';
   const AH = (window.AH = window.AH || {});
@@ -23,6 +24,8 @@
       this.dead = false;
       this.flash = 0;
       this.phase = Math.random() * 6;
+      this.shoot = !!def.shoot && def.type === 'robot';
+      this.shootCd = 1 + Math.random() * 1.5;
       const skin = def.skin ? 'en_' + def.skin + '_' + def.type : null;
       const local = skin && scene.anims.exists(skin);
       this.sprite = scene.physics.add.sprite(def.x, def.y, local ? skin + '_0' : spec.tex).setOrigin(0.5, spec.origin).setDepth(40);
@@ -53,6 +56,18 @@
         else if (b.blocked.right) this.dir = -1;
         b.setVelocityX(this.dir * sp);
         s.setFlipX(this.dir > 0);
+        if (this.shoot) {
+          this.shootCd -= dt;
+          const dx = player.x - s.x;
+          if (this.shootCd <= 0 && Math.abs(dx) < 330 && Math.abs(dx) > 40 && Math.abs(player.y - (s.y - 20)) < 70) {
+            this.shootCd = 2.2 + Math.random() * 0.8;
+            const d = dx > 0 ? 1 : -1;
+            s.setFlipX(d > 0);
+            s.setTint(0xffa080);
+            this.scene.time.delayedCall(120, () => { if (!this.dead) s.clearTint(); });
+            this.scene.spawnEnemyBolt(s.x + d * 14, s.y - 22, d);
+          }
+        }
       } else if (this.type === 'spider') {
         const near = Math.abs(player.x - s.x) < 170 && Math.abs(player.y - s.y) < 90;
         const lim = this.range + (near ? 60 : 0);

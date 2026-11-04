@@ -49,6 +49,7 @@
       const full = 'LEVEL ' + levelId + ' - ' + levelName.toUpperCase();
       const sc = full.length * 12 > 380 ? 1 : 2;
       mk(630, 328, 'MICROSOFT AZURE HEROES 2027', '#9a8cff', { scale: 1, ox: 1 });
+      scene.add.image(630 - 27 * 6 - 6, 331, 'ms_logo').setScrollFactor(0).setDepth(D + 2).setDisplaySize(8, 8);
       mk(630, sc === 2 ? 338 : 341, full, '#ffe14a', { scale: sc, ox: 1 });
 
       this.hackLabel = mk(12, 52, 'HACK PROGRESS', '#ffffff').setVisible(false);

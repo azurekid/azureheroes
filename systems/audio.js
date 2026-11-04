@@ -98,6 +98,11 @@
       if (!this.ctx) return;
       switch (name) {
         case 'jump': this.tone(260, 0.16, 'square', 0.16, 560); break;
+        case 'zap': this.tone(1400, 0.1, 'sawtooth', 0.08, 500); break;
+        case 'splash': this.noise(0.4, 0.3); this.tone(180, 0.3, 'sine', 0.16, 60); break;
+        case 'bike': this.tone(1568, 0.06, 'square', 0.12); this.tone(1568, 0.06, 'square', 0.12, null, 0.1); break;
+        case 'secret': [523, 659, 784, 1047, 1319].forEach((f, i) => this.tone(f, 0.12, 'triangle', 0.16, null, i * 0.07)); break;
+        case 'achieve': this.tone(880, 0.08, 'sine', 0.18); this.tone(1320, 0.2, 'sine', 0.18, null, 0.08); break;
         case 'doubleJump': this.tone(420, 0.18, 'square', 0.16, 900); break;
         case 'power': this.tone(523, 0.08, 'square', 0.14); this.tone(659, 0.08, 'square', 0.14, null, 0.08); this.tone(784, 0.08, 'square', 0.14, null, 0.16); this.tone(1047, 0.22, 'square', 0.14, null, 0.24); break;
         case 'coin': this.tone(988, 0.07, 'square', 0.14); this.tone(1319, 0.16, 'square', 0.14, null, 0.07); break;
