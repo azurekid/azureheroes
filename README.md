@@ -68,7 +68,7 @@ Every level ends in an arena with that region's boss. Ground bosses must be bloc
 | Power BI | Coin magnet and double score for 12 s |
 | Teams | Instant +30 health |
 
-Clippy warns you when health is low, and Xbox-style achievements pop up for firsts. Open the **Hero Lab** on the title screen with **H** to choose a male or female hero, skin tone, hair style, hair colour and suit colour. The choice is saved.
+Clippy warns you when health is low, and Xbox-style achievements pop up for firsts. Open the **Hero Lab** on the title screen with **H** to choose a male or female hero, skin tone, hair style, hair colour and suit colour, plus **local wardrobe** from the game's regions: a Texas cowboy hat, Mexican sombrero, London bowler, Paris beret, Dutch King's Day crown, Japanese hachimaki, Australian cork hat, Venetian gondolier hat, Rio carnaval plumes, a Redmond Azure cap or a Virginia tricorn, and extras such as Dutch wooden clogs, a football scarf, a serape, a flower garland or a bandana. The choice is saved and shows in every pose, including flight.
 
 Some levels have **Azure Pipelines** warp pipes: press Down (or stand still) on a pipe to drop into an underground bonus zone with extra coins and enemies, then take the exit pipe back up further along the level.
 

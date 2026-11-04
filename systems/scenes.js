@@ -152,22 +152,31 @@
         { k: 'skin', label: 'SKIN TONE', n: A.skins.length, sw: A.skins, name: (i) => SKIN_NAMES[i] },
         { k: 'hair', label: 'HAIR STYLE', n: A.styles.length, get: () => A.styles.indexOf(this.look.hair), set: (i) => { this.look.hair = A.styles[i]; }, name: (i) => HAIR_NAMES[A.styles[i]] },
         { k: 'hairCol', label: this.look.hair === 'hijab' ? 'SCARF COLOUR' : 'HAIR COLOUR', n: A.hairCols.length, sw: A.hairCols, name: (i) => HAIRCOL_NAMES[i] },
-        { k: 'suit', label: 'SUIT', n: A.suits.length, sw: A.suits, name: (i) => SUIT_NAMES[i] }
+        { k: 'suit', label: 'SUIT', n: A.suits.length, sw: A.suits, name: (i) => SUIT_NAMES[i] },
+        { k: 'hat', label: 'LOCAL HEADWEAR', n: A.hats.length, list: A.hats },
+        { k: 'gear', label: 'LOCAL EXTRA', n: A.gear.length, list: A.gear }
       ];
+      this.rows.forEach((r) => {
+        if (!r.list) return;
+        r.get = () => Math.max(0, r.list.findIndex((x) => x[0] === this.look[r.k]));
+        r.set = (i) => { this.look[r.k] = r.list[i][0]; };
+        r.name = (i) => r.list[i][1];
+      });
       this.sel = 0;
       this.sw = this.add.graphics().setDepth(4);
       this.rows.forEach((r, i) => {
-        const y = 70 + i * 46;
+        const y = 50 + i * 35;
         r.y = y;
         r.lab = T(this, 248, y, r.label, { scale: 1, color: '#c9a0ff' });
-        r.val = T(this, 420, y + 18, '', { scale: 2, color: '#ffffff', ox: 0.5 });
+        if (r.list) r.from = T(this, 608, y, '', { scale: 1, color: '#4dff7a', ox: 1 });
+        r.val = T(this, 430, y + 12, '', { scale: 2, color: '#ffffff', ox: 0.5 });
         const step = (d) => { this.sel = i; this.change(d); };
-        AH.UI.button(this, 270, y + 22, '<', () => step(-1), { scale: 3 }).setDepth(20);
-        AH.UI.button(this, 590, y + 22, '>', () => step(1), { scale: 3 }).setDepth(20);
-        const z = this.add.zone(300, y - 4, 270, 40).setOrigin(0).setInteractive();
+        AH.UI.button(this, 270, y + 18, '<', () => step(-1), { scale: 3 }).setDepth(20);
+        AH.UI.button(this, 590, y + 18, '>', () => step(1), { scale: 3 }).setDepth(20);
+        const z = this.add.zone(300, y - 4, 270, 34).setOrigin(0).setInteractive();
         z.on('pointerdown', () => { this.sel = i; this.refresh(); });
       });
-      T(this, 320, 304, 'UP/DOWN PICK   LEFT/RIGHT CHANGE   X RANDOM', { scale: 1, color: '#9a8cff', ox: 0.5 });
+      T(this, 320, 300, 'UP/DOWN PICK   LEFT/RIGHT CHANGE   X RANDOM', { scale: 1, color: '#9a8cff', ox: 0.5 });
       AH.UI.button(this, 420, 324, 'SAVE + PLAY', () => this.done(true), { scale: 2, color: '#ffe14a' }).setDepth(20);
       AH.UI.button(this, 560, 324, 'BACK', () => this.done(false), { scale: 2 }).setDepth(20);
       AH.UI.button(this, 300, 324, 'RANDOM', () => this.random(), { scale: 2, color: '#ff7ad9' }).setDepth(20);
@@ -192,7 +201,7 @@
     }
     random() {
       const A = AH.Art.hero, R = (n) => Math.floor(Math.random() * n);
-      this.look = { body: R(2) ? 'f' : 'm', skin: R(A.skins.length), hair: A.styles[R(A.styles.length)], hairCol: R(A.hairCols.length), suit: R(A.suits.length) };
+      this.look = { body: R(2) ? 'f' : 'm', skin: R(A.skins.length), hair: A.styles[R(A.styles.length)], hairCol: R(A.hairCols.length), suit: R(A.suits.length), hat: A.hats[R(A.hats.length)][0], gear: A.gear[R(A.gear.length)][0] };
       AH.Audio.play('power');
       this.refresh();
     }
@@ -205,7 +214,8 @@
         r.lab.setColor(on ? '#ffe14a' : '#c9a0ff');
         if (r.k === 'hairCol') r.lab.setText(this.look.hair === 'hijab' ? 'SCARF COLOUR' : 'HAIR COLOUR');
         r.val.setText(r.name(v)).setColor(on ? '#ffe14a' : '#ffffff');
-        if (on) sw.lineStyle(2, 0xffe14a, 1).strokeRoundedRect(242, r.y - 6, 372, 42, 6);
+        if (r.from) r.from.setText(r.list[v][2]);
+        if (on) sw.lineStyle(2, 0xffe14a, 1).strokeRoundedRect(242, r.y - 5, 372, 34, 6);
         if (r.sw) r.sw.forEach((c, j) => {
           const x = 330 + j * 22 - (r.sw.length - 5) * 6, col = Phaser.Display.Color.HexStringToColor(c).color;
           sw.fillStyle(col, 1).fillRect(x, r.y - 2, 14, 10);

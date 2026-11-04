@@ -50,7 +50,7 @@ Ground bosses cannot be hit head-on. The player holds the **MFA Shield** to bloc
 ![The Boxing Roo](screenshots/boss4.png)
 ![The Sumo Shogun](screenshots/boss3.png)
 
-Floating orbs add Copilot (an auto-firing sidekick), Defender, GitHub Actions, Power BI and Teams power-ups, plus Clippy tips and achievement toasts. The Hero Lab lets players build a male or female hero with six skin tones, several hair styles and colours, and suit colours. Phishing hoppers, Ransomware chargers and DDoS botnet clouds that drop bombs appear in every region, and Azure Pipelines warp pipes lead to underground bonus zones.
+Floating orbs add Copilot (an auto-firing sidekick), Defender, GitHub Actions, Power BI and Teams power-ups, plus Clippy tips and achievement toasts. The Hero Lab lets players build a male or female hero with six skin tones, several hair styles and colours, and suit colours, then add local wardrobe such as a cowboy hat, sombrero, beret, hachimaki, cork hat or carnaval plumes, and extras like Dutch clogs or a serape. Phishing hoppers, Ransomware chargers and DDoS botnet clouds that drop bombs appear in every region, and Azure Pipelines warp pipes lead to underground bonus zones.
 
 ![Hero Lab](screenshots/hero-lab.png)
 ![Azure Pipelines bonus zone](screenshots/pipe-zone.png)

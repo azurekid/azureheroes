@@ -90,6 +90,7 @@ Headless Chrome, 1280x720. One browser process per level.
 | Complete, then WORLD MAP, then deploy | PASS | The next level reaches `play` with no errors. |
 | Register, play, game over, world rank | PASS | Against `server.js`: register on the HTML form, game over posts the score, and the panel shows WORLD RANK. The leaderboard lists name, location and score. |
 | Server API | PASS | `npm test`: register, duplicate name, login, wrong password, progress merge, score and rank, leaderboard, logout, static whitelist. |
+| Hero Lab wardrobe | PASS | 11 hats and 5 extras render in idle, run and flight frames (contact sheet reviewed). The keyboard changes the new rows, the look saves, survives a reload and shows in levels 1, 8 and 10 with no errors. |
 | Static host / file:// | PASS | No `/api/health`, so the game stays in guest mode with no account menu and no errors. |
 
 Not tested: real phones and mobile Safari, App Service itself (only the same Node server locally), and many concurrent users.

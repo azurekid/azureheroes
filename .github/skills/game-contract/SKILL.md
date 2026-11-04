@@ -76,7 +76,7 @@ F Azure Blast, Shift Flight Boost, E / S / Down = MFA Shield, P pause, R restart
 - Landmarks may come from anywhere in the country, not only the region's city.
 
 ### Save, resume and online contract
-- `AH.Save.data = { best, unlocked, bests: {id: score}, muted, hero, look, resume: {id, score, lives} | null, updated }`. `unlocked` is `n + 1` when all n levels are cleared.
+- `AH.Save.data = { best, unlocked, bests: {id: score}, muted, hero, look: {body, skin, hair, hairCol, suit, hat, gear}, resume: {id, score, lives} | null, updated }`. `unlocked` is `n + 1` when all n levels are cleared.
 - Resume rules: level start saves `{id, startScore, startLives}`. Game over saves `{id, 0, 3}`. Level complete saves the next level with the current score and lives, or `null` after the last level. Call `AH.Save.setResume(id, score, lives)`. Never write `resume` directly.
 - `AH.Online` (`systems/online.js`) is only active when `/api/health` answers. Otherwise the game is in guest mode and nothing breaks. `save()` pushes progress when logged in. `submitScore(score, level, city)` returns `{best, rank}` or `null`.
 - Server API (`server.js`, see README): `health`, `leaderboard`, `register`, `login`, `me`, `logout`, `progress` (merge: unlocks never go backwards; newer `updated` wins for resume), `score`. Names: 3-15 chars `A-Z 0-9`. Locations are limited to the pixel font charset (max 20 chars).
