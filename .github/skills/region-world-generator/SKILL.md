@@ -19,7 +19,11 @@ Design goal: every world must feel like its own place at a glance, the way each 
 - Layouts come from `AH.Levels.make(id)`; nothing in a level is hand-placed. Every call must give a new layout.
 - Read [game-contract](../game-contract/SKILL.md), [game-security](../game-security/SKILL.md) and [level-builder](../level-builder/SKILL.md). Coordinate cross-file work via [game-orchestrator](../game-orchestrator/SKILL.md).
 - Reuse `makeRun` (streets), `makeFly` (flight) or `makeDataCenter`; prefer tuning `opt`. Extend shared generators only when the requested mechanic cannot be expressed by existing options.
-- Unspanned run gaps: 100-195px, gaps over 130px need a double jump, rise <= 20 when the gap is over 140px. Wider boat/bridge gaps need a reachable carrier/deck.
+- Unspanned run gaps: 100-195px, gaps over 130px need a double jump, rise <= 20 when the gap is over 140px, unless the gap
+  holds two `ledge` stairs (each hop <= 60px). Wider boat/bridge gaps need a reachable carrier/deck.
+- Verticality: `makeRun` mixes `wall` segments (zero gap, 150-186px rise, platform flagged `climb` + `wallFrom`, drawn with
+  `climb_face`/`climb_sign`, needs a wall jump) and `stairs` segments (ledges up to a high roof). Tune with `opt.wallRate` /
+  `opt.stairRate`. Rooftops stay at y >= 106 (below the HUD), items at y >= 60, and the last rooftops return to y >= 200.
 - Fly: gap height >= 132px, successive gap centres differ by <= 120px.
 - Length 8,000-13,000px so levels stay challenging. The timer scales with width.
 - Reserve pipe entrances/returns and checkpoints first. Place hazards and enemies from shuffled eligible areas; keep the boss arena clear.
@@ -37,6 +41,11 @@ Design goal: every world must feel like its own place at a glance, the way each 
 - Appending a world keeps existing players' `unlocked` counts valid. Inserting one in the middle shifts level ids.
 - Landmarks can come from the whole country (e.g. Colosseum and Pisa for Italy), not only the region's city.
 - Optional: `ambient` moving objects, `opt.secret` theme, and `opt.pipes` warp pipes (see game-contract).
+- Optional local flavour (see game-contract "Regional rooms"): `stand` (a street stall such as
+  `herring` or `bakery`), `pipeTheme` (a regional cloud room such as the Paris `metro`, with
+  `pipe_<theme>`, `challenge_*_<theme>` and optional `challenge_train_<theme>` art),
+  `ambient.water: ['region']` river boats, `AH.Art.sceneryStars` signature landmarks and a
+  regional `main` music theme in `AH.Audio.REGION_SONG`. Add a test for each.
 - Preserve the shared cloud challenge pool, meaningful height variation, local street objects
   and accessible low combat routes. New country content must be welcoming, not stereotypes
   that demean people. Teach Microsoft/Azure secure practices through configuration threats.

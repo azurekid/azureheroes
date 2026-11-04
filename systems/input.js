@@ -8,12 +8,13 @@
       this.scene = scene;
       this.opts = opts; // { fly, shield }
       const kb = scene.input.keyboard;
-      this.k = kb.addKeys('LEFT,RIGHT,UP,DOWN,A,D,W,S,SPACE,F,SHIFT,E,P,R,M,ENTER,ESC');
+      this.k = kb.addKeys('LEFT,RIGHT,UP,DOWN,A,D,W,S,SPACE,F,SHIFT,E,P,R,M,ENTER,ESC,H,Q');
       kb.addCapture('SPACE,UP,DOWN,LEFT,RIGHT');
       this.t = { left: false, right: false, up: false, down: false, attack: false, boost: false, shield: false };
       this.tJump = false;
       this.tFire = false;
       this.tPause = false;
+      this.tHelp = false;
       this.buttons = [];
       const forced = /[?&]touch=1/.test(location.search);
       this.isTouch = forced || scene.sys.game.device.input.touch;
@@ -61,6 +62,9 @@
       this.pauseBtn = new AH.PixelText(s, 630, 112, 'PAUSE', { scale: 1, color: '#c9a0ff', ox: 1 }).setScrollFactor(0).setDepth(1500);
       this.pauseBtn.setInteractive({ useHandCursor: true });
       this.pauseBtn.on('pointerdown', () => { this.tPause = true; });
+      this.helpBtn = new AH.PixelText(s, 630, 126, 'HELP', { scale: 1, color: '#7fe8ff', ox: 1 }).setScrollFactor(0).setDepth(1500);
+      this.helpBtn.setInteractive({ useHandCursor: true });
+      this.helpBtn.on('pointerdown', () => { this.tHelp = true; });
     }
 
     destroy() {
@@ -70,7 +74,7 @@
 
     read() {
       const k = this.k, t = this.t, J = Phaser.Input.Keyboard.JustDown;
-      const jumpKey = J(k.SPACE) || (!this.opts.fly && (J(k.UP) || J(k.W)));
+      const space = J(k.SPACE), jumpKey = space || (!this.opts.fly && (J(k.UP) || J(k.W)));
       const cmd = {
         left: k.LEFT.isDown || k.A.isDown || t.left,
         right: k.RIGHT.isDown || k.D.isDown || t.right,
@@ -79,17 +83,22 @@
         jumpPressed: jumpKey || this.tJump,
         jumpHeld: k.SPACE.isDown || k.UP.isDown || k.W.isDown,
         fire: J(k.F) || this.tFire,
+        fireHeld: k.F.isDown || t.attack,
         boost: k.SHIFT.isDown || t.boost,
         shield: !this.opts.fly && (k.E.isDown || t.shield),
         pause: J(k.P) || this.tPause,
+        help: J(k.H) || this.tHelp,
+        quit: J(k.Q),
+        nav: J(k.LEFT) || J(k.A) ? -1 : J(k.RIGHT) || J(k.D) ? 1 : 0,
         restart: J(k.R),
         esc: J(k.ESC),
         mute: J(k.M),
-        confirm: J(k.ENTER) || J(k.SPACE)
+        confirm: J(k.ENTER) || space
       };
       this.tJump = false;
       this.tFire = false;
       this.tPause = false;
+      this.tHelp = false;
       return cmd;
     }
   };

@@ -46,6 +46,7 @@
       mk(12, 328, 'POWER:', '#ffffff', { scale: 1 });
       this.puText = mk(240, 327, '', '#ffe14a', { scale: 1 });
       this.power = mk(60, 327, 'AZURE BLAST READY', '#7fe8ff', { scale: 1 });
+      this.charge = mk(60, 349, 'HOLD F TO CHARGE', '#c9a0ff', { scale: 1 });
       const full = 'LEVEL ' + levelId + ' - ' + levelName.toUpperCase();
       const sc = full.length * 12 > 380 ? 1 : 2;
       mk(630, 328, 'MICROSOFT AZURE HEROES 2027', '#9a8cff', { scale: 1, ox: 1 });
@@ -81,7 +82,12 @@
       b.fillStyle(0xffffff, 0.4).fillRect(60, 337, Math.round(150 * s.boost / 100), 2);
       const pw = s.powers || {};
       this.puText.setText(Object.keys(pw).map((k) => k.toUpperCase() + ' ' + Math.ceil(pw[k]) + 'S').join('  '));
-      this.power.setText(ready ? 'AZURE BLAST READY' : 'BLAST CHARGING...').setColor(ready ? '#7fe8ff' : '#c9a0ff');
+      const weapon = AH.Weapons[s.weapon || 'azure'];
+      this.power.setText(weapon.name + (s.weaponTime > 0 ? ' ' + Math.ceil(s.weaponTime) + 'S' : ''))
+        .setColor(ready ? '#7fe8ff' : '#c9a0ff');
+      this.charge.setText(!ready ? 'BOOST TOO LOW' : s.charge >= 1 ? 'CHARGED! RELEASE FIRE' : s.charge > 0 ? 'CHARGE ' + Math.round(s.charge * 100) + '%' : 'HOLD FIRE TO CHARGE')
+        .setColor(s.charge >= 1 ? '#4dff7a' : '#c9a0ff');
+      b.fillStyle(0x4dff7a, 1).fillRect(60, 346, Math.round(150 * (s.charge || 0)), 2);
 
       const showHack = s.hack !== null && s.hack !== undefined;
       this.hackLabel.setVisible(showHack);
@@ -96,12 +102,15 @@
       const bs = s.boss;
       this.bossLabel.setVisible(!!bs);
       if (bs && bs.name !== this.bossName) { this.bossName = bs.name; this.bossLabel.setText(bs.name); }
-      this.risk.setVisible(!!bs).setAlpha(Math.floor(this.t * 3) % 2 ? 0.55 : 1);
-      this.stun.setVisible(!!bs && bs.stunned);
+      this.risk.setVisible(!!bs).setAlpha(1);
+      this.stun.setVisible(!!bs);
       if (bs) {
+        this.risk.setText(bs.vulnerable ? 'OPEN ' + Math.ceil(bs.window) + 'S' : 'ARMORED')
+          .setColor(bs.vulnerable ? '#4dff7a' : '#ffb060');
+        this.stun.setText(bs.cue).setColor(bs.vulnerable ? '#4dff7a' : '#ffb060');
         const w = 616;
         b.fillStyle(0x1a0a2a, 1).fillRect(12, 70, w, 14);
-        b.fillStyle(bs.stunned ? 0xffd23f : 0xff2a4a, 1).fillRect(12, 70, Math.round(w * bs.hp / bs.max), 14);
+        b.fillStyle(bs.vulnerable ? 0x4dff7a : 0xff2a4a, 1).fillRect(12, 70, Math.round(w * bs.hp / bs.max), 14);
         b.fillStyle(0xffffff, 0.3).fillRect(12, 70, Math.round(w * bs.hp / bs.max), 3);
         b.lineStyle(2, 0xffffff, 0.8).strokeRect(12, 70, w, 14);
       }
@@ -126,6 +135,92 @@
       t.on('pointerdown', () => { AH.Audio.toggle(); refresh(); });
       scene.events.on('audio-changed', refresh);
       return t;
+    },
+    // paged help overlay (controls, threat guide, tips); the caller routes keys to page() / close()
+    help(scene, onClose) {
+      const items = [], D0 = 2000;
+      const add = (o) => { items.push(o); return o.setScrollFactor ? o.setScrollFactor(0) : o; };
+      const txt = (x, y, s, o) => add(T(scene, x, y, s, Object.assign({ scale: 1, color: '#ffffff' }, o)).setDepth(D0 + 2));
+      const g = add(scene.add.graphics().setDepth(D0));
+      g.fillStyle(0x05031a, 0.88).fillRect(0, 0, 640, 360);
+      g.fillStyle(0x0b0830, 1).fillRoundedRect(18, 14, 604, 332, 10);
+      g.lineStyle(3, 0x27e0ff, 1).strokeRoundedRect(18, 14, 604, 332, 10);
+      g.lineStyle(1, 0xff7ad9, 1).strokeRoundedRect(24, 20, 592, 320, 8);
+      txt(320, 26, 'HERO HANDBOOK', { scale: 3, color: '#ffe14a', ox: 0.5, shadow: '#b02a08' });
+      const PAGES = ['CONTROLS', 'THREAT GUIDE', 'POWER-UPS + TIPS'];
+      const tabs = PAGES.map((p, i) => {
+        const b = AH.UI.button(scene, 130 + i * 190, 62, p, () => show(i), { scale: 1, color: '#c9a0ff' }).setDepth(D0 + 3);
+        items.push(b);
+        return b;
+      });
+      let page = 0, body = [];
+      const btxt = (x, y, s, o) => { const t = T(scene, x, y, s, Object.assign({ scale: 1, color: '#ffffff' }, o)).setScrollFactor(0).setDepth(D0 + 2); body.push(t); return t; };
+      const bg = add(scene.add.graphics().setDepth(D0 + 1));
+      function show(i) {
+        page = (i + PAGES.length) % PAGES.length;
+        body.forEach((o) => o.destroy());
+        body = [];
+        bg.clear();
+        tabs.forEach((t, k) => t.setColor(k === page ? '#ffe14a' : '#c9a0ff'));
+        bg.fillStyle(0xffe14a, 1).fillRect(130 + page * 190 - 60, 70, 120, 2);
+        if (page === 0) {
+          [['LEFT / RIGHT  A / D', 'RUN'], ['SPACE / UP / W', 'JUMP - AIR: DOUBLE JUMP - ON A WALL: WALL JUMP'],
+            ['F - TAP / HOLD', 'RELEASE TO FIRE / HOLD FOR A CHARGED SHOT'], ['E', 'MFA SHIELD - BLOCKS SHOTS AND HITS FROM THE FRONT'],
+            ['DOWN / S', 'DUCK - STANDING STILL IT IS A LOW SHIELD GUARD'], ['DOWN + LEFT / RIGHT', 'SLIDE ATTACK UNDER LOW THREATS'],
+            ['SHIFT', 'BOOST JETS - FLY UP FOR A MOMENT'], ['DOWN ON A PIPE', 'WARP INTO A CLOUD CHALLENGE'],
+            ['P / ESC', 'PAUSE MENU'], ['Q', 'QUIT TO THE TITLE SCREEN'], ['R', 'RESTART THE LEVEL'], ['H   M', 'THIS HELP   SOUND ON / OFF']
+          ].forEach((r, k) => { btxt(44, 90 + k * 18, r[0], { color: '#ffe14a' }); btxt(232, 90 + k * 18, r[1]); });
+          btxt(320, 314, 'FLIGHT LEVELS: ARROWS OR WASD FLY IN ALL DIRECTIONS, F BLASTS', { color: '#7fe8ff', ox: 0.5 });
+        } else if (page === 1) {
+          const SPEC = (AH.Enemy && AH.Enemy.SPEC) || {}, CATS = (AH.Enemy && AH.Enemy.CATS) || {};
+          let x = 52;
+          Object.keys(CATS).forEach((c) => {
+            bg.fillStyle(Phaser.Display.Color.HexStringToColor(CATS[c].color).color, 1).fillRect(x - 10, 86, 6, 6);
+            const t = btxt(x, 85, CATS[c].name, { color: CATS[c].color });
+            x += t.width + 30;
+          });
+          Object.keys(SPEC).filter((k) => SPEC[k].label).forEach((k, i) => {
+            const sp = SPEC[k], cat = CATS[sp.cat], col = i % 2, row = Math.floor(i / 2);
+            const x0 = 34 + col * 292, y0 = 102 + row * 36;
+            bg.fillStyle(0x1a0a48, 1).fillRoundedRect(x0, y0, 280, 32, 5);
+            bg.fillStyle(Phaser.Display.Color.HexStringToColor(cat.color).color, 1).fillRect(x0, y0 + 3, 3, 26);
+            if (scene.textures.exists(sp.tex)) {
+              const im = scene.add.image(x0 + 22, y0 + 16, sp.tex).setScrollFactor(0).setDepth(D0 + 2);
+              const k2 = Math.min(28 / im.width, 28 / im.height);
+              im.setScale(k2);
+              body.push(im);
+            }
+            btxt(x0 + 42, y0 + 5, sp.label, { color: cat.color });
+            btxt(x0 + 42, y0 + 18, sp.info, { color: '#c9d4ff' });
+          });
+        } else {
+          [['COPILOT', 'SIDEKICK THAT BLASTS FOR YOU', '#7fe8ff'], ['DEFENDER', 'INVINCIBLE FOR A FEW SECONDS', '#4dff7a'],
+            ['GITHUB ACTIONS', 'TURBO SPEED', '#ffffff'], ['POWER BI', 'COIN MAGNET + DOUBLE SCORE', '#ffe14a'],
+            ['TEAMS CALL', '+30 HEALTH', '#c9a0ff'], ['AZURE BIKE', 'DOUBLE SPEED - RIDE THROUGH ENEMIES', '#ff9a3a'],
+            ['EVENT GRID SPREAD', '25S - FAN SHOT. CHARGE FOR FIVE SHOTS', '#ffb060'],
+            ['COSMOS BEAM', '25S - PIERCES ENEMIES, NOT WALLS', '#c9a0ff']
+          ].forEach((r, k) => { btxt(44, 90 + k * 15, r[0], { color: r[2] }); btxt(200, 90 + k * 15, r[1]); });
+          ['SHOTS DESTROY BULLETS. HOLD FIRE, THEN RELEASE TO CHARGE.',
+            'BOSS RED: ARMORED. GREEN + OPEN: DAMAGE WINDOW.',
+            'BLOCK 2 SHOTS OR A CHARGE. DODGE AIR BOSS VOLLEYS.',
+            'PIPE ROOMS: AKS, DOCKER, ACTIONS, PIPELINES, ENTRA, FUNCTIONS.',
+            'CLEAR REGIONS FOR OUTFITS, HAIR AND ACCESSORIES.',
+            'COLLECT 5 MFA TOKENS. SECURE ACCESS, IMAGES AND ENDPOINTS.'
+          ].forEach((l, k) => btxt(44, 220 + k * 15, l, { color: k === 1 || k === 4 ? '#4dff7a' : '#ffffff' }));
+        }
+      }
+      txt(320, 330, 'LEFT / RIGHT: PAGE    H / ESC / ENTER: CLOSE', { color: '#9a8cff', ox: 0.5 });
+      items.push(AH.UI.button(scene, 590, 30, 'X', () => close(), { scale: 2, color: '#ff7ad9' }).setDepth(D0 + 3));
+      let open = true;
+      function close() {
+        if (!open) return;
+        open = false;
+        body.forEach((o) => o.destroy());
+        items.forEach((o) => o.destroy());
+        if (onClose) onClose();
+      }
+      show(0);
+      return { page: (d) => show(page + d), close: close, get open() { return open; } };
     },
     fmtTime: fmtTime,
     pad: pad

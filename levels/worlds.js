@@ -21,15 +21,27 @@
   function powerKinds(n, list) {
     const out = ['copilot', 'teams'];
     while (out.length < n) out.push(pick(list));
-    return shuffle(out).slice(0, n);
+    return shuffle(out.slice(0, n).concat(['spread', 'pierce']));
   }
+  function clearWeapons(powerups, solids, y) {
+    powerups.filter((p) => p.kind === 'spread' || p.kind === 'pierce').forEach((p, i) => {
+      if (solids.some((s) => p.x + 12 > s.x && p.x - 12 < s.x + s.w && p.y + 12 > s.y && p.y - 12 < s.y + s.h)) {
+        p.x = 160 + i * 100;
+        p.y = y;
+      }
+    });
+  }
+
+  // Climb walls rise beyond double-jump height (about 160px) so they need wall jumps; TOP_Y keeps the hero below the HUD.
+  const TOP_Y = 106, CLIMB_LOW = 150, CLIMB_MIN = 164, CLIMB_MAX = 186;
 
   // Terrain mixes plain gaps with steps (walls to jump up), drops, floating upper-tier platforms and stepping stones over wide gaps.
   function makeRun(m) {
     const o = m.opt;
     const P = [{ x: 0, y: 270, w: 420, h: 130 }];
-    const bridges = [], movers = [], span = {};
-    let y = 270;
+    const bridges = [], movers = [], ledges = [], span = {};
+    const wallRate = o.wallRate === undefined ? 0.22 : o.wallRate, stairRate = o.stairRate === undefined ? 0.14 : o.stairRate;
+    let y = 270, lastKind = '';
     for (let i = 1; i <= o.count; i++) {
       const prev = P[P.length - 1];
       const r = Math.random();
@@ -40,7 +52,15 @@
         if (r2 < o.boatRate) kind = 'boat';
         else if (r2 < o.boatRate + o.bridgeRate) kind = 'bridge';
       }
+      // vertical sections: a marked climb wall (wall jumps) or ledge stairs over a pit up to a high rooftop
+      if (i > 2 && i < o.count - 1 && kind !== 'boat' && kind !== 'bridge' && lastKind !== 'wall' && lastKind !== 'stairs') {
+        const r3 = Math.random();
+        if (r3 < wallRate && y - CLIMB_LOW >= TOP_Y) kind = 'wall';
+        else if (r3 < wallRate + stairRate && y - 96 >= TOP_Y) kind = 'stairs';
+      }
       let gap = 0, ny = y;
+      if (kind === 'wall') ny = Math.max(TOP_Y, y - ri(CLIMB_MIN, CLIMB_MAX));
+      if (kind === 'stairs') { gap = ri(160, 190); ny = Math.max(TOP_Y, y - ri(96, 124)); }
       if (kind === 'bridge') { gap = ri(120, 190); ny = y; }
       if (kind === 'boat') { gap = ri(240, 300); ny = clamp(y + ri(-20, 20), 250, 300); }
       if (kind === 'step') { ny = y - (i === 1 ? ri(64, 68) : ri(42, 68)); if (ny < 178) kind = 'drop'; }
@@ -50,9 +70,20 @@
         const maxRise = gap > 140 ? 20 : 30;
         ny = clamp(y + ri(-maxRise, 40), 178, 300);
       }
+      // the last rooftops come back down so the boss arena stays at street height
+      if (i >= o.count - 1) ny = Math.max(ny, 200);
+      const wallFrom = y;
       y = ny;
+      lastKind = kind;
       const w = i === o.count ? 480 : ri(o.minW, o.maxW);
       P.push({ x: prev.x + prev.w + gap, y: y, w: w, h: 400 - y });
+      if (kind === 'wall') Object.assign(P[P.length - 1], { climb: true, wallFrom: wallFrom });
+      if (kind === 'stairs') {
+        const gs = prev.x + prev.w;
+        ledges.push({ x: gs + 18, y: wallFrom - 52, w: 52, h: 14, float: true, ledge: true },
+          { x: gs + gap - 74, y: wallFrom - 100, w: 50, h: 14, float: true, ledge: true });
+        span[i] = 'stairs';
+      }
       // spanned gaps: a walkable bridge deck, or a boat that shuttles across the water
       if (kind === 'bridge') { bridges.push({ x: prev.x + prev.w, y: y, w: gap, h: 14, bridge: true, draw: Math.random() < (o.drawRate || 0) }); span[i] = 'bridge'; }
       if (kind === 'boat') { movers.push({ x0: prev.x + prev.w + 6, x1: prev.x + prev.w + gap - 118, y: 296, w: 112, speed: ri(48, 64) }); span[i] = 'boat'; }
@@ -67,9 +98,9 @@
     for (let i = 2; i < n - 1; i++) if (cpIdx.indexOf(i) < 0) free.push(i);
     const pipeAt = {}, pipePairs = [];
     const want = o.pipes === undefined ? 2 : o.pipes;
-    free.filter((i) => i < n * 0.7).forEach((i) => {
+    free.filter((i) => i < n * 0.7 && P[i].y >= 150).forEach((i) => {
       if (pipePairs.length >= want || pipeAt[i] || pipePairs.some((q) => Math.abs(q[0] - i) < 6)) return;
-      const j = free.find((j) => j >= i + 4 && j <= i + 9 && !pipeAt[j]);
+      const j = free.find((j) => j >= i + 4 && j <= i + 9 && !pipeAt[j] && P[j].y >= 150);
       if (j !== undefined) { pipePairs.push([i, j]); pipeAt[i] = pipeAt[j] = 1; }
     });
     for (let i = free.length - 1; i >= 0; i--) if (pipeAt[free[i]]) free.splice(i, 1);
@@ -96,7 +127,7 @@
     take(share(o.ramRate === undefined ? 0.06 : o.ramRate), (p) => enemies.push({ type: 'ram', x: Math.round(p.x + p.w / 2), y: p.y, range: Math.round(Math.min(80, p.w / 2 - 70)) }), 240);
     shuffle(free.slice()).slice(0, share(o.botnetRate === undefined ? 0.05 : o.botnetRate)).forEach((i) => enemies.push({ type: 'botnet', x: Math.round(P[i].x + P[i].w / 2), y: Math.max(70, P[i].y - ri(150, 175)), range: 140 }));
     // drones hover above rooftops without claiming them; extra walkers double up on long rooftops
-    shuffle(free.slice()).slice(0, share(o.droneRate)).forEach((i) => enemies.push({ type: 'drone', x: Math.round(P[i].x + P[i].w * rnd(0.3, 0.7)), y: P[i].y - ri(90, 130), range: 0 }));
+    shuffle(free.slice()).slice(0, share(o.droneRate)).forEach((i) => enemies.push({ type: 'drone', x: Math.round(P[i].x + P[i].w * rnd(0.3, 0.7)), y: Math.max(80, P[i].y - ri(90, 130)), range: 0 }));
     free.forEach((i) => {
       const p = P[i];
       if (p.w < 250 || Math.random() > (o.extraRate || 0)) return;
@@ -135,7 +166,9 @@
       const gs = P[i - 1].x + P[i - 1].w, ge = P[i].x;
       if (span[i] === 'bridge') { for (let c = 0; c < 3; c++) coins.push({ x: Math.round(gs + (ge - gs) * (0.25 + c * 0.25)), y: P[i].y - 30 }); continue; }
       if (span[i] === 'boat') { for (let c = 0; c < 3; c++) coins.push({ x: Math.round(gs + (ge - gs) * (0.3 + c * 0.2)), y: 262 }); continue; }
-      if (ge - gs > 130 && Math.random() < 0.7) coins.push({ x: Math.round((gs + ge) / 2), y: Math.min(P[i].y, P[i - 1].y) - 110 });
+      if (span[i] === 'stairs') { ledges.filter((l) => l.x > gs && l.x < ge).forEach((l) => coins.push({ x: l.x + l.w / 2, y: l.y - 24 })); continue; }
+      if (P[i].climb) { for (let c = 0; c < 3; c++) coins.push({ x: P[i].x - 16, y: P[i].wallFrom - 50 - c * 36 }); continue; }
+      if (ge - gs > 130 && Math.random() < 0.7) coins.push({ x: Math.round((gs + ge) / 2), y: Math.max(70, Math.min(P[i].y, P[i - 1].y) - 110) });
     }
     const tokenIdx = shuffle(free.slice()).slice(0, Math.max(3, Math.round(n / 6)));
     const mfaTokens = tokenIdx.map((i) => ({ x: Math.round(P[i].x + P[i].w * rnd(0.15, 0.3)), y: P[i].y - 50 }));
@@ -165,12 +198,13 @@
       if (vehicles.length < (o.bikes || 0) && i < n * 0.75) { vehicles.push({ kind: 'bike', x: Math.round(p.x + p.w * 0.3), y: p.y }); return; }
       if (oc < Math.round(open.length * (o.obstacleRate || 0))) {
         oc++;
-        const kind = m.region === 'westeurope' && oc === 1 ? 'herring' : pick(o.obstacles), sz = (AH.Art && AH.Art.obSize && AH.Art.obSize[kind]) || OB_SIZE[kind];
+        const kind = o.stand && oc === 1 ? o.stand : pick(o.obstacles), sz = (AH.Art && AH.Art.obSize && AH.Art.obSize[kind]) || OB_SIZE[kind];
         const ox = Math.round(p.x + p.w * rnd(0.3, 0.6) - sz[0] / 2);
         obstacles.push({ kind: kind, x: ox, y: p.y - sz[1], w: sz[0], h: sz[1] });
-        coins.push({ x: ox + sz[0] / 2, y: p.y - sz[1] - 26 });
+        coins.push({ x: ox + sz[0] / 2, y: Math.max(60, p.y - sz[1] - 26) });
       }
     });
+    clearWeapons(powerups, P.concat(floaters, obstacles), 230);
     const deco = [];
     if (o.water) for (let i = 1; i < n; i++) {
       const gs = P[i - 1].x + P[i - 1].w, ge = P[i].x;
@@ -183,14 +217,16 @@
     P.push(arena);
     const width = arena.x + arena.w;
     const pipes = [], pipeZones = [], pipeSolids = [];
-    const zoneThemes = shuffle(['pipelines', 'aks', 'actions', 'docker']);
+    // Shared themes rotate everywhere; a world's own regional theme (opt.pipeTheme) always takes the first pipe.
+    const zoneThemes = shuffle(Object.keys(CHALLENGES).filter((k) => !CHALLENGES[k].region));
+    if (o.pipeTheme && CHALLENGES[o.pipeTheme]) zoneThemes.unshift(o.pipeTheme);
     pipePairs.forEach((q, k) => {
       const a = P[q[0]], b = P[q[1]];
       const ex = Math.round(a.x + a.w * 0.62 - 22), bx = Math.round(b.x + b.w * 0.4 - 22);
-      pipeSolids.push({ x: ex, y: a.y - 46, w: 44, h: 46, pipe: true }, { x: bx, y: b.y - 46, w: 44, h: 46, pipe: true });
-      for (let c = 0; c < 3; c++) coins.push({ x: ex + 22, y: a.y - 70 - c * 22 });
       // Reserve enough space for the longest room; rooms must never overlap each other.
       const Z = makePipeZone(width + 1200 + k * 4400, zoneThemes[k % zoneThemes.length]);
+      pipeSolids.push({ x: ex, y: a.y - 46, w: 44, h: 46, pipe: true, theme: Z.theme }, { x: bx, y: b.y - 46, w: 44, h: 46, pipe: true, theme: Z.theme });
+      for (let c = 0; c < 3; c++) coins.push({ x: ex + 22, y: Math.max(60 + c * 22, a.y - 70 - c * 22) });
       Z.back = { x: bx + 22, y: b.y - 46 };
       pipes.push({ x: ex + 22, y: a.y - 46, zone: k });
       pipeZones.push(Z);
@@ -207,7 +243,7 @@
     });
     return {
       pipes: pipes, pipeZones: pipeZones,
-      width: width, platforms: P.concat(floaters, bridges, pipeSolids, [].concat.apply([], pipeZones.map((z) => z.platforms))), lasers: lasers, coins: coins, mfaTokens: mfaTokens, powerups: powerups, props: props, enemies: enemies,
+      width: width, platforms: P.concat(floaters, ledges, bridges, pipeSolids, [].concat.apply([], pipeZones.map((z) => z.platforms))), lasers: lasers, coins: coins, mfaTokens: mfaTokens, powerups: powerups, props: props, enemies: enemies,
       movers: movers, obstacles: obstacles, vehicles: vehicles, deco: deco,
       secret: sx ? Object.assign(sx, { name: o.secretName || 'PHONE BOX' }) : sx, bonus: sx ? makeBonus(width + 400, typeof o.secret === 'string' ? o.secret : 'cloud') : null,
       checkpoints: cpIdx.map((i) => ({ x: P[i].x + 40, y: P[i].y })),
@@ -217,7 +253,7 @@
     };
   }
 
-  const OB_SIZE = { bus: [96, 56], cab: [72, 42], flowers: [56, 34], bikes: [84, 34], herring: [88, 62], icecream: [64, 38], lifeguard: [34, 52], vespa: [68, 44], fiat: [78, 44], cafe: [78, 40], kiosk: [44, 64], gelato: [68, 38], pickup: [88, 44], schoolbus: [96, 56], taxi: [72, 42] };
+  const OB_SIZE = { bus: [96, 56], cab: [72, 42], flowers: [56, 34], bikes: [84, 34], herring: [88, 62], bakery: [88, 62], icecream: [64, 38], lifeguard: [34, 52], vespa: [68, 44], fiat: [78, 44], cafe: [78, 40], kiosk: [44, 64], gelato: [68, 38], pickup: [88, 44], schoolbus: [96, 56], taxi: [72, 42] };
 
   // Secret bonus room: one screen of floating platforms over a themed floor, packed with credits.
   // Themes: cloud (Bliss hill), retro (classic desktop), xbox (Game Pass arena).
@@ -244,43 +280,73 @@
     pipelines: { name: 'AZURE PIPELINES', hint: 'FIX BUGS. TEST BEFORE YOU DEPLOY.', stages: ['BUILD', 'TEST', 'SCAN', 'APPROVE', 'DEPLOY'], tips: ['COMPILE CLEAN', 'CATCH PIPELINE BUGS', 'DEFENDER FOR CLOUD', 'REVIEW PERMISSIONS', 'SHIP WITH AZURE'], threats: ['bug', 'bug', 'image', 'rbac', 'endpoint'] },
     aks: { name: 'AKS CONTAINER CLUSTER', hint: 'CLIMB PODS AND SECURE THE CLUSTER.', stages: ['NODE POOL', 'POD HOP', 'RBAC', 'INGRESS', 'HEALTH CHECK'], tips: ['SCALE WITH AKS', 'ISOLATE WORKLOADS', 'LEAST PRIVILEGE', 'USE PRIVATE LINK', 'AZURE MONITOR'], threats: ['image', 'bug', 'rbac', 'endpoint', 'guest'] },
     actions: { name: 'GITHUB ACTIONS', hint: 'RACE RUNNERS. REVIEW GUEST ACCESS.', stages: ['CHECKOUT', 'RUNNER', 'UNIT TEST', 'IDENTITY', 'RELEASE'], tips: ['REVIEW YOUR CODE', 'HOSTED RUNNERS', 'FIX FAILING TESTS', 'ENTRA ACCESS REVIEWS', 'DEPLOY TO AZURE'], threats: ['guest', 'bug', 'bug', 'rbac', 'endpoint'] },
-    docker: { name: 'DOCKER IMAGE DOCK', hint: 'CLIMB CONTAINERS. PATCH UNSAFE IMAGES.', stages: ['DOCKERFILE', 'BUILD IMAGE', 'SCAN IMAGE', 'REGISTRY', 'CONTAINER APPS'], tips: ['SMALL TRUSTED BASE', 'REBUILD AND PATCH', 'DEFENDER FOR CLOUD', 'AZURE CONTAINER REGISTRY', 'RUN ON AZURE'], threats: ['image', 'bug', 'image', 'endpoint', 'rbac'] }
+    docker: { name: 'DOCKER IMAGE DOCK', hint: 'CLIMB CONTAINERS. PATCH UNSAFE IMAGES.', stages: ['DOCKERFILE', 'BUILD IMAGE', 'SCAN IMAGE', 'REGISTRY', 'CONTAINER APPS'], tips: ['SMALL TRUSTED BASE', 'REBUILD AND PATCH', 'DEFENDER FOR CLOUD', 'AZURE CONTAINER REGISTRY', 'RUN ON AZURE'], threats: ['image', 'bug', 'image', 'endpoint', 'rbac'] },
+    entra: { name: 'ENTRA ACCESS VAULT', hint: 'VERIFY IDENTITIES. GRANT LEAST PRIVILEGE.', stages: ['SIGN IN', 'MFA', 'ACCESS POLICY', 'ROLE REVIEW', 'GUEST CLEANUP'], tips: ['VERIFY EVERY REQUEST', 'USE STRONG MFA', 'CONDITIONAL ACCESS', 'LEAST PRIVILEGE', 'REVIEW STALE GUESTS'], threats: ['guest', 'phish', 'endpoint', 'rbac', 'guest'] },
+    metro: { region: 'francecentral', name: 'PARIS METRO - LIGNE 14', hint: 'RIDE THE LINES. ROUTE TRAFFIC SAFELY.', stages: ['TICKET GATE', 'QUAI', 'CORRESPONDANCE', 'RUSH HOUR', 'SORTIE'], tips: ['FRONT DOOR WAF', 'LOAD BALANCE TRAFFIC', 'ROUTE WITH FRONT DOOR', 'DDOS PROTECTION', 'PRIVATE ENDPOINTS'], threats: ['guest', 'bug', 'endpoint', 'bug', 'rbac'] },
+    functions: { name: 'AZURE FUNCTIONS REACTOR', hint: 'HANDLE EVENTS. SECURE EVERY TRIGGER.', stages: ['TRIGGER', 'BINDING', 'EXECUTE', 'RETRY', 'OBSERVE'], tips: ['VALIDATE INPUT EVENTS', 'USE MANAGED IDENTITY', 'KEEP FUNCTIONS SMALL', 'MAKE RETRIES SAFE', 'AZURE MONITOR'], threats: ['endpoint', 'rbac', 'bug', 'image', 'bug'] }
   };
   function makePipeZone(x0, theme) {
-    const C = CHALLENGES[theme], bay = ri(600, 700), W = bay * 5 + 320, F = 300;
+    const C = CHALLENGES[theme], F = 300;
+    const widths = Array.from({ length: 5 }, () => ri(560, 660));
+    const W = widths.reduce((a, b) => a + b, 400);
     const platforms = [{ x: x0, y: F, w: W, h: 100, pipeFloor: true, cloudKind: theme },
       { x: x0, y: -60, w: W, h: 90, pipeFloor: true, ceil: true }];
     const coins = [], enemies = [], lasers = [], stages = [], powerups = [];
-    C.stages.forEach((name, i) => {
-      const x = x0 + 200 + i * bay;
-      const top = theme === 'docker' ? ri(176, 196) : theme === 'pipelines' ? ri(184, 200) : ri(204, 220);
-      stages.push({ x: x, name, tip: C.tips[i] });
-      if (theme === 'aks' || theme === 'docker') {
-        platforms.push({ x: x + 30, y: 252, w: 70, h: 48, cloudKind: theme },
-          { x: x + 100, y: top, w: 110, h: F - top, cloudKind: theme },
-          { x: x + 210, y: 252, w: 70, h: 48, cloudKind: theme });
+    const layouts = shuffle(['steps', 'catwalk', 'duct', 'split', 'security', 'arena', 'switchback']).slice(0, 5);
+    // Keep a duck/roof choice without turning every educational bay into a tunnel.
+    if (!layouts.includes('duct')) layouts[ri(0, 4)] = 'duct';
+    const lessons = shuffle(C.stages.map((name, i) => ({ name, tip: C.tips[i], threat: C.threats[i] })));
+    let x = x0 + 200, token;
+    lessons.forEach((lesson, i) => {
+      const w = widths[i], layout = layouts[i], start = platforms.length;
+      const add = (dx, y, pw, h, flags) => platforms.push(Object.assign({ x: x + dx, y, w: pw, h, cloudKind: theme }, flags));
+      const groundEnemy = (dx, type = lesson.threat) => enemies.push({ type, x: x + dx, y: F, range: type === 'endpoint' ? 0 : 20 });
+      stages.push({ x, name: lesson.name, tip: lesson.tip, layout });
+      if (layout === 'steps') {
+        add(60, 252, 70, 48); add(130, 204, 110, 96); add(240, 252, 70, 48);
+        groundEnemy(370); groundEnemy(w - 60, 'image');
+      } else if (layout === 'catwalk') {
+        add(50, 220, 100, 14); add(200, 158, 160, 14); add(w - 140, 220, 90, 14);
+        groundEnemy(180); groundEnemy(w - 60, 'rbac');
+      } else if (layout === 'duct') {
+        add(180, 254, ri(140, 180), 20, { lowTunnel: true });
+        for (let c = 0; c < 4; c++) coins.push({ x: x + 192 + c * 36, y: 289 });
+        groundEnemy(90); groundEnemy(w - 80, 'guest');
+      } else if (layout === 'split') {
+        add(40, 240, 100, 14); add(180, 180, 110, 14);
+        add(330, 220, 90, 14); add(w - 110, 150, 70, 14);
+        groundEnemy(250); groundEnemy(w - 60, 'bug');
+      } else if (layout === 'security') {
+        add(60, 228, 100, 14); add(320, 164, 100, 14);
+        [240, w - 100].forEach((dx, j) => lasers.push({ x: x + dx, y: F - 84 + j * 24, w: 6, h: 84 - j * 24, on: ri(900, 1200), off: ri(1400, 1800), phase: ri(0, 1800) }));
+        groundEnemy(190); groundEnemy(w - 45, 'endpoint');
+      } else if (layout === 'arena') {
+        add(60, 246, 70, 54); add(210, 180, 130, 14); add(w - 150, 246, 70, 54);
+        groundEnemy(170); groundEnemy(w - 200, 'image');
+        enemies.push({ type: 'endpoint', x: x + 275, y: 180, range: 0 });
       } else {
-        if (theme === 'pipelines') platforms.push({ x: x + 20, y: 260, w: 70, h: 40, cloudKind: theme });
-        platforms.push({ x: x + 90, y: top, w: 140, h: 16, cloudKind: theme });
-        if (theme === 'actions') platforms.push({ x: x + 240, y: top - 60, w: 90, h: 16, cloudKind: theme });
-        lasers.push({ x: x + 250, y: 244, w: 6, h: 56, on: ri(1000, 1400), off: ri(1100, 1600), phase: ri(0, 1500) });
+        add(60, 240, 90, 14); add(190, 180, 90, 14); add(320, 126, 100, 14);
+        groundEnemy(160); groundEnemy(w - 65, 'rbac');
       }
-      // A low service duct is an alternate route: duck below it or jump onto its roof.
-      platforms.push({ x: x + 350, y: 254, w: 140, h: 20, cloudKind: theme, lowTunnel: true });
-      for (let c = 0; c < 5; c++) coins.push({ x: x + 40 + c * 38, y: top - 24 });
-      for (let c = 0; c < 4; c++) coins.push({ x: x + 360 + c * 36, y: 289 });
-      enemies.push({ type: C.threats[i], x: x + 540, y: F, range: 24 });
-      enemies.push({ type: i % 2 ? 'guest' : 'bug', x: x + 420, y: F, range: 36 });
-      if (theme === 'aks' || theme === 'docker') enemies.push({ type: 'endpoint', x: x + 155, y: top, range: 0 });
-      if (i === 1 || i === 3) powerups.push({ kind: i === 1 ? 'defender' : 'teams', x: x + 300, y: 270 });
+      const route = platforms.slice(start);
+      route.forEach((p) => {
+        for (let c = 0; c < 3; c++) coins.push({ x: p.x + p.w * (c + 1) / 4, y: p.y - 24 });
+      });
+      for (let c = 0; c < 3; c++) {
+        const cx = x + w - 110 + c * 28;
+        const cy = Math.min(270, ...route.filter((p) => cx + 8 > p.x && cx - 8 < p.x + p.w).map((p) => p.y - 24));
+        coins.push({ x: cx, y: cy });
+      }
+      const reward = route.reduce((a, b) => a.y < b.y ? a : b);
+      if (i === 2) token = { x: reward.x + reward.w / 2, y: reward.y - 26 };
+      if (i !== 2) powerups.push({ kind: ['spread', 'defender', '', 'pierce', 'teams'][i], x: reward.x + reward.w / 2, y: reward.y - 26 });
+      x += w;
     });
-    const tx = x0 + 200 + 2 * bay;
-    platforms.push({ x: tx + 100, y: 146, w: 100, h: 14, cloudKind: theme });
-    platforms.push({ x: x0 + W - 112, y: F - 46, w: 44, h: 46, pipe: true });
+    platforms.push({ x: x0 + W - 112, y: F - 46, w: 44, h: 46, pipe: true, theme });
     return {
       x: x0, w: W, theme, name: C.name, hint: C.hint, stages, powerups,
       timeBonus: Math.ceil(W / 150) + 60, platforms, coins, enemies, lasers,
-      token: { x: tx + 150, y: 120 },
+      token,
       entry: { x: x0 + 70, y: 250 }, exit: { x: x0 + W - 90, y: F - 46 }
     };
   }
@@ -397,7 +463,9 @@
     }
     const spots = shuffle(platforms.filter((q) => q.y < F && q.h < 80).map((q) => ({ x: q.x + q.w / 2, y: q.y - 36 })));
     secs.forEach((q) => { if (!q.boss) spots.push({ x: Math.round(rnd(q.x + 300, q.x + q.len * 0.5)), y: 262 }); });
+    while (spots.length < 6) spots.push({ x: 120 + spots.length % 2 * 100, y: 262 });
     const powerups = powerKinds(4, POWER_RUN).map((kind, i) => Object.assign({ kind: kind }, spots[i]));
+    clearWeapons(powerups, platforms, 262);
     return {
       width: width, platforms: platforms, powerups: powerups, props: [], lasers: [], cables: cables, coins: coins, mfaTokens: mfaTokens, enemies: enemies,
       terminals: terminals, gates: gates, checkpoints: checkpoints, spawn: { x: 60, y: 250 },
@@ -412,7 +480,7 @@
       id: 1, region: 'westeurope', ambient: { sky: ['plane', 'plane', 'balloon'], birds: 'gull', road: ['tram', 'cyclist', 'cyclist', 'mini'] }, regionName: 'WEST EUROPE', city: 'AMSTERDAM', name: 'Amsterdam Canal Run', mode: 'run', theme: 'roof',
       tint: 0xffc0a0, landmarks: 'AMSTERDAM - SCHIPHOL - MICROSOFT HQ - KINDERDIJK - ROTTERDAM - UTRECHT - THE HAGUE', hint: 'RIDE CANAL BOATS, MIND THE PULL-UP BRIDGES, GRAB THE AZURE BIKE', ground: 'quay', water: true, rail: 'quay',
       boss: { kind: 'molen', name: 'WINDMILL TITAN', proj: 'molen' },
-      opt: { count: 24, gapMin: 100, gapMax: 175, minW: 220, maxW: 340, cpEvery: 7, laserRate: 0.2, robotRate: 0.34, spiderRate: 0.24, droneRate: 0.16, stepRate: 0.14, dropRate: 0.12, floatRate: 0.55, stoneRate: 0.45, power: 4, props: ['tulips', 'bike'], water: true, bridgeRate: 0.2, drawRate: 0.6, boatRate: 0.14, obstacles: ['flowers', 'bikes'], obstacleRate: 0.3, bikes: 2, extraRate: 0.35, floatEnemyRate: 0.3, shootRate: 0.3 }
+      opt: { count: 24, gapMin: 100, gapMax: 175, minW: 220, maxW: 340, cpEvery: 7, laserRate: 0.2, robotRate: 0.34, spiderRate: 0.24, droneRate: 0.16, stepRate: 0.14, dropRate: 0.12, floatRate: 0.55, stoneRate: 0.45, power: 4, props: ['tulips', 'bike'], water: true, bridgeRate: 0.2, drawRate: 0.6, boatRate: 0.14, obstacles: ['flowers', 'bikes'], stand: 'herring', obstacleRate: 0.3, bikes: 2, extraRate: 0.35, floatEnemyRate: 0.3, shootRate: 0.3 }
     },
     {
       id: 2, region: 'uksouth', ambient: { sky: ['plane', 'heli'], birds: 'pigeon', road: ['redbus', 'cab', 'cab', 'cyclist'] }, regionName: 'UK SOUTH', city: 'LONDON', name: 'London Thames Run', mode: 'run', theme: 'roof',
@@ -421,16 +489,16 @@
       opt: { count: 28, gapMin: 105, gapMax: 185, minW: 210, maxW: 330, cpEvery: 7, laserRate: 0.22, robotRate: 0.36, spiderRate: 0.25, droneRate: 0.2, stepRate: 0.16, dropRate: 0.12, floatRate: 0.55, stoneRate: 0.5, power: 5, props: ['postbox', 'phone'], water: true, bridgeRate: 0.12, boatRate: 0.14, obstacles: ['bus', 'cab', 'cab'], obstacleRate: 0.35, bikes: 1, secret: true, extraRate: 0.4, floatEnemyRate: 0.35, shootRate: 0.35 }
     },
     {
-      id: 3, region: 'francecentral', ambient: { sky: ['plane', 'balloon', 'heli'], birds: 'pigeon', road: ['citroen', 'vespa', 'cyclist', 'cab'] }, regionName: 'FRANCE CENTRAL', city: 'PARIS', name: 'Paris Seine Run', mode: 'run', theme: 'roof',
-      tint: 0xffc7d7, landmarks: 'EIFFEL TOWER - LOUVRE - MONT-SAINT-MICHEL - CARCASSONNE - PONT DU GARD - NICE',
-      hint: 'DODGE THE VESPAS. A METRO ENTRANCE HIDES A RETRO SECRET!', ground: 'quai_paris', water: true, rail: 'quai_paris',
+      id: 3, region: 'francecentral', ambient: { sky: ['plane', 'balloon', 'heli'], birds: 'pigeon', road: ['citroen', 'vespa', 'cyclist', 'cab'], water: ['region'] }, regionName: 'FRANCE CENTRAL', city: 'PARIS', name: 'Paris Seine Run', mode: 'run', theme: 'roof',
+      tint: 0xffc7d7, landmarks: 'EIFFEL TOWER - SACRE-COEUR - MOULIN ROUGE - LOUVRE - MONT-SAINT-MICHEL - CARCASSONNE',
+      hint: 'RIDE THE METRO PIPES. A GHOST STATION HIDES A RETRO SECRET!', ground: 'quai_paris', water: true, rail: 'quai_paris',
       boss: { kind: 'chef', name: 'CHEF DE CHAOS', proj: 'chef' },
       opt: {
         count: 24, gapMin: 105, gapMax: 185, minW: 210, maxW: 330, cpEvery: 7,
         laserRate: 0.18, robotRate: 0.34, spiderRate: 0.24, droneRate: 0.2,
         stepRate: 0.16, dropRate: 0.13, floatRate: 0.52, stoneRate: 0.45, power: 5,
-        props: ['easel', 'macarons'], water: true, bridgeRate: 0.12, boatRate: 0.16,
-        obstacles: ['vespa', 'cafe', 'kiosk'], obstacleRate: 0.32, secret: 'retro', secretName: 'METRO ENTRANCE',
+        props: ['easel', 'macarons'], water: true, bridgeRate: 0.12, boatRate: 0.24,
+        obstacles: ['vespa', 'cafe', 'kiosk'], stand: 'bakery', obstacleRate: 0.32, secret: 'retro', secretName: 'GHOST STATION', pipeTheme: 'metro',
         extraRate: 0.38, floatEnemyRate: 0.34, shootRate: 0.28
       }
     },

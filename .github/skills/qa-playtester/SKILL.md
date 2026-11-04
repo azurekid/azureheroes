@@ -11,11 +11,24 @@ description: 'Verify Azure Heroes controls, procedural reachability, cloud rooms
 - Mark PASS / FAIL per level, do not mark the game done if one level fails.
 - Also test: world map (select, deploy, cleared routes), Continue after game over and after a clear, Hero Lab, warp pipes, secret rooms, and with `npm start`: register, login, score posting and the leaderboard. Run `npm test` for the API.
 - Use one browser process per level in headless runs. Starting two levels on one page stalls the harness, not the game.
-- Test Down/S duck versus E shield, low shots, once-per-slide damage, ceiling clearance,
+- Test H help (title and in game, page with Left/Right), Q quit, Esc/P pause menu, blasts destroying enemy bullets, suit unlock banner and locked suits in the Hero Lab, enemy nameplates.
+- Playwright `keyboard.press` can be shorter than one frame; Phaser drops it. Hold keys about 100 ms (`down`, wait, `up`).
+- Verify quick-release and 1.2s charge on keyboard and touch, no premature shot,
+  Boost costs, replacement/expiry/respawn and charge cancellation on state changes.
+  Test per-target beam hits, wall collisions and spread fan counts.
+- Observe natural ground/air boss windows, armor rejection, phase pressure and
+  synchronized OPEN text/green marker/countdown; distinguish this from forcing stun.
+- Exercise all seven room layouts with real Arcade physics, token collection and
+  return pipes. Test six themes and seeded diversity, not only object counts.
+- Verify all ten wardrobe bundles in every pose, locked hair/accessories as well
+  as outfits, old-save fallback and unlocked-only randomization.
+- Test Down/S duck versus E shield (ground, air and crouch guard), low shots, once-per-slide damage, ceiling clearance,
   actual touch actions, all cloud-room themes, time grants, disjoint bounds and pipe returns.
 - Use deterministic seeds for generation assertions and real Arcade collision traversal.
   Preserve physics frame synchronization in bots; reject implausible instant completions.
 - Identify invulnerability, refilled Boost, teleporting or forced boss stun in reports.
+- After a death, count live enemies against `L.enemies`; fire Down+F tap and Down+F hold.
+- Let a ground boss charge past you and confirm the wall BONK opens a full window.
   Those checks prove integration/reachability, not unassisted combat balance.
 - Run `npm test` for gameplay, framework, security-boundary and server regressions.
   Verify skill discovery metadata, relative links and pinned CI/CDN integrity.

@@ -59,10 +59,24 @@ Shapes of the base keys:
 Runtime state shape read by the HUD (`scene.snapshot()`):
 `{levelId, levelName, health, score, mfa, credits, lives, time, boost, blastReady, hack, boss, mode}`.
 
-Input contract: Arrows/WASD move, Space jump (press again in the air = double jump),
-F Azure Blast (low while ducking), Shift Flight Boost, E = MFA Shield,
-S / Down = duck (moving starts a slide attack), P pause, R restart, M mute.
-Touch run controls include DUCK and SHIELD separately.
+Input contract: Arrows/WASD move, Space jump (press again in the air = double jump; airborne while
+pushing into a wall = wall slide, Space then wall-jumps away and restores the double jump),
+F Azure Blast (low while ducking; blasts also destroy enemy and boss bullets), Shift Flight Boost,
+E = MFA Shield (ground and air), S / Down = duck (standing still = crouch guard with the shield,
+moving starts a slide attack), P / Esc pause, H help overlay, Q quit to title, R restart, M mute.
+`AH.Input.read()` returns `help`, `quit`, `esc` and `nav` (-1/0/1 page turns) besides the movement flags.
+Touch run controls include DUCK, SHIELD, PAUSE and HELP. On the title screen E opens the Hero Lab and H opens help.
+
+## Addendum: rendering, hero art, suits, threat identity
+
+- The canvas is `640 * AH.VIEW_SCALE` by `360 * AH.VIEW_SCALE`; a camera patch in `systems/scenes.js` zooms every camera so all game logic,
+  layouts and coordinates stay in the 640x360 space. Never hard-code the physical canvas size.
+- `AH.Art.buildHeroHD(scene, look, frame)` returns a high-detail hero texture key; it is not auto-scaled, so callers use `setScale(size / AH.Art.HD)`.
+- `HERO_SUIT` entries have `name` and `unlock` (level index, -1 = always open). `AH.Art.hero.suitOpen(i, unlocked)` is true when
+  `unlocked >= unlock + 2`. `lookOf` falls back to the default suit for a locked suit; the Hero Lab must refuse to save one.
+- Every enemy type in `AH.Enemy.SPEC` needs `label` (pixel-font charset), `cat` (`malware`, `network`, `identity`, `devops`, see `AH.Enemy.CATS`) and a short `info` tip.
+  The nameplate and the Hero Handbook (`AH.UI.help(scene, onClose)`) read these fields.
+- Remove enemies with `enemy.remove()` (or `die()`), never by destroying the sprite only, so the nameplate is cleaned up.
 
 ## Level generation addendum
 - `AH.Levels.make(id)` returns a freshly randomised level in the Level format, with extra fields `region`, `regionName`, `city`, `landmarks`, `hint`, `tint`, `mode`.
@@ -99,5 +113,64 @@ Touch run controls include DUCK and SHIELD separately.
 - Pipe zones additionally expose `theme` (`pipelines`, `aks`, `actions`, `docker`), `name`,
   `hint`, `stages: [{x, name, tip}]`, `powerups: [{kind,x,y}]` and `timeBonus` seconds.
   Their disjoint bounds accommodate rooms up to 3840px. Each zone grants its time bonus once.
-- Optional platform `cloudKind` selects a cloud challenge tile; `lowTunnel` marks a
+- Optional platform `cloudKind` selects a cloud challenge material; `lowTunnel` marks a
   duck-height overhead beam. Street obstacle `herring` is an Amsterdam haring stand.
+- Cloud-room art: `AH.Art.buildCloudPlatform(scene, platform)` returns a cached,
+  exact-size cargo/catwalk texture without changing collision geometry. Dock floors
+  use `cloud_floor_<theme>`. `challenge_far_<theme>` is a room-only parallax layer;
+  `challenge_bg_<theme>` and suffixes `_1`, `_2` are transparent scenery variations.
+  `challenge_sign_<theme>` backs compact stage labels. All drawing remains in art.
+
+### Charged weapons, boss signals and varied rooms
+- Optional powerup kinds `spread` and `pierce` equip a temporary weapon for 25 seconds;
+  replacement refreshes the timer, expiry and respawn restore Azure Blast. No save changes.
+- Input adds `fireHeld` alongside `fire` (press). Tap fires on release; hold up to 1.2s
+  for a charged shot, then release. Cancel charge on hurt, shield, pause/help and warp.
+  Keyboard F and the touch BLAST button share these rules.
+- `player.azureBlast(charge = 0)` accepts 0..1. `spawnBlast(x,y,dir,options)` accepts
+  optional `weapon` (`azure`, `spread`, `pierce`) and `charge`. Default shots preserve
+  existing callers. Projectile damage and pierced-target tracking belong to scene state.
+- HUD snapshot adds `weapon`, `weaponTime`, `charge`; boss snapshots add `state`,
+  `vulnerable`, `window` and `cue`. Boss damage is allowed only while vulnerable;
+  green OPEN text/countdown and an overhead marker must agree with the hit check.
+- Pipe themes also include `entra` (identity/access vault) and `functions` (event reactor).
+  Every theme needs floor, sign, far scenery and three background textures. Optional
+  stage `layout` names identify shuffled room templates; geometry, enemy placement,
+  rewards and hazards vary per template, not just colours or labels.
+
+### Regional wardrobe rewards
+- Classic outfits are appended to `HERO_SUIT` with `unlock: -1` (Cowboy, India Kurta)
+  so saved suit indexes stay valid. The hijab is headwear (`hat: 'hijab'`), not a
+  hairstyle; `lookOf` migrates old `hair: 'hijab'` saves. The Gold Mode suit
+  (`suit: 'gold'`) is runtime-only and never opens through saves or Hero Lab.
+- Clearing each region grants one outfit, hairstyle and accessory at
+  `Save.unlocked >= regionIndex + 2`. Existing classic styles, hats and extras stay open.
+- `AH.Art.hero` exposes `hairNames`, `hairUnlock`, `gearUnlock`, `wardrobeOpen(category, value, unlocked)`,
+  `wardrobeFor(regionIndex)` (`{suit, hair, gear}`) and `lookOpen(look, unlocked)`.
+  Categories are `suit`, `hair`, `hat`, `gear`; unknown selections are never open.
+- `lookOf(data)` replaces locked/unknown suit, hair and gear with the saved body's
+  classic defaults, without mutating saved data. Hero Lab can preview locked rewards,
+  but refuses to save any locked selection; randomization only chooses open entries.
+- Regional outfits change garment structure, not only colours. Japan's reward is a
+  kimono with an obi sash; all outfits, hair and extras retain every hero frame,
+  32x48 collision-independent canvas and HD rendering. Rewards are respectful wearable
+  adaptations, not claims to represent every person in a region.
+- Hero Lab explains the selected reward's required region clear; completion announces
+  all three reward names. Labels use the existing pixel-font charset.
+
+### Regional rooms, street stands and music
+- World option `pipeTheme` names a regional `CHALLENGES` entry (Paris: `metro`). It always
+  sits behind the first pipe; the second pipe takes a distinct shared theme. Regional
+  themes never enter the shared pool. Pipe platforms carry `theme`.
+- World option `stand` names the local street obstacle guaranteed once per level
+  (`herring` in Amsterdam, `bakery` in Paris); its size lives in `OB_SIZE`/`obSize`.
+- Optional room art: `pipe_<theme>` replaces the pipe body, `pipe_<theme>_top` overlays the
+  entrance, and `challenge_train_<theme>` adds passing background trains. Scenes check
+  `textures.exists` so themes without them keep the default pipe.
+- `ambient.water: ['region']` sails `boat_<region>` along the river. `AH.Art.sceneryStars[region]`
+  lists signature landmarks that open the strip and appear about twice as often.
+- `AH.Audio.music(kind, region)`: kinds `title`, `main`, `pipe`, `metro`, `bonus`, `boss`;
+  `null` stops. Only `main` uses the region (`AH.Audio.REGION_SONG`); unknown kinds or
+  regions fall back to `main`. Repeating the same resolved song never restarts it.
+  Levels call `levelMusic()` on start and when leaving rooms, bonus areas and boss resets.
+  Songs are code-only data (`AH.Audio.SONGS`), never fetched or loaded from files.

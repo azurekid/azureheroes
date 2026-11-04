@@ -18,6 +18,28 @@
     endpoint: { tex: 'endpoint_0', anim: 'endpoint_move', body: [26, 20, 3, 8], gravity: true, speed: 0, origin: 1, behaviour: 'robot', fix: 'ENDPOINT SECURED - USE AZURE PRIVATE LINK' },
     guest: { tex: 'guest_0', anim: 'guest_move', body: [26, 12, 3, 8], gravity: true, speed: 65, origin: 1, behaviour: 'spider', fix: 'GUEST REVIEWED - ENTRA ACCESS REVIEWS' }
   };
+  // threat category drives the nameplate colour, so the hero can read what each enemy is at a glance
+  const CATS = {
+    malware: { name: 'MALWARE', color: '#ff4a5a', dark: '#5a0a14' },
+    network: { name: 'NETWORK', color: '#ffa040', dark: '#5a2a04' },
+    identity: { name: 'IDENTITY', color: '#ff7ad9', dark: '#4a0a3a' },
+    devops: { name: 'DEVOPS', color: '#ffe14a', dark: '#4a3a04' }
+  };
+  const INFO = {
+    robot: ['MALWARE BOT', 'malware', 'PATROLS, SOME SHOOT. BLAST OR STOMP'],
+    spider: ['WORM CRAWLER', 'malware', 'SPREADS FAST WHEN NEAR. SLIDE INTO IT'],
+    ram: ['RANSOMWARE', 'malware', 'GLOWS RED, THEN CHARGES. JUMP OVER'],
+    drone: ['SPY DRONE', 'network', 'HOMES IN FROM THE AIR. BLAST IT'],
+    botnet: ['DDOS BOTNET', 'network', 'DROPS PACKET BOMBS FROM ABOVE'],
+    endpoint: ['PUBLIC ENDPOINT', 'network', 'EXPOSED TURRET. USE PRIVATE LINK'],
+    phish: ['PHISHING LURE', 'identity', 'LEAPS AT YOU. NEVER TAKE THE BAIT'],
+    rbac: ['OVERPRIVILEGED ROLE', 'identity', 'TOO MANY RIGHTS AND IT SHOOTS'],
+    guest: ['STALE GUEST', 'identity', 'FORGOTTEN ACCOUNT. DUCK + SLIDE'],
+    bug: ['PIPELINE BUG', 'devops', 'HOPS AROUND BUILDS. TEST IT AWAY'],
+    image: ['VULNERABLE IMAGE', 'devops', 'UNPATCHED CONTAINER. IT CHARGES']
+  };
+  Object.keys(INFO).forEach((k) => { SPEC[k].label = INFO[k][0]; SPEC[k].cat = INFO[k][1]; SPEC[k].info = INFO[k][2]; });
+  const TAG_RANGE = 230;
 
   AH.Enemy = class Enemy {
     constructor(scene, def) {
@@ -46,6 +68,15 @@
       this.sprite.body.setAllowGravity(spec.gravity);
       if (spec.gravity) scene.physics.add.collider(this.sprite, scene.solids);
       this.sprite.enemy = this;
+      const cat = CATS[spec.cat];
+      this.tag = new AH.PixelText(scene, def.x, def.y, spec.label, { scale: 1, color: cat.color, shadow: cat.dark, ox: 0.5, oy: 1 }).setDepth(41).setVisible(false);
+    }
+
+    // nameplate above the sprite, shown when the hero gets close
+    updateTag(player) {
+      const s = this.sprite, show = !this.dead && Math.abs(player.x - s.x) < TAG_RANGE && Math.abs(player.y - s.y) < 160;
+      this.tag.setVisible(show);
+      if (show) this.tag.setPosition(Math.round(s.x), Math.round(s.y - (this.spec.origin === 1 ? s.displayHeight : s.displayHeight / 2) - 3));
     }
 
     get x() { return this.sprite.x; }
@@ -55,6 +86,7 @@
       if (this.dead) return;
       const s = this.sprite, b = s.body, sp = this.spec.speed, type = this.spec.behaviour || this.type;
       this.phase += dt;
+      this.updateTag(player);
       if (this.flash > 0) {
         this.flash -= dt;
         if (this.flash <= 0) s.clearTint();
@@ -157,9 +189,9 @@
       }
     }
 
-    hit(dir) {
+    hit(dir, damage = 1) {
       if (this.dead) return false;
-      this.health -= 1;
+      this.health -= damage;
       const s = this.sprite;
       if (this.health <= 0) { this.die(); return true; }
       AH.Audio.play('enemyHit');
@@ -172,11 +204,20 @@
       return true;
     }
 
+    remove() {
+      this.dead = true;
+      this.sprite.destroy();
+      this.tag.destroy();
+    }
+
     die() {
       this.dead = true;
       const s = this.sprite;
       this.scene.onEnemyKilled(this);
       s.destroy();
+      this.tag.destroy();
     }
   };
+  AH.Enemy.SPEC = SPEC;
+  AH.Enemy.CATS = CATS;
 })();

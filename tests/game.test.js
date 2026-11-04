@@ -5,17 +5,93 @@ const fs = require('node:fs');
 const vm = require('node:vm');
 const path = require('node:path');
 
-function load(file, AH = {}, seed = 1) {
+function load(file, AH = {}, seed = 1, globals = {}) {
   const math = Object.create(Math);
   math.random = () => { seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0; return seed / 4294967296; };
-  const context = vm.createContext({ window: { AH }, Math: math });
+  const context = vm.createContext({ ...globals, window: { AH }, Math: math });
   vm.runInContext(fs.readFileSync(path.join(__dirname, '..', file), 'utf8'), context);
   return context.window.AH;
 }
 
+test('cloud platforms use finite cargo art without changing collision geometry', () => {
+  const calls = [], zones = [];
+  const display = { setOrigin() { return this; }, setDepth() { return this; } };
+  const AH = load('systems/scenes.js', {
+    Levels: { ids: [1] },
+    Art: { buildCloudPlatform(scene, p) { calls.push(['cargo', p.w, p.h]); return 'cargo'; } }
+  }, 1, { Phaser: { Scene: class {} } });
+  const scene = new AH.Scenes[5]();
+  scene.L = { theme: 'roof' };
+  scene.mode = 'run';
+  scene.rects = [];
+  scene.add = {
+    image(...args) { calls.push(['image', ...args]); return display; },
+    tileSprite(...args) { calls.push(['tile', ...args]); return display; },
+    zone(...args) { zones.push(args); return {}; }
+  };
+  scene.solids = { add() {} };
+  for (const theme of ['docker', 'aks', 'actions', 'pipelines', 'entra', 'functions']) {
+    scene.addPlatform({ x: 100, y: 200, w: 110, h: 100, cloudKind: theme });
+    scene.addPlatform({ x: 0, y: 300, w: 3500, h: 100, cloudKind: theme, pipeFloor: true });
+    assert.ok(calls.some(c => c[0] === 'tile' && c[5] === 'cloud_floor_' + theme));
+  }
+  assert.equal(calls.filter(c => c[0] === 'cargo').length, 6);
+  assert.equal(calls.filter(c => c[0] === 'image' && c[3] === 'cargo').length, 6);
+  assert.deepEqual(zones[0], [155, 250, 110, 100]);
+  assert.deepEqual(zones[1], [1750, 350, 3500, 100]);
+  assert.equal(scene.rects.length, 12);
+});
+
+test('room scenery variants cover street ambience and parallax is isolated and density-aware', () => {
+  const calls = [];
+  const display = () => ({
+    img: {}, visible: true, depth: 0,
+    setOrigin() { return this; }, setScrollFactor() { return this; }, setTint() { return this; },
+    setVisible(v) { this.visible = v; return this; },
+    setDepth(d) { this.depth = d; return this; }
+  });
+  const AH = load('systems/scenes.js', {
+    Levels: { ids: [1] }, Art: { D: 2 }, Audio: { music() {} },
+    PixelText: class { constructor() { return display(); } }
+  }, 1, { Phaser: { Scene: class {} } });
+  const scene = new AH.Scenes[5]();
+  const zone = { x: 10000, w: 3500, theme: 'docker', name: 'DOCKER', hint: 'SHIP',
+    stages: [], exit: { x: 13400, y: 254 } };
+  scene.L = { width: 9000, pipeZones: [zone] };
+  scene.add = {
+    image(...args) { calls.push(args); return display(); },
+    tileSprite() { return display(); }
+  };
+  scene.tweens = { add() {} };
+  scene.textures = { exists: () => false };
+  scene.buildPipes();
+  assert.deepEqual(calls.map(c => c[2]), [
+    'challenge_bg_docker', 'challenge_bg_docker_1', 'challenge_bg_docker_2',
+    'challenge_bg_docker', 'challenge_bg_docker_1', 'challenge_bg_docker_2'
+  ]);
+  const sky = scene.pipeSkies[0].sky;
+  assert.ok(sky.depth > -16.9, 'room sky covers regional scenery, road and time-of-day wash');
+  assert.equal(sky.visible, false);
+  scene.fx = display();
+  scene.cameras = { main: { scrollX: 11000, setBounds() {} } };
+  scene.physics = { world: { setBounds() {} } };
+  scene.inPipe = zone;
+  scene.warping = true;
+  scene.updatePipes(0, null);
+  assert.equal(sky.visible, true);
+  assert.equal(sky.tilePositionX, 440);
+  assert.equal(scene.fx.visible, false);
+  scene.leavePipeNow();
+  assert.equal(sky.visible, false);
+  assert.equal(scene.fx.visible, true);
+  scene.updatePipes(0, null);
+  assert.equal(sky.visible, false);
+});
+
 test('random worlds have distinct, disjoint, substantial cloud challenges and vertical routes', () => {
   const { Levels } = load('levels/worlds.js');
   const themes = new Set();
+  let walls = 0, stairs = 0;
   for (const meta of Levels.worlds) {
     for (let run = 0; run < 80; run++) {
       const L = Levels.make(meta.id);
@@ -32,8 +108,20 @@ test('random worlds have distinct, disjoint, substantial cloud challenges and ve
           L.movers.some((m) => m.x0 > a.x + a.w && m.x0 < b.x);
         if (!spanned) {
           assert.ok(gap <= 195, meta.city + ' needs a bridge/boat for a wider gap');
-          if (gap > 140) assert.ok(a.y - b.y <= 20, 'wide-gap rises must remain double-jump reachable');
+          if (gap > 140 && a.y - b.y > 20) {
+            // ledge stairs: each hop (roof -> ledge -> ledge -> roof) stays within one jump
+            const steps = L.platforms.filter((p) => p.ledge && p.x > a.x + a.w && p.x < b.x).sort((p, q) => p.x - q.x);
+            assert.equal(steps.length, 2, 'wide-gap rises need ledge stairs');
+            for (const [lo, hi] of [[a, steps[0]], [steps[0], steps[1]], [steps[1], b]]) assert.ok(lo.y - hi.y <= 60, 'stair hops stay one jump high');
+            stairs++;
+          }
         }
+        if (gap === 0 && a.y - b.y > 70) {
+          assert.ok(b.climb && b.wallFrom === a.y, 'rises above a jump are marked climb walls');
+          assert.ok(a.y - b.y <= 186, 'climb walls stay within wall-jump reach');
+          walls++;
+        }
+        assert.ok(b.y >= 106, 'rooftops stay below the HUD');
       }
       assert.ok(L.platforms.some((p) => p.float && p.x < L.width));
       assert.ok(L.enemies.filter((e) => e.x < L.width).length >= 20);
@@ -47,13 +135,20 @@ test('random worlds have distinct, disjoint, substantial cloud challenges and ve
         }
       }
       if (meta.id === 1) assert.ok(L.obstacles.some((o) => o.kind === 'herring'));
+      if (meta.id === 3) assert.ok(L.obstacles.some((o) => o.kind === 'bakery'), 'Paris has a bakery stall');
+      // Regional rooms stay home: only Paris opens the Metro, always behind its first pipe.
+      assert.equal(L.pipeZones[0].theme === 'metro', meta.region === 'francecentral');
+      assert.equal(L.pipeZones[1].theme === 'metro', false);
+      for (const q of L.platforms.filter((p) => p.pipe)) assert.ok(q.theme, 'pipes carry their room theme');
       for (const Z of L.pipeZones) {
         themes.add(Z.theme);
         assert.ok(Z.w >= 3200 && Z.w <= 3840);
         assert.equal(Z.stages.length, 5);
         assert.ok(Z.enemies.length >= 10);
         assert.ok(Z.timeBonus >= Z.w / 190);
-        assert.equal(Z.platforms.filter((p) => p.lowTunnel).length, 5);
+        assert.ok(Z.platforms.some((p) => p.lowTunnel));
+        assert.ok(Z.platforms.filter((p) => p.lowTunnel).length < Z.stages.length);
+        assert.equal(new Set(Z.stages.map((s) => s.layout)).size, 5);
         assert.ok(Z.entry.x < Z.exit.x);
         for (const p of Z.platforms) {
           assert.ok(p.x >= Z.x && p.x + p.w <= Z.x + Z.w);
@@ -68,7 +163,8 @@ test('random worlds have distinct, disjoint, substantial cloud challenges and ve
       }
     }
   }
-  assert.deepEqual([...themes].sort(), ['actions', 'aks', 'docker', 'pipelines']);
+  assert.deepEqual([...themes].sort(), ['actions', 'aks', 'docker', 'entra', 'functions', 'metro', 'pipelines']);
+  assert.ok(walls > 50 && stairs > 50, 'run worlds regularly mix climb walls and ledge stairs');
 });
 
 test('duck body preserves feet, cannot stand under beams, and blasts fire low', () => {
@@ -104,9 +200,97 @@ test('duck body preserves feet, cannot stand under beams, and blasts fire low', 
   assert.equal(body.bottom, 300);
 });
 
+test('MFA shield works on E (ground and air) and as a crouch guard on DOWN; DOWN + direction slides', () => {
+  const AH = load('systems/player.js', { Art: { D: 2 }, Audio: { play() {} } });
+  const chain = new Proxy({}, { get: (t, k) => (k in t ? t[k] : () => chain) });
+  const body = {
+    x: 100, width: 14, height: 40, position: { y: 260 }, prev: { y: 260 }, prevFrame: { y: 260 },
+    velocity: { x: 0, y: 0 }, blocked: { down: true }, touching: { down: false },
+    get y() { return this.position.y; }, get bottom() { return this.y + this.height; }, get right() { return this.x + this.width; },
+    setSize(w, h) { this.height = h / 2; }, setOffset() {}, updateCenter() {}
+  };
+  const sprite = Object.assign(Object.create(chain), { x: 107, y: 277, body, setVelocityX(v) { body.velocity.x = v; return this; } });
+  const p = Object.create(AH.Player.prototype);
+  Object.assign(p, {
+    sprite, scene: { rects: [], burst() {}, cameras: { main: { scrollX: 0 } } }, shieldFx: chain, mode: 'run', facing: 1,
+    invuln: 0, defender: 0, blastCd: 0, attackT: 0, slideT: 0, slideCd: 0, boost: 100, jumps: 0, coyote: 0,
+    riding: false, speedMul: 1, runT: 0, pre: 'hl_', slideHits: new Set(), ducking: false, health: 100
+  });
+  const cmd = (o) => Object.assign({ left: false, right: false, up: false, down: false, jumpPressed: false, fire: false, boost: false, shield: false }, o);
+  p.update(1 / 60, cmd({ shield: true }));
+  assert.equal(p.shielding, true, 'E shields on the ground');
+  p.update(1 / 60, cmd({ down: true }));
+  assert.equal(p.shielding, true, 'DOWN while standing still is a crouch guard');
+  assert.equal(p.ducking, true);
+  const shots = [];
+  p.scene.spawnBlast = (x, y, dir, o) => shots.push({ y, charge: o.charge });
+  for (let i = 0; i < 80; i++) p.update(1 / 60, cmd({ down: true, fire: i === 0, fireHeld: true }));
+  assert.equal(p.shielding, false, 'holding F lowers the crouch guard');
+  assert.equal(p.ducking, true, 'and the hero stays ducked to charge a low shot');
+  p.update(1 / 60, cmd({ down: true }));
+  assert.equal(shots.length, 1, 'releasing F while ducking fires');
+  assert.ok(shots[0].charge >= 0.3, 'the low shot keeps its charge');
+  assert.equal(shots[0].y, body.bottom - 10 - 5 * shots[0].charge, 'and leaves at feet height, clear of the floor');
+  p.update(1 / 60, cmd({}));
+  body.blocked.down = false;
+  p.update(1 / 60, cmd({ shield: true }));
+  assert.equal(p.shielding, true, 'E also shields in the air');
+  body.blocked.down = true;
+  p.update(1 / 60, cmd({}));
+  p.update(1 / 60, cmd({ down: true, right: true }));
+  assert.equal(p.sliding, true, 'DOWN + direction slides');
+  assert.equal(p.shielding, false, 'sliding is an attack, not a guard');
+});
+
+test('wall slide slows the fall and wall jumps kick away while keeping the double jump', () => {
+  const AH = load('systems/player.js', { Art: { D: 2 }, Audio: { play() {} } });
+  const chain = new Proxy({}, { get: (t, k) => (k in t ? t[k] : () => chain) });
+  const body = {
+    x: 100, width: 14, height: 40, position: { y: 200 }, prev: { y: 200 }, prevFrame: { y: 200 },
+    velocity: { x: 0, y: 300 }, blocked: { down: false, right: true }, touching: { down: false },
+    get y() { return this.position.y; }, get bottom() { return this.y + this.height; }, get right() { return this.x + this.width; },
+    setSize(w, h) { this.height = h / 2; }, setOffset() {}, updateCenter() {},
+    setVelocityX(v) { this.velocity.x = v; }, setVelocityY(v) { this.velocity.y = v; }
+  };
+  const sprite = Object.assign(Object.create(chain), {
+    x: 107, y: 220, body,
+    setVelocityX(v) { body.velocity.x = v; return this; }, setVelocityY(v) { body.velocity.y = v; return this; },
+    setVelocity(x, y) { body.velocity.x = x; body.velocity.y = y; return this; }
+  });
+  const p = Object.create(AH.Player.prototype);
+  Object.assign(p, {
+    sprite, scene: { rects: [], burst() {}, cameras: { main: { scrollX: 0 } } }, shieldFx: chain, mode: 'run', facing: 1,
+    invuln: 0, defender: 0, blastCd: 0, attackT: 0, slideT: 0, slideCd: 0, boost: 100, jumps: 2, coyote: 0,
+    riding: false, speedMul: 1, runT: 0, pre: 'hl_', slideHits: new Set(), ducking: false, health: 100
+  });
+  const cmd = (o) => Object.assign({ left: false, right: false, up: false, down: false, jumpPressed: false, fire: false, boost: false, shield: false }, o);
+  p.update(1 / 60, cmd({ right: true }));
+  assert.equal(p.wallSliding, true, 'pushing into a wall in the air slides');
+  assert.ok(body.velocity.y <= 110, 'wall slide caps the fall speed');
+  p.update(1 / 60, cmd({ right: true, jumpPressed: true }));
+  assert.equal(p.wallJumps, 1, 'jump on a wall is a wall jump even after a double jump');
+  assert.ok(body.velocity.y < -380, 'wall jump launches upward');
+  assert.ok(body.velocity.x < 0, 'wall jump kicks away from the wall');
+  assert.equal(p.jumps, 1, 'wall jump restores the double jump');
+  body.blocked.right = false;
+  p.update(1 / 60, cmd({ right: true }));
+  assert.ok(body.velocity.x < 0, 'the kick briefly overrides input toward the wall');
+});
+
 test('all cloud threat types retain two-hit health, shared behavior and credit drops', () => {
   let drops = 0;
-  const AH = load('systems/enemies.js', { Art: { D: 2 }, Audio: { play() {} } });
+  const tags = [];
+  class PixelText {
+    constructor(scene, x, y, str, o) { this.str = str; this.o = o; this.destroyed = false; tags.push(this); }
+    setDepth() { return this; } setVisible(v) { this.visible = v; return this; } setPosition() { return this; }
+    destroy() { this.destroyed = true; }
+  }
+  const AH = load('systems/enemies.js', { Art: { D: 2 }, Audio: { play() {} }, PixelText });
+  const cats = Object.keys(AH.Enemy.CATS);
+  for (const [type, spec] of Object.entries(AH.Enemy.SPEC)) {
+    assert.ok(spec.label && spec.info && cats.includes(spec.cat), type + ' has a nameplate, threat category and guide text');
+    assert.match(spec.label + spec.info, /^[A-Z0-9 .!':\/+,?-]+$/, type + ' text fits the pixel font');
+  }
   for (const type of ['bug', 'image', 'rbac', 'endpoint', 'guest']) {
     const body = { setSize() {}, setOffset() {}, setAllowGravity() {}, setVelocityX() {}, setVelocityY() {} };
     const sprite = {
@@ -125,6 +309,16 @@ test('all cloud threat types retain two-hit health, shared behavior and credit d
     assert.equal(e.dead, false);
     e.hit(1);
     assert.equal(e.dead, true);
+    assert.equal(tags[tags.length - 1].destroyed, true, 'nameplate is removed with the enemy');
   }
   assert.equal(drops, 5);
+});
+
+test('every region has exactly one unlockable hero suit and locked suits are enforced', () => {
+  const { Levels } = load('levels/worlds.js');
+  const src = fs.readFileSync(path.join(__dirname, '..', 'art/sprites.js'), 'utf8');
+  const unlocks = [...src.matchAll(/\{ name: '([A-Z ]+)', unlock: (\d+), suit:/g)].map((m) => +m[2]);
+  assert.deepEqual(unlocks, [...Levels.ids].map((id, i) => i), 'one suit per level, in world order');
+  assert.match(src, /suitOpen = \(i, unlocked\) => .*unlock \+ 2/, 'a suit opens once its level index is cleared');
+  assert.match(src, /if \(!suitOpen\(out\.suit, data && data\.unlocked\)\) out\.suit = /, 'lookOf never returns a locked suit');
 });

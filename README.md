@@ -32,7 +32,7 @@ The game remembers where you left off. **C: Continue** on the title screen or ma
 |-------|--------------|-------|------|------|
 | 1 | `westeurope` | Amsterdam Canal Run: canal houses, Centraal Station, Schiphol, Microsoft HQ, Kinderdijk, Rotterdam, The Hague | Windmill Titan | Run |
 | 2 | `uksouth` | London Thames Run: Big Ben, Tower Bridge, Stonehenge, Edinburgh, Glenfinnan, a secret phone box | Bearskin Sentinel | Run |
-| 3 | `francecentral` | Paris Seine Run: Eiffel Tower, Louvre, Mont-Saint-Michel, Carcassonne, a secret Metro entrance | Chef de Chaos | Run |
+| 3 | `francecentral` | Paris Seine Run: Eiffel Tower, Sacre-Coeur, Moulin Rouge, zinc rooftops, bakeries, bateaux-mouches, Louvre, Mont-Saint-Michel, a Metro sub-level and a ghost station | Chef de Chaos | Run |
 | 4 | `japaneast` | Tokyo Skyway Pursuit: Mount Fuji, Tokyo Tower, Himeji, Osaka Castle, Shinkansen | Sumo Shogun (hovering) | Flight |
 | 5 | `australiaeast` | Sydney Harbour Run: Opera House, Harbour Bridge, Uluru, Twelve Apostles | Boxing Roo | Run |
 | 6 | `italynorth` | Venice Lagoon Run: Rialto, St Mark's, gondolas, Colosseum, Leaning Tower of Pisa, a Trevi portal | Gladiator Maximus | Run |
@@ -49,16 +49,17 @@ Every region also has cyber-threat enemies: **Phishing hoppers** leap at you, **
 
 Run levels are not just rooftops. The ground matches the city: canal quays and brick bridges in Amsterdam, the Thames embankment promenade in London and harbour piers in Sydney. Fall in the water and you lose a life. Canal boats and ferries carry you across. Amsterdam's pull-up bridges lift on a timer, so watch for the flashing warning before you cross.
 
-- **Azure Bike** (Amsterdam, London): run into it to ride. It is faster and rams enemies, but one hit knocks you off.
+- **Azure Bike** (Amsterdam, London): run into it to ride. It doubles your running speed (about 360 instead of 190 px/s, with a speed trail and wider look-ahead) and rams enemies, but one hit knocks you off.
 - **Secret phone box** (London): stand inside for a moment to warp to a bonus room full of credits.
 - **Shooting enemies**: some walkers fire bolts back at you. Streets have denser patrols, including low cloud threats that can be slide-attacked or blasted while ducking.
 - **Vertical routes**: taller steps, deeper drops and more upper walkways reward jumping between street and rooftop routes. Pipe entrances and returns are reserved before hazards are placed.
 - **Amsterdam street life**: look for Hollandse Haring stands, larger bicycles and more legible small-car traffic.
+- **Paris street life**: boulangerie stalls on the quays, Haussmann zinc rooftops, bateaux-mouches on the Seine and Guimard Metro entrances. The Eiffel Tower, Sacre-Coeur and Moulin Rouge appear more often than other local landmarks.
 - **No repeats**: a scenery strip of local landmarks and Microsoft billboards scrolls behind the street. The same landmark never shows twice on screen.
 
 Microsoft touches: the Microsoft logo in the HUD and title, Microsoft HQ and Azure/Copilot/Xbox signs in the scenery, a Bliss-style hill, a Blue Screen game over and an Azure portal "Deployment succeeded" level-complete panel.
 
-Every level ends in an arena with that region's boss. Ground bosses must be blocked with the MFA Shield until they are stunned. Hovering bosses (Tokyo, Rio) cannot be blocked: dodge their volleys, then blast them while they are exposed. The exit opens when the boss is down.
+Every level ends in an arena with that region's boss. Bosses attack faster as their health drops, with telegraphed charges and staggered volleys. **Red health bar / ARMORED means shots cannot damage the boss. Green bar, target brackets and OPEN countdown mean fire now.** Ground bosses open after you block two shots or a charge with the MFA Shield. Jump or dodge a charge and the boss slams into the arena wall, dazed for over three seconds. All bosses overheat after three attacks, so there is always a damage opportunity. Hovering bosses must be dodged. Old bullets clear when the damage window opens. The exit opens when the boss is down. Losing a life restores defeated enemies, except those close to the checkpoint.
 
 ### Power-ups
 
@@ -69,10 +70,49 @@ Every level ends in an arena with that region's boss. Ground bosses must be bloc
 | GitHub Actions | Turbo speed for 9 s |
 | Power BI | Coin magnet and double score for 12 s |
 | Teams | Instant +30 health |
+| Event Grid Spread | Replaces the blaster for 25 s: three fan shots, five when charged |
+| Cosmos Beam | Replaces the blaster for 25 s: pierces three enemies, five when charged; stops at walls |
 
-Clippy warns you when health is low, and Xbox-style achievements pop up for firsts. Open the **Hero Lab** on the title screen with **H** to choose a male or female hero, skin tone, hair style, hair colour and suit colour, plus **local wardrobe** from the game's regions: a Texas cowboy hat, Mexican sombrero, London bowler, Paris beret, Dutch King's Day crown, Japanese hachimaki, Australian cork hat, Venetian gondolier hat, Rio carnaval plumes, a Redmond Azure cap or a Virginia tricorn, and extras such as Dutch wooden clogs, a football scarf, a serape, a flower garland or a bandana. The choice is saved and shows in every pose, including flight.
+**Tap F and release for a quick shot; hold F up to 1.2 seconds, then release for a stronger shot.**
+The touch BLAST button works the same way. The HUD shows the weapon, remaining pickup
+time and charge; a glowing muzzle signals charge readiness. Charged Azure/Cosmos shots
+deal up to three normal hits and use up to 20 extra Boost. Spread pellets each deal one
+hit. A new weapon pickup replaces the previous one; expiry or respawn restores Azure
+Blast. Shielding with E, taking damage, pausing, opening Help or warping cancels a held charge. Hold Down and F to charge a low shot: pressing F lowers the crouch guard.
+Every world offers both weapon pickups, including flight and data-center levels.
 
-Street levels have two warp pipes into different randomly selected **cloud challenges**. Press Down (or stand still) on a pipe to enter; its label names the destination. Each underground room is 3,320-3,820 pixels long with five sections, 10-15 enemies, upper rewards, low service ducts, an MFA token and two power-ups:
+Clippy warns you when health is low, and Xbox-style achievements pop up for firsts. Open the **Hero Lab** on the title screen with **E** to choose a male or female hero, skin tone, hair style, hair colour and suit colour, plus **local wardrobe** from the game's regions: a Texas cowboy hat, Mexican sombrero, London bowler, Paris beret, Dutch King's Day crown, Japanese hachimaki, Australian cork hat, Venetian gondolier hat, Rio carnaval plumes, a Redmond Azure cap, a Virginia tricorn or a hijab (its scarf colour is set on the colour row), and extras such as Dutch wooden clogs, a football scarf, a serape, a flower garland or a bandana. The choice is saved and shows in every pose, including flight.
+
+The game renders at 1280x720 (`AH.VIEW_SCALE = 2`) while game logic stays at 640x360, so the hero, HUD and text stay sharp. The Hero Lab and title screen use a high-detail hero portrait.
+
+**Regional wardrobe.** Each clear unlocks an outfit with a distinct garment shape,
+a hairstyle and an accessory, announced on the deployment screen. Preview locked
+items in Hero Lab, but clear their region before saving them. Classic wardrobe and
+previously earned progress remain available. The **Cowboy** (denim western shirt,
+leather vest, sheriff star, buckle) and **India Kurta** (long kurta under a Nehru
+jacket) outfits are open from the start.
+
+**Gold Mode (easter egg).** On the title screen type Up, Up, Down, Down, Left,
+Right, Left, Right, A. You get a golden suit and 30 lives for that browser session.
+Gold runs are a sandbox: their scores are never submitted to the leaderboard and
+nothing is saved (no bests, unlocks or continue point). Reload the page to leave it.
+
+| Clear region | Outfit | Hairstyle | Accessory |
+|---|---|---|---|
+| Amsterdam | Canal Jacket | Canal Braid | Tulip Pin |
+| London | Formal Coat | Tailored Part | Pocket Watch |
+| Paris | Breton Top | Seine Waves | Silk Neckerchief |
+| Tokyo | Kimono | Tidy Bun | Obi Cord |
+| Sydney | Reef Vest | Surf Crop | Shell Pendant |
+| Venice | Gondolier | Lagoon Sweep | Lagoon Ribbon |
+| Rio | Rio Tracksuit | Rio Curls | Sport Wristbands |
+| Mexico City | Charro Jacket | Ribbon Braid | Silver Bow |
+| Redmond | Campus Hoodie | Campus Undercut | Campus Satchel |
+| Virginia | Trail Coat | Crown Coils | Trail Compass |
+
+**Know your threat.** Every enemy carries a nameplate coloured by category: red = malware, orange = network, pink = identity, yellow = DevOps. Press **H** for the Hero Handbook, which lists every threat and how to beat it.
+
+Street levels have two warp pipes into different randomly selected **cloud challenges**. Press Down (or stand still) on a pipe to enter; its label names the destination. Each underground room is 3,200-3,840 pixels long with five shuffled sections, at least ten enemies, upper rewards, an MFA token and weapon/support pickups:
 
 | Challenge | Route and mission |
 |-----------|-------------------|
@@ -80,10 +120,81 @@ Street levels have two warp pipes into different randomly selected **cloud chall
 | AKS Container Cluster | Climb node pools and pods; clear RBAC issues and exposed ingress. |
 | GitHub Actions | Follow upper runner platforms over lasers; review guest identities before release. |
 | Docker Image Dock | Climb container stacks, patch unsafe images and ship through Azure Container Registry to Container Apps. |
+| Entra Access Vault | Navigate an identity vault, verify identities, review access and apply least privilege. |
+| Azure Functions Reactor | Route events through a reactor, secure triggers and bindings, and monitor workloads. |
+| Paris Metro - Ligne 14 (Paris only) | Ride through tiled stations with passing trains; route traffic with Front Door, WAF, DDoS Protection and Private Endpoints. |
 
-Duck or slide under ducts, or jump onto their roofs. Each room grants extra time once on entry. The exit pipe returns you farther along the street and sets a checkpoint.
+Rooms shuffle seven distinct layout types: steps, catwalks, ducts, split-level routes,
+security-laser crossings, encounter arenas and switchbacks. Bay widths, lesson order,
+threats and rewards vary, and layouts do not repeat within a room. Duck or slide under
+ducts, or jump onto their roofs. Each room grants extra time once on entry. The exit
+pipe returns you farther along the street and sets a checkpoint.
+
+Docker and AKS rooms are shipping-container docks with corrugated cargo stacks,
+locking bars, cranes, harbour water and work lights. GitHub Actions and Azure
+Pipelines use industrial runner workshops with assembly arms, conveyors and
+workstations. Entra adds circular vault doors, identity cabinets and access circuits;
+Functions adds reactor cores, trigger conduits and event-processing machinery.
+Layered scenery and three background variations give the rooms depth.
+Paris always opens the Metro behind its first pipe (a Guimard entrance); the
+second pipe uses a shared theme. Regions can add their own room the same way.
+
+### Testing a specific world or challenge
+
+For normal play, select its region on the world map (world IDs are in the table
+above). For development, run `npm start` and use a separate browser guest profile:
+starting a level updates local resume progress. Do not sign in or submit test scores.
+
+After the title screen loads, open the browser developer console:
+
+```js
+console.table(AH.Levels.worlds.map(({ id, city }) => ({ id, city })));
+const active = AHGame.scene.getScenes(true)[0];
+active.scene.start('Level', { id: 1 }); // Amsterdam; replace 1 with any world ID
+```
+
+Once the level appears, inspect its two randomly selected pipe destinations:
+
+```js
+const level = AHGame.scene.getScene('Level');
+console.table(level.L.pipeZones.map(({ theme, name }) => ({ theme, name })));
+const room = level.L.pipeZones.find(z => z.theme === 'docker');
+if (room) level.warpPipe(
+  level.player.x, level.player.y, room.entry.x, room.entry.y,
+  [room.x, room.w], room
+);
+```
+
+Theme names are `docker`, `aks`, `actions`, `pipelines`, `entra`, `functions`, and
+`metro` (Paris, `{ id: 3 }`, first pipe). If the desired theme is
+absent, press R to regenerate the world, then rerun the room snippet. Flight worlds
+and Virginia have no pipe rooms. Use the actual exit pipe to check the return.
+Append `?touch=1` to the local URL to check the touch layout; this does not replace
+real-device testing. These are developer-console calls to existing scene APIs;
+no diagnostic routes or cheats are added to the shipped game.
+
+To hear a specific track, run `AH.Audio.music('metro')` (see Music below).
 
 Collect 5 MFA tokens for an extra life. Every enemy takes 2 hits and drops an Azure Credit. Best score, unlocked levels and the resume point are stored in `localStorage`, and synced to your account when you are logged in.
+
+## Music
+
+Music is a synthesised chiptune engine (`systems/audio.js`, Web Audio only, no audio
+files). A lookahead scheduler plays multi-section songs written as per-bar chords and
+melody strings; bass, chords and drums are generated from style patterns, on a music
+bus with a compressor and echo below the sound effects.
+
+| Track | Where |
+|-------|-------|
+| `title` | Title screen and world map |
+| `main` | Street levels; Paris plays a musette waltz, Amsterdam a street organ, London a march and Tokyo a koto theme. Other regions use the default theme. |
+| `pipe` | Cloud challenge rooms |
+| `metro` | The Paris Metro room (swing manouche) |
+| `bonus` | Secret bonus rooms |
+| `boss` | Boss arenas |
+
+`AH.Audio.music(kind, region)` starts a track; calling it again with the same track
+does not restart it, and `music(null)` stops. M mutes music and effects.
 
 ## Controls
 
@@ -91,15 +202,19 @@ Collect 5 MFA tokens for an extra life. Every enemy takes 2 hits and drops an Az
 |--------|----------|-------|
 | Move | Arrow keys / WASD | Left / Right buttons |
 | Jump / Double jump | Space (double-tap for double jump), Up, W | Jump button |
-| Azure Blast (costs Boost) | F | Attack button |
+| Wall slide / Wall jump | In the air, hold toward a wall to slide; press Jump to kick off (repeat to climb) | Direction + Jump |
+| Quick shot / charged shot (also destroys enemy bullets) | Tap F / hold F then release | Tap / hold BLAST then release |
 | Flight Boost | Shift | - |
 | Duck / Slide attack | S or Down; hold while moving to slide | Duck + direction |
 | Low Azure Blast | F while ducking | Duck + Blast |
-| MFA Shield (blocks boss attacks) | E | Shield button |
-| Pause / Restart / Mute | P / R / M | Pause button |
+| MFA Shield (blocks shots and boss hits from the front, works in the air) | E | Shield button |
+| Crouch guard (low shield) | Down / S while standing still | Duck button |
+| Pause / Restart / Mute | P or Esc / R / M | Pause button |
+| Help (Hero Handbook) | H (title and in game) | HELP button |
+| Quit to title | Q, or QUIT in the pause menu | Pause > QUIT |
 | Enter pipe | Down on a pipe | Stand still on the pipe |
 | Continue / High scores / Log in | C / B / L (title and map) | Tap the menu item |
-| Hero Lab | H (title) | Tap the hero |
+| Hero Lab | E (title) | Tap the hero |
 
 Add `?touch=1` to the URL to force the touch controls on a desktop browser.
 
