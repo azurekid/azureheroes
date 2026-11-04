@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Microsoft Azure Heroes 2027</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#0a0720">
+  <meta name="description" content="Microsoft Azure Heroes 2027 - a 16-bit synthwave side-scrolling adventure.">
+  <style>
+    html, body { margin: 0; height: 100%; background: #0a0720; overflow: hidden; overscroll-behavior: none; }
+    body { display: flex; align-items: center; justify-content: center; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; touch-action: none; }
+    #game { width: 100vw; height: 100vh; height: 100dvh; display: flex; align-items: center; justify-content: center; }
+    canvas { image-rendering: pixelated; image-rendering: crisp-edges; display: block; touch-action: none; }
+    #rotate { display: none; position: fixed; left: 0; right: 0; top: 0; padding: 8px; text-align: center; background: #0b0830; color: #ffe14a; font: bold 13px monospace; letter-spacing: 1px; border-bottom: 2px solid #27e0ff; z-index: 5; }
+    @media (orientation: portrait) and (pointer: coarse) { #rotate { display: block; } }
+    noscript { color: #fff; font: 16px monospace; }
+  </style>
+</head>
+<body>
+  <div id="rotate">ROTATE YOUR DEVICE FOR THE BEST EXPERIENCE</div>
+  <div id="game"><noscript>Microsoft Azure Heroes 2027 needs JavaScript enabled.</noscript></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/phaser@3.80.1/dist/phaser.min.js"></script>
+  <script src="art/sprites.js"></script>
+  <script src="ui/hud.js"></script>
+  <script src="levels/level2.js"></script>
+  <script src="levels/level3.js"></script>
+  <script src="levels/level4.js"></script>
+  <script src="systems/audio.js"></script>
+  <script src="systems/input.js"></script>
+  <script src="systems/player.js"></script>
+  <script src="systems/enemies.js"></script>
+  <script src="systems/boss.js"></script>
+  <script src="systems/scenes.js"></script>
+  <script>
+    window.addEventListener('load', function () {
+      window.AHGame = new Phaser.Game({
+        type: Phaser.AUTO,
+        parent: 'game',
+        width: 640,
+        height: 360,
+        backgroundColor: '#0a0720',
+        pixelArt: true,
+        roundPixels: true,
+        input: { activePointers: 4 },
+        physics: { default: 'arcade', arcade: { gravity: { y: 1100 }, debug: false } },
+        scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH },
+        scene: AH.Scenes
+      });
+      ['gesturestart', 'dblclick'].forEach(function (e) { document.addEventListener(e, function (ev) { ev.preventDefault(); }); });
+    });
+  </script>
+</body>
+</html>
