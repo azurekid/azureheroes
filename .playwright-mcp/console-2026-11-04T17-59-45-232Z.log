@@ -1,0 +1,10 @@
+[       0ms] Error: Page crashed and was reset to about:blank.
+    at _Tab.logErrorMessage (/Users/rogier/.npm/_npx/9833c18b2d85bc59/node_modules/playwright-core/lib/coreBundle.js:67171:62)
+    at Context.ensureTab (/Users/rogier/.npm/_npx/9833c18b2d85bc59/node_modules/playwright-core/lib/coreBundle.js:67592:28)
+    at runNextTicks (node:internal/process/task_queues:64:5)
+    at process.processImmediate (node:internal/timers:472:9)
+    at async Object.handle (/Users/rogier/.npm/_npx/9833c18b2d85bc59/node_modules/playwright-core/lib/coreBundle.js:70193:13)
+    at async BrowserBackend.callTool (/Users/rogier/.npm/_npx/9833c18b2d85bc59/node_modules/playwright-core/lib/coreBundle.js:68359:11)
+    at async /Users/rogier/.npm/_npx/9833c18b2d85bc59/node_modules/playwright-core/lib/coreBundle.js:74721:26
+    at async wrappedHandler (/Users/rogier/.npm/_npx/9833c18b2d85bc59/node_modules/playwright-core/lib/utilsBundle.js:82024:24)
+[   50599ms] [ERROR] Executing inline event handler violates the following Content Security Policy directive 'script-src 'nonce-oCCjeUsq-vwOSDyXeaTX1A' 'strict-dynamic' 'report-sample' 'unsafe-eval' 'unsafe-inline' https: http:'. Note that 'unsafe-inline' is ignored if either a hash or nonce value is present in the source list. The action has been blocked. @ https://www.google.com/search?q=about%3Ablank&oq=about%3Ablank&gs_lcrp=EgZjaHJvbWUyBggAEEUYOjIGCAEQRRg50gEHOTc4ajBqMqgCALACAA&sourceid=chrome&ie=UTF-8&sei=w3LrapjOE-3o7_UP3oyquQ8:0

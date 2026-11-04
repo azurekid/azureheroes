@@ -24,11 +24,15 @@ function art() {
     canvas.getContext = () => ctx;
     return canvas;
   } };
-  // Isolate the actual hero rig and public exports, avoiding unrelated world art.
+  // Isolate the actual hero rig and rogue hacker reference, avoiding unrelated world art.
   const prefix = source.slice(0, source.indexOf("  reg2('shield_fx'"));
+  const enemyStart = source.indexOf('  function hackerFrame(step)');
+  const enemyEnd = source.indexOf('  /* climb walls:', enemyStart);
+  assert.ok(enemyStart >= 0 && enemyEnd > enemyStart, 'rogue hacker art exists');
+  const enemy = source.slice(enemyStart, enemyEnd);
   const exports = source.slice(source.lastIndexOf('    hero: {'), source.lastIndexOf('    generate: function'));
   const context = vm.createContext({ window: {}, document });
-  vm.runInContext(prefix + '\nAH.Art = {D: D,\n' + exports + '};})();', context);
+  vm.runInContext(prefix + '\n' + enemy + '\nAH.Art = {D: D, rogue: defs.hacker_0,\n' + exports + '};})();', context);
   return context.window.AH.Art;
 }
 const A = art(), H = A.hero;
@@ -39,6 +43,46 @@ function scene() {
     anims: { exists: (key) => anims.has(key), create: ({ key }) => anims.add(key) }
   };
 }
+function hasPath(canvas, points) {
+  return canvas.ops.some((op, i) => points.every(([x, y], j) => {
+    const p = canvas.ops[i + j];
+    return p && p[0] === (j ? 'lineTo' : 'moveTo') && p[1] === x && p[2] === y;
+  }));
+}
+function hasCape(canvas, frame) {
+  return hasPath(canvas, frame === 'fly'
+    ? [[14, 18], [2, 14], [0.8, 20]]
+    : [[12, 14], [20, 15], [19.5, 24]]);
+}
+const hackerHoodPath = [[11, 4.7], [12.4, 2.4], [16, 1.4]];
+const hackerLogo = [
+  [[18.2, 18.2], [19.4, 19.3]],
+  [[19.4, 19.3], [18.2, 20.4]],
+  [[20, 20.4], [21, 20.4]]
+];
+function hasRoundedRect(canvas, x, y, w, h, r, color) {
+  return canvas.ops.some((op, i) => op[0] === 'moveTo' && op[1] === x + r && op[2] === y &&
+    canvas.ops[i + 1]?.[0] === 'arcTo' && canvas.ops[i + 1][1] === x + w &&
+    canvas.ops[i + 1][2] === y && canvas.ops[i + 1][4] === y + h &&
+    canvas.ops[i + 6]?.[0] === 'fillStyle' && canvas.ops[i + 6][1] === color);
+}
+function hackerHoodOps(canvas) {
+  const start = canvas.ops.findIndex((op) =>
+    op[0] === 'ellipse' && op[1] === 17 && op[2] === 7.8 && op[3] === 7.7 && op[4] === 7.6);
+  const end = canvas.ops.findIndex((op, i) =>
+    i > start && op[0] === 'moveTo' && op[1] === 13.8 && op[2] === 7.2);
+  assert.ok(start >= 4 && end > start, 'hood and visor are present');
+  return JSON.stringify(canvas.ops.slice(start - 4, end + 5));
+}
+function hackerTerminalOps(canvas) {
+  const start = canvas.ops.findIndex((op) => op[0] === 'moveTo' && op[1] === 2.2 && op[2] === 14.8);
+  const end = canvas.ops.findIndex((op, i) =>
+    i > start && op[0] === 'ellipse' && op[1] === 1.3 && op[2] === 17 && op[3] === 0.8);
+  assert.ok(start >= 1 && end > start, 'portable terminal is present');
+  return JSON.stringify(canvas.ops.slice(start - 1, end + 3));
+}
+const hasPupil = (canvas, x, radius) => canvas.ops.some((op) =>
+  op[0] === 'ellipse' && op[1] === x && op[2] === 8.4 && op[3] === radius);
 function lab(unlocked = 1) {
   const AH = { Levels: { ids: [] }, Art: A, Save: { data: { unlocked }, save() { this.saved = true; } }, Audio: { play() {} } };
   vm.runInNewContext(scenes, { window: { AH }, Phaser: { Scene: class {} } });
@@ -52,7 +96,7 @@ function lab(unlocked = 1) {
 }
 
 test('every region grants exactly one outfit, hair and accessory at its clear threshold', () => {
-  assert.equal(H.suits.length, 17);
+  assert.equal(H.suits.length, 18);
   assert.equal(H.styles.length, 17);
   assert.equal(H.gear.length, 16);
   for (let region = 0; region < 10; region++) {
@@ -92,6 +136,127 @@ test('saved locked or invalid wardrobe falls back without changing old saves', (
   assert.ok(H.hats.some((x) => x[0] === 'hijab'));
   assert.equal(A.lookOf({ hero: 'f' }).hair, 'long');
   assert.equal(A.lookOf({ look: { body: 'm', hair: 'bad', gear: 'bad', hat: 'bad', suit: 999 } }).hair, 'swoop');
+});
+
+test('Cloud Hacker is appended, open, and leaves existing saved suit indexes intact', () => {
+  const previous = ['AZURE', 'ROSE', 'VIOLET', 'TEAL', 'SUNSET', 'CANAL JACKET', 'FORMAL COAT', 'BRETON TOP',
+    'KIMONO', 'REEF VEST', 'GONDOLIER', 'RIO TRACKSUIT', 'CHARRO JACKET', 'CAMPUS HOODIE', 'TRAIL COAT',
+    'COWBOY', 'INDIA KURTA'];
+  assert.deepEqual([...H.suitNames.slice(0, 17)], previous);
+  assert.equal(H.suitNames[17], 'CLOUD HACKER');
+  assert.equal(H.wardrobeOpen('suit', 17, 1), true);
+  const suitColor = H.suits[17].match(/^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i);
+  assert.ok(suitColor, 'the hoodie has an explicit RGB color');
+  const channels = suitColor.slice(1).map((hex) => parseInt(hex, 16));
+  assert.ok(Math.max(...channels) <= 32, 'the hoodie base is near-black');
+  for (const body of ['m', 'f']) {
+    for (let suit = 0; suit <= 17; suit++) {
+      const look = { ...H.def[body], suit };
+      assert.equal(A.lookOf({ unlocked: 11, look }).suit, suit);
+    }
+    const look = { ...H.def[body], suit: 17, hair: 'afro', hat: 'none' };
+    assert.equal(JSON.stringify(A.lookOf({ unlocked: 1, look })), JSON.stringify(look));
+  }
+  const { lab: L, AH } = lab();
+  L.look.suit = 17;
+  L.done(true);
+  assert.equal(AH.Save.saved, true, 'the new style can be saved before any region is cleared');
+});
+
+test('Cloud Hacker renders every pose and explicit headwear replaces its built-in hood', () => {
+  const S = scene();
+  const enemyHood = hackerHoodOps(A.rogue), enemyTerminal = hackerTerminalOps(A.rogue);
+  for (const body of ['m', 'f']) for (const hair of ['swoop', 'afro', 'long', 'pony', 'braids']) for (const hat of ['none', 'bowler', 'cap', 'hijab', 'hachimaki']) {
+    const look = { ...H.def[body], suit: 17, hair, hat };
+    const prefix = A.buildHero(S, look);
+    for (const frame of frames) {
+      const normal = S.textures.get(prefix + frame);
+      const hd = S.textures.get(A.buildHeroHD(S, look, frame));
+      for (const [canvas, density] of [[normal, A.D], [hd, A.HD]]) {
+        assert.equal(canvas.width, 32 * density);
+        assert.equal(canvas.height, 48 * density);
+        const label = `${body} ${hair} ${hat} ${frame}`;
+        assert.equal(hasCape(canvas, frame), false, `${label} has no cape`);
+        assert.ok(hasRoundedRect(canvas, 12, 4.7, 10.2, 8, 3, '#1a101e'), `${label} keeps the dark face`);
+        assert.ok(hasRoundedRect(canvas, 13.2, 6.7, 7.8, 2.6, 0.8, '#d63c5c'), `${label} keeps the red visor`);
+        for (const [x, radius] of [[16.6, 0.55], [20.6, 0.45]]) {
+          assert.equal(hasPupil(canvas, x, radius), false, `${label} keeps the visor opaque`);
+        }
+        for (const stroke of hackerLogo) assert.ok(hasPath(canvas, stroke), `${label} keeps the chest logo`);
+        assert.equal(hackerTerminalOps(canvas), enemyTerminal, `${label} carries the enemy-style terminal`);
+        assert.ok(hasPath(canvas, [[16.2, 15], [16.2, 30]]), `${label} keeps the jacket zip`);
+        const torso = canvas.ops.findIndex((op, i) => op[0] === 'moveTo' && op[1] === 9 && op[2] === 15 &&
+          canvas.ops[i + 1]?.[0] === 'lineTo' && canvas.ops[i + 1][1] === 12 && canvas.ops[i + 1][2] === 14);
+        assert.ok(torso >= 0 && canvas.ops[torso + 5][0] === 'lineTo' && canvas.ops[torso + 5][1] === 23 &&
+          canvas.ops[torso + 5][2] >= 31, `${label} covers the base belt with the hoodie`);
+        assert.equal(hasPath(canvas, hackerHoodPath), hat === 'none', `${label} uses the correct headwear`);
+        if (hat === 'none') assert.equal(hackerHoodOps(canvas), enemyHood, `${label} matches the enemy hood`);
+        const scarfWrap = canvas.ops.some((op) => op[0] === 'moveTo' && op[1] === 12.2 && op[2] === 11);
+        assert.equal(scarfWrap, hat === 'hijab', `${label} keeps the hijab wrap separate from the hood`);
+      }
+    }
+  }
+});
+
+test('the built-in hacker hood hides hair without changing saved hairstyles', () => {
+  const S = scene();
+  const styles = [['swoop', 0], ['afro', 1], ['long', 2], ['pony', 3], ['braids', 4], ['tidybun', 5]];
+  for (const body of ['m', 'f']) for (const frame of frames) {
+    let normalReference, hdReference;
+    for (const [hair, hairCol] of styles) {
+      const look = { ...H.def[body], suit: 17, hat: 'none', hair, hairCol };
+      assert.equal(JSON.stringify(A.lookOf({ unlocked: 11, look })), JSON.stringify(look));
+      const prefix = A.buildHero(S, look);
+      const normal = JSON.stringify(S.textures.get(prefix + frame).ops);
+      const hd = JSON.stringify(S.textures.get(A.buildHeroHD(S, look, frame)).ops);
+      if (normalReference === undefined) { normalReference = normal; hdReference = hd; }
+      assert.equal(normal, normalReference, `${body} ${hair} ${frame} hides hair in gameplay`);
+      assert.equal(hd, hdReference, `${body} ${hair} ${frame} hides hair in HD`);
+    }
+    const withHat = { ...H.def[body], suit: 17, hat: 'bowler', hair: 'long' };
+    const light = A.buildHeroHD(S, { ...withHat, hairCol: 0 }, frame);
+    const dark = A.buildHeroHD(S, { ...withHat, hairCol: 3 }, frame);
+    assert.notEqual(JSON.stringify(S.textures.get(light).ops), JSON.stringify(S.textures.get(dark).ops),
+      `${body} ${frame} retains hair colour when the hood is replaced`);
+  }
+});
+
+test('other hero outfits retain their capes and visible eyes', () => {
+  const S = scene();
+  for (const body of ['m', 'f']) for (const suit of [H.def[body].suit, 5, 'gold']) {
+    const look = { ...H.def[body], suit };
+    const prefix = A.buildHero(S, look);
+    for (const frame of frames) {
+      const normal = S.textures.get(prefix + frame);
+      const hd = S.textures.get(A.buildHeroHD(S, look, frame));
+      for (const canvas of [normal, hd]) {
+        assert.ok(hasCape(canvas, frame), `${body} ${suit} ${frame} keeps its cape`);
+        assert.equal(hasRoundedRect(canvas, 12, 4.7, 10.2, 8, 3, '#1a101e'), false,
+          `${body} ${suit} ${frame} has no hacker face`);
+      }
+      for (const [x, radius] of [[16.6, 0.55], [20.6, 0.45]]) {
+        assert.ok(hasPupil(hd, x, radius), `${body} ${suit} ${frame} keeps its HD eyes`);
+      }
+    }
+  }
+});
+
+test('bowler crown reaches its brim and covers hair in every hero pose', () => {
+  const S = scene();
+  for (const body of ['m', 'f']) for (const hair of ['swoop', 'buzz', 'afro', 'long', 'pony', 'tidybun']) {
+    const look = { ...H.def[body], hair, hat: 'bowler' };
+    const prefix = A.buildHero(S, look);
+    for (const frame of frames) {
+      const normal = S.textures.get(prefix + frame);
+      const hd = S.textures.get(A.buildHeroHD(S, look, frame));
+      for (const canvas of [normal, hd]) {
+        assert.ok(canvas.ops.some((op) => op[0] === 'rect' && op[1] === -40 && op[2] === 5.8),
+          `${body} ${hair} ${frame} clips hair at the brim`);
+        const clip = canvas.ops.find((op) => op[0] === 'rect' && op[1] === 0 && op[2] === -2 && op[3] === 32);
+        assert.ok(clip && clip[2] + clip[4] >= 5.8, `${body} ${hair} ${frame} crown reaches the brim`);
+      }
+    }
+  }
 });
 
 test('Hero Lab rejects every locked category and randomizes only unlocked selections', () => {
@@ -178,9 +343,16 @@ test('Gold Mode easter egg is a sandbox: 30 lives, gold suit, nothing saved or s
   };
   vm.runInNewContext(scenes, { window: { AH }, Phaser: { Scene: class {} } });
   const G = AH.Gold;
-  let n = 0;
-  for (const code of ['ArrowUp', 'ArrowUp', 'ArrowUp', ...G.codes.slice(2)]) n = G.step(n, code);
-  assert.equal(n, G.codes.length);
+  G.reset();
+  const feed = (event) => JSON.parse(JSON.stringify(G.feed(event)));
+  for (const code of G.codes.slice(0, -1)) assert.deepEqual(feed({ code }), { active: true, complete: false });
+  assert.deepEqual(feed({ code: 'Unidentified', key: 'a' }), { active: true, complete: true });
+  assert.equal(G.position, 0);
+  G.reset();
+  assert.deepEqual(feed({ code: 'ArrowUp', repeat: true }), { active: false, complete: false });
+  assert.deepEqual(feed({ code: 'ArrowUp' }), { active: true, complete: false });
+  assert.deepEqual(feed({ code: 'KeyX' }), { active: true, complete: false });
+  assert.equal(G.position, 0);
   assert.equal(G.step(5, 'KeyX'), 0);
   assert.equal(G.armed, false);
   assert.equal(G.run(), false);

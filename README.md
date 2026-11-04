@@ -43,7 +43,7 @@ The game remembers where you left off. **C: Continue** on the title screen or ma
 
 Levels are generated at random each time a level starts, so platforms, lasers, enemies, coins, power-ups and MFA tokens land in new places on every run. Run levels mix gaps, steps up, drops and floating platforms at different heights, and every region has its own coins, enemy skins, scenery props, traffic, birds and sky objects (planes, balloons, blimps, helicopters). Each run also gets a random time of day, from sunrise to night.
 
-Every region also has cyber-threat enemies: **Phishing hoppers** leap at you, **Ransomware chargers** wind up and dash, and **DDoS botnet clouds** follow you and drop bombs. Street and data-center levels also feature pipeline bugs, vulnerable container images, overprivileged RBAC robots, exposed-endpoint turrets and stale guest-account crawlers. Defeating them reveals tips about GitHub Actions, Defender for Cloud, Entra access reviews, least privilege and Azure Private Link.
+Every region also has cyber-threat enemies: **Phishing hoppers** leap at you, **Ransomware chargers** wind up and dash, and **DDoS botnet clouds** follow you and drop bombs. Street and data-center levels also feature pipeline bugs, vulnerable container images, overprivileged RBAC robots, exposed-endpoint turrets, stale guest-account crawlers and **Rogue Hackers** who fire from handheld terminals. Their bolts can be blocked with the MFA Shield. Defeating them reveals tips about GitHub Actions, Defender for Cloud, Entra MFA and access reviews, least privilege and Azure Private Link.
 
 ### Streets, water and secrets
 
@@ -89,8 +89,11 @@ The game renders at 1280x720 (`AH.VIEW_SCALE = 2`) while game logic stays at 640
 a hairstyle and an accessory, announced on the deployment screen. Preview locked
 items in Hero Lab, but clear their region before saving them. Classic wardrobe and
 previously earned progress remain available. The **Cowboy** (denim western shirt,
-leather vest, sheriff star, buckle) and **India Kurta** (long kurta under a Nehru
-jacket) outfits are open from the start.
+leather vest, sheriff star, buckle), **India Kurta** (long kurta under a Nehru
+jacket) and **Cloud Hacker** (capeless, with the Rogue Hacker's hood, red visor,
+dark zip hoodie and portable terminal) outfits are open from the start. Cloud
+Hacker has the normal abilities; choose `NONE` on the headwear row for its hood,
+which hides the selected hair, or choose a hat or hijab to wear that instead.
 
 **Gold Mode (easter egg).** On the title screen type Up, Up, Down, Down, Left,
 Right, Left, Right, A. You get a golden suit and 30 lives for that browser session.
@@ -144,6 +147,8 @@ second pipe uses a shared theme. Regions can add their own room the same way.
 For normal play, select its region on the world map (world IDs are in the table
 above). For development, run `npm start` and use a separate browser guest profile:
 starting a level updates local resume progress. Do not sign in or submit test scores.
+After changing art, hard-refresh the browser: the local server caches static assets
+for up to an hour.
 
 After the title screen loads, open the browser developer console:
 
@@ -172,6 +177,11 @@ and Virginia have no pipe rooms. Use the actual exit pipe to check the return.
 Append `?touch=1` to the local URL to check the touch layout; this does not replace
 real-device testing. These are developer-console calls to existing scene APIs;
 no diagnostic routes or cheats are added to the shipped game.
+
+To find a Rogue Hacker, start a street world or Virginia (`{ id: 10 }`) and use
+`console.table(AHGame.scene.getScene('Level').L.enemies.filter(e => e.type === 'hacker'))`
+after the level loads. Virginia always has one in its first section; their exact
+positions vary.
 
 To hear a specific track, run `AH.Audio.music('metro')` (see Music below).
 

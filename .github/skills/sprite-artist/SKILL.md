@@ -5,12 +5,20 @@ description: 'Create Azure Heroes code-drawn pixel art, duck/slide poses, cloud 
 
 - Read [game-contract](../game-contract/SKILL.md) and [game-security](../game-security/SKILL.md).
 - Runtime art belongs only in `art/sprites.js` and read-only UI in `ui/hud.js`. Related tests/docs are in scope; coordinate consumers via [game-orchestrator](../game-orchestrator/SKILL.md).
-- Hero: blue suit, blue cape, glowing A, sunglasses, 32x48px, frames: idle, run0-3, jump, fly, attack, shield, duck, slide. Preserve wardrobe in every pose and register frames in `HERO_FRAMES`.
+- Hero: blue suit, blue cape, glowing A, sunglasses, 32x48px, frames: idle, run0-3, jump, fly, attack, shield, duck, slide. Preserve wardrobe in every pose and register frames in `HERO_FRAMES`; Cloud Hacker is capeless.
 - Enemies: patrol robot, drone, spider bot, boss CyberGuardian, all in same neon sunset palette.
 - Draw with code / pixel arrays, no external image files.
 - Keep the HUD from the mockups: Health, Score, MFA, Credits, Lives, Time on top, ability + level name at bottom.
 - The world map (`world_map`, `map_plane`) is drawn from lon/lat polygons in `MAP`/`LAND`. Use `AH.Art.MAP.proj(lon, lat)` to place pins for new regions.
 - Hero Lab wardrobe: add headwear to `HERO_HATS` and draw it in `heroHat` (head space, canvas top is y 0). Hats must cover the top of the hair: give each new hat a `HAT_LINE` band y (hair above it is clipped by `underHat`); only headbands may leave hair showing above. Full head coverings (hijab) use a `HAT_LINE` of 99 to hide all hair and draw their back drape in `hatBack`; the heroine bust stays a modest contour (`heroBust`, no cleavage) on suits and outfits. Add extras to `HERO_GEAR` and draw them in `heroGear` (`stand` and `fly` poses). Each entry is `[key, NAME, ORIGIN]` using the pixel font charset.
+- The `CLOUD HACKER` hero's dark hood is part of the outfit, not a saved hat:
+  show it only when no headwear is selected. Explicit hats and the hijab replace it.
+  Match the Rogue Hacker's enclosed dark face, red visor, red-accented zip hoodie
+  and handheld terminal; the built-in hood hides hair without changing the saved look.
+  Keep the face and visor with every headwear choice, and omit the cape in every pose,
+  including flight, without changing abilities.
+- The bowler's rounded crown must meet its band and brim without exposing a scalp gap.
+  Check hair coverage with afro, bun and long styles in both gameplay and HD poses.
 - HD hero: hero frames are drawn at density `DEN`; extra detail goes behind the `HDX` flag (`heroHDTorso`, `heroHead`) so in-game frames stay readable. Preview with `AH.Art.buildHeroHD`.
 - Regional rewards: add outfit, hairstyle and accessory together through the
   game-contract wardrobe APIs. Outfits must change garment structure (Japan: kimono
@@ -21,6 +29,9 @@ description: 'Create Azure Heroes code-drawn pixel art, duck/slide poses, cloud 
 - Cloud threats (`bug_*`, `image_*`, `rbac_*`, `endpoint_*`, `guest_*`) have two shared frames. Draw the real thing:
   `bug` is a six-legged beetle (faces right), `endpoint` an open laptop broadcasting a public globe with its port on the
   left (faces left, bolts leave at that port).
+- The rogue `hacker_*` enemy has a red-accented hood and a handheld terminal facing left.
+  Its laptop port aligns with shooter bolts; its nameplate identifies it as an enemy.
+  Reuse its hood, visor and terminal art for the playable Cloud Hacker where practical.
 - Faces stay natural at hi-res: subtle mouth lines and soft blush, no glossy or saturated lips.
 - Climb walls use `climb_face` (tiling grip rail) and `climb_sign` (up arrow) so wall-jump spots read at a glance.
 - Challenge art must match regional-world detail: recognizable shipping containers

@@ -89,7 +89,9 @@
     feed(event) {
       if (this.armed) return { active: false, complete: false };
       if (event.repeat) return { active: this.position > 0, complete: false };
-      const code = event.code || (event.key && event.key.toLowerCase() === 'a' ? 'KeyA' : event.key);
+      const code = this.codes.includes(event.code)
+        ? event.code
+        : (event.key && event.key.toLowerCase() === 'a' ? 'KeyA' : event.key);
       const wasActive = this.position > 0;
       this.position = this.step(this.position, code);
       const complete = this.position === this.codes.length;

@@ -226,7 +226,8 @@
     { name: 'GOLD DEFENDER', unlock: 9, suit: '#e8ecf8', suitD: '#7a80a8', suitM: '#b8c0dc', suitL: '#ffffff', cape: '#e0a010', capeL: '#ffe070', capeD: '#7a4a04', boots: '#3a3a6a', bootL: '#8a8ac8', cuff: '#ffd84a' },
     // classic outfits open from the start (appended so saved suit indexes stay valid)
     { name: 'COWBOY', unlock: -1, outfit: 'cowboy', suit: '#3a6ab0', suitD: '#1a3460', suitM: '#2a5090', suitL: '#8ab0e0', cape: '#8a4a1c', capeL: '#c07a3a', capeD: '#4a2208', boots: '#5a2e10', bootL: '#a0602a', cuff: '#f0d8a0' },
-    { name: 'INDIA KURTA', unlock: -1, outfit: 'kurta', suit: '#f4ead2', suitD: '#a8946a', suitM: '#d8c8a0', suitL: '#ffffff', cape: '#8a1a3a', capeL: '#c8406a', capeD: '#4a0820', boots: '#5a2a10', bootL: '#a0602a', cuff: '#e8b030' }
+    { name: 'INDIA KURTA', unlock: -1, outfit: 'kurta', suit: '#f4ead2', suitD: '#a8946a', suitM: '#d8c8a0', suitL: '#ffffff', cape: '#8a1a3a', capeL: '#c8406a', capeD: '#4a0820', boots: '#5a2a10', bootL: '#a0602a', cuff: '#e8b030' },
+    { name: 'CLOUD HACKER', unlock: -1, outfit: 'hacker', suit: '#190d20', suitD: '#160d1b', suitM: '#3d2035', suitL: '#704052', cape: '#713449', capeL: '#d47782', capeD: '#240e1e', boots: '#160d1b', bootL: '#3d2035', cuff: '#321321' }
   ];
   // Gold Mode easter-egg suit: drawn only for gold runs, never listed in Hero Lab or saved
   const GOLD_SUIT = { name: 'GOLDEN HERO', unlock: -1, suit: '#ffc828', suitD: '#8a5204', suitM: '#e09a10', suitL: '#fff3a8', cape: '#ffd848', capeL: '#fffac8', capeD: '#a86808', boots: '#7a4804', bootL: '#ffd848', cuff: '#ffffff' };
@@ -279,7 +280,9 @@
     H.skinL = s[0]; H.skin = s[1]; H.skinD = s[2];
     H.hairL = h[0]; H.hair = h[1]; H.hairD = h[2];
     FEM = L.body === 'f'; HAIR = HERO_HAIR_STYLES.indexOf(L.hair) >= 0 ? L.hair : 'swoop';
-    HAT = L.hair === 'hijab' ? 'hijab' : known(HERO_HATS, L.hat) ? L.hat : 'none'; GEAR = known(HERO_GEAR, L.gear) ? L.gear : 'none';
+    const hat = L.hair === 'hijab' ? 'hijab' : known(HERO_HATS, L.hat) ? L.hat : 'none';
+    HAT = hat === 'none' && H.outfit === 'hacker' ? 'hackerhood' : hat;
+    GEAR = known(HERO_GEAR, L.gear) ? L.gear : 'none';
   }
   applyLook(HERO_DEF.m);
 
@@ -306,6 +309,7 @@
     if (FEM) rrect(g, bx - 3, by - 1.6, 2, 1.8, 0.4, '#0a0620');
     rrect(g, bx - 3.2, by - 9, 6.6, 2.2, 0.8, H.cuff);
     line(g, bx - 2.4, by - 0.2, bx + 5.6, by - 0.2, 0.9, '#0a0620');
+    if (H.outfit === 'hacker') line(g, bx - 2.4, by - 1.6, bx + 5.2, by - 1.6, 0.6, '#d36870');
     if (GEAR === 'clogs') heroClog(g, bx, by);
   }
   function heroEmblem(g, cx, cy, s) {
@@ -357,8 +361,9 @@
     if (!H.outfit) return;
     g.save();
     if (pose === 'fly') { g.translate(16, 22); g.rotate(Math.PI / 2); g.scale(0.65, 0.65); g.translate(-16, -22); }
-    const hem = H.outfit === 'kimono' ? 36 : H.outfit === 'kurta' ? 35 : H.outfit === 'cowboy' ? 31 : H.outfit === 'coat' || H.outfit === 'trail' ? 34 : 29;
-    poly(g, [[9, 15], [12, 14], [20, 14], [23, 15], [21, 25], [23, hem], [9, hem], [11, 25]], lg(g, 9, 14, 23, hem, [[0, H.suitL], [0.35, H.suit], [1, H.suitD]]));
+    const hem = H.outfit === 'kimono' ? 36 : H.outfit === 'kurta' ? 35 : H.outfit === 'hacker' ? 31.4 : H.outfit === 'cowboy' ? 31 : H.outfit === 'coat' || H.outfit === 'trail' ? 34 : 29;
+    const mid = H.outfit === 'hacker' ? H.suitM : H.suit;
+    poly(g, [[9, 15], [12, 14], [20, 14], [23, 15], [21, 25], [23, hem], [9, hem], [11, 25]], lg(g, 9, 14, 23, hem, [[0, H.suitL], [0.35, mid], [1, H.suitD]]));
     const stripe = (y, c, w) => line(g, 10.5, y, 21.5, y, w || 1, c);
     if (FEM) heroBust(g, H.suitL, H.suitD);
     if (H.outfit === 'kimono') {
@@ -414,6 +419,14 @@
       rrect(g, 13, 13.2, 6, 1.8, 0.6, H.cape); line(g, 13.2, 13.3, 18.8, 13.3, 0.35, H.cuff);
       line(g, 11.2, 23.4, 13.8, 23.4, 0.45, H.capeD);
       poly(g, [[18.6, 18.2], [20.6, 18.2], [19.6, 16.8]], H.cuff);
+    } else if (H.outfit === 'hacker') {
+      line(g, 16.2, 15, 16.2, 30, 0.7, '#ec8a85');
+      line(g, 11, 25, 14.5, 25, 0.7, '#321321');
+      line(g, 18, 25, 21.5, 25, 0.7, '#321321');
+      line(g, 18.2, 18.2, 19.4, 19.3, 0.6, '#ff637a');
+      line(g, 19.4, 19.3, 18.2, 20.4, 0.6, '#ff637a');
+      line(g, 20, 20.4, 21, 20.4, 0.6, '#ffbd9b');
+      stripe(hem - 0.6, H.suitD, 0.8);
     } else if (H.outfit === 'hoodie') {
       ell(g, 16, 16, 6, 3.4, H.capeD);
       poly(g, [[12, 14], [16, 18], [20, 14], [18, 20], [14, 20]], H.suitL);
@@ -447,8 +460,8 @@
   // long styles hang behind the head and shoulders
   // Head-space y of each hat's lower band: hair above it is hidden so the hat covers the top of the hair.
   // Headbands (hachimaki, plumes) leave hair visible above them.
-  const HAT_LINE = { cowboy: 4.8, sombrero: 4.6, bowler: 5, beret: 4.6, crown: 3.2, cork: 4.6, boater: 4.6, cap: 5.8, tricorn: 5.2, hijab: 99 };
-  // headwear that also hangs behind the head and shoulders (hijab drape) draws with the back hair
+  const HAT_LINE = { cowboy: 4.8, sombrero: 4.6, bowler: 5.8, beret: 4.6, crown: 3.2, cork: 4.6, boater: 4.6, cap: 5.8, tricorn: 5.2, hijab: 99, hackerhood: 99 };
+  // Head coverings that hang behind the head draw with the back hair.
   function hatBack(g) {
     if (HAT !== 'hijab') return;
     ell(g, 16.4, 7.4, 7.4, 7.8, hairG(g, 9, 0, 24, 15));
@@ -545,11 +558,14 @@
       poly(g, [[3.2, 3.4], [5.4, 5.2], [16.8, 6], [28.2, 5.2], [30.4, 3.4], [30, 5.2], [27.6, 7], [16.8, 7.6], [6, 7], [3.6, 5.2]], V(3.4, 7.6, [[0, '#ffe08a'], [1, '#b07a24']]));
       for (let x = 5.4; x < 28.6; x += 2.2) line(g, x, 6.1 + Math.abs(x - 16.8) * -0.03, x + 1.1, 6.9, 0.5, '#d0203a');
     } else if (HAT === 'bowler') {
-      g.save(); g.beginPath(); g.rect(0, -2, 32, 5.2); g.clip(); ell(g, 16.8, 5.2, 5.4, 5, lg(g, 12, 0, 22, 5, [[0, '#6a5c80'], [0.35, '#2a2034'], [1, '#0a0610']])); g.restore();
-      line(g, 11.6, 4.3, 22, 4.3, 1, '#7a2a3a');
-      poly(g, [[9.2, 3.8], [10.6, 4.8], [16.8, 5.2], [23, 4.8], [24.4, 3.8], [24.2, 5.2], [22.6, 6.2], [16.8, 6.4], [11, 6.2], [9.4, 5.2]], '#16101e');
-      line(g, 10, 5.4, 23.6, 5.4, 0.4, 'rgba(160,140,200,0.6)');
-      ell(g, 15, 1.8, 1.6, 0.8, 'rgba(255,255,255,0.35)', -0.4);
+      g.save(); g.beginPath(); g.rect(0, -2, 32, 8); g.clip();
+      ell(g, 16.8, 5.7, 6.1, 5.4, lg(g, 10, 0, 23, 6, [[0, '#827790'], [0.35, '#40384f'], [0.75, '#201a2a'], [1, '#0a0610']]));
+      g.restore();
+      rrect(g, 10.8, 4.3, 12, 1.4, 0.5, '#702838');
+      line(g, 11.2, 4.6, 22.4, 4.6, 0.35, '#d08088');
+      poly(g, [[8.4, 4.2], [10, 5.2], [16.8, 5.6], [23.6, 5.2], [25.2, 4.2], [24.9, 5.6], [23, 6.4], [16.8, 6.6], [10.6, 6.4], [8.7, 5.6]], '#16101e');
+      line(g, 9.3, 5.6, 24.3, 5.6, 0.4, 'rgba(180,160,210,0.65)');
+      ell(g, 14.8, 1.8, 1.7, 0.8, 'rgba(255,255,255,0.3)', -0.4);
     } else if (HAT === 'beret') {
       ell(g, 17.4, 3.2, 6.8, 2.6, V(0.6, 5.8, [[0, '#ff5a6a'], [0.5, '#c81e3a'], [1, '#6a0a1a']]), -0.12);
       line(g, 11.2, 4.8, 22, 5, 0.9, '#6a0a1a');
@@ -671,9 +687,48 @@
     line(g, bx - 2.6, by - 4, bx + 2.2, by - 4.1, 0.5, '#fffbe0');
     ell(g, bx + 3.4, by - 2.4, 0.9, 0.6, '#d08a10');
   }
+  function hackerFace(g) {
+    rrect(g, 12, 4.7, 10.2, 8, 3, '#1a101e');
+  }
+  function hackerVisor(g) {
+    rrect(g, 13.2, 6.7, 7.8, 2.6, 0.8, '#d63c5c');
+    line(g, 13.8, 7.2, 20.4, 7.2, 0.5, '#ffe5d1');
+  }
+  function hackerHood(g) {
+    ell(g, 17, 7.8, 7.7, 7.6, lg(g, 10, 0, 24, 15, [[0, '#d47782'], [0.4, '#713449'], [1, '#240e1e']]));
+    hackerFace(g);
+    poly(g, [[11, 4.7], [12.4, 2.4], [16, 1.4], [20, 2], [22.9, 5.2], [21, 4.8], [17.6, 3.7], [14.2, 4.4], [12.5, 7.2], [11.6, 11]], '#5b293e');
+    line(g, 12.5, 4, 15, 2.8, 0.6, '#ffc4bc');
+    line(g, 15, 2.8, 19.5, 3.1, 0.6, '#ffc4bc');
+    hackerVisor(g);
+  }
+  function hackerTerminal(g) {
+    rrect(g, 1, 14.8, 10.5, 9.5, 1.2, '#c2b9c9');
+    rrect(g, 2.1, 15.8, 8.3, 7.3, 0.6, '#24121e');
+    line(g, 3, 17.1, 4.9, 18.6, 0.8, '#ff637a');
+    line(g, 4.9, 18.6, 3, 20.1, 0.8, '#ff637a');
+    line(g, 6, 20.3, 8.9, 20.3, 0.7, '#ffbd9b');
+    poly(g, [[0.3, 24], [11.5, 24], [13.2, 25.8], [1.4, 25.8]], '#8b8293');
+    ell(g, 1.3, 17, 0.8, 0.8, '#ff637a');
+  }
   function heroHead(g, dx, dy, skipBack) {
     dx = dx || 0; dy = dy || 0;
     g.save(); g.translate(dx, dy);
+    if (H.outfit === 'hacker') {
+      if (HAT === 'hackerhood') {
+        hackerHood(g);
+      } else {
+        if (!skipBack) { hatBack(g); underHat(g, hairBack); }
+        rrect(g, 14.2, 11.6, 4.4, 3.6, 1, H.suitD);
+        ell(g, 16.8, 8, 5.2, 5.6, '#1a101e');
+        underHat(g, hairFront);
+        hackerFace(g);
+        heroHat(g);
+        hackerVisor(g);
+      }
+      g.restore();
+      return;
+    }
     if (!skipBack) { hatBack(g); underHat(g, hairBack); }
     rrect(g, 14.2, 11.6, 4.4, 3.6, 1, H.skinD);
     ell(g, 16.8, 8, 5.2, 5.6, lg(g, 12, 3, 21, 13, [[0, H.skinL], [1, H.skin]]));
@@ -723,18 +778,22 @@
   }
   function hero(o) {
     return function (g) {
-      heroCape(g, o.flare, o.capeLen);
-      const backHair = HAIR === 'long' || HAIR === 'braids';
+      if (H.outfit !== 'hacker') heroCape(g, o.flare, o.capeLen);
+      const backHair = HAT !== 'hackerhood' && (HAIR === 'long' || HAIR === 'braids');
       if (backHair) { g.save(); g.translate(o.hx || 0, o.hy || 0); hatBack(g); underHat(g, hairBack); g.restore(); }
-      heroArm(g, o.back[0], o.back[1], o.back[2], false, false);
+      const back = H.outfit === 'hacker' ? [[10, 16], [7, 20], [8.3, 21.3]] : o.back;
+      heroArm(g, back[0], back[1], back[2], false, false);
       heroLeg(g, o.legs[0], true);
       heroLeg(g, o.legs[1], false);
       heroTorso(g);
       heroOutfit(g, 'stand');
-      heroShoulder(g, 22.6, 15.6, true);
-      heroShoulder(g, 9.4, 15.6, false);
+      if (H.outfit !== 'hacker') {
+        heroShoulder(g, 22.6, 15.6, true);
+        heroShoulder(g, 9.4, 15.6, false);
+      }
       heroGear(g, 'stand');
       heroArm(g, o.front[0], o.front[1], o.front[2], true, o.fist);
+      if (H.outfit === 'hacker') hackerTerminal(g);
       heroHead(g, o.hx, o.hy, backHair);
       if (o.punchFx) {
         const gr = g.createRadialGradient(30, o.punchFx, 0, 30, o.punchFx, 5);
@@ -780,9 +839,11 @@
     });
     reg2(P + 'fly', 32, 48, function (g) {
       // horizontal superhero flight pose facing right
-      poly(g, [[14, 18], [2, 14], [0.8, 20], [1.6, 26], [14, 26]], lg(g, 0, 14, 14, 26, [[0, H.capeD], [0.5, H.cape], [1, H.capeL]]));
-      line(g, 12, 19, 3, 16.5, 0.8, 'rgba(8,16,70,0.55)'); line(g, 12, 22, 2.4, 22, 0.8, 'rgba(8,16,70,0.55)');
-      line(g, 12, 25, 3, 26, 0.7, 'rgba(120,170,255,0.5)');
+      if (H.outfit !== 'hacker') {
+        poly(g, [[14, 18], [2, 14], [0.8, 20], [1.6, 26], [14, 26]], lg(g, 0, 14, 14, 26, [[0, H.capeD], [0.5, H.cape], [1, H.capeL]]));
+        line(g, 12, 19, 3, 16.5, 0.8, 'rgba(8,16,70,0.55)'); line(g, 12, 22, 2.4, 22, 0.8, 'rgba(8,16,70,0.55)');
+        line(g, 12, 25, 3, 26, 0.7, 'rgba(120,170,255,0.5)');
+      }
 const CL = GEAR === 'clogs' ? (y0, y1) => lg(g, 0, y0, 0, y1, [[0, '#fff090'], [1, '#c09010']]) : null;
       limb(g, 7, 25, 1.4, 28, 5.4, H.suitD, H.suitD, H.suitM);                                      // back leg
       poly(g, [[0.4, 26], [3.6, 25], [4.6, 31], [0.6, 31.4]], CL ? CL(25, 31) : lg(g, 0, 25, 4, 31, [[0, H.bootL], [1, H.boots]]));
@@ -795,12 +856,15 @@ const CL = GEAR === 'clogs' ? (y0, y1) => lg(g, 0, y0, 0, y1, [[0, '#fff090'], [
       g.fillStyle = gl; g.fillRect(14, 16, 12, 12);
       poly(g, [[22, 20], [19, 24], [20.2, 24], [20.9, 22.6], [22.4, 22.6]], '#ffffff');
       heroOutfit(g, 'fly');
-      ell(g, 24, 18.6, 3.2, 3, lg(g, 21, 16, 26, 21, [[0, H.suitL], [1, H.suitM]]));
+      if (H.outfit !== 'hacker') ell(g, 24, 18.6, 3.2, 3, lg(g, 21, 16, 26, 21, [[0, H.suitL], [1, H.suitM]]));
       limb(g, 24, 18.6, 28.4, 17.6, 4.6, H.suitM, H.suit, H.suitL);                                 // reaching arm
       limb(g, 28.4, 17.6, 31.4, 16.6, 4, H.suitM, H.suit, H.suitL);
       ell(g, 30, 17, 2.6, 2.6, GEAR === 'wristbands' ? '#ffe14a' : H.cuff); ell(g, 31.3, 16.8, 2.5, 2.5, H.skin);
-      rrect(g, 21.6, 20.6, 3.6, 3, 1, H.skinD);                                                      // neck
+      rrect(g, 21.6, 20.6, 3.6, 3, 1, H.outfit === 'hacker' ? H.suitD : H.skinD);                        // neck
       heroGear(g, 'fly');
+      if (H.outfit === 'hacker') {
+        g.save(); g.translate(5, 11); g.scale(0.65, 0.65); hackerTerminal(g); g.restore();
+      }
       g.save(); g.translate(11, 11.4); g.scale(0.75, 0.75);
       heroHead(g, 0, 0);
       g.restore();
@@ -866,6 +930,30 @@ const CL = GEAR === 'clogs' ? (y0, y1) => lg(g, 0, y0, 0, y1, [[0, '#fff090'], [
   }
   reg2('robot_0', 32, 37, robotFrame(0), { shade: 0.5 });
   reg2('robot_1', 32, 37, robotFrame(1), { shade: 0.5 });
+
+  // The laptop and its firing port face left, like the shared shooter behavior.
+  function hackerFrame(step) {
+    return function (g) {
+      const stride = step ? 2 : -1;
+      limb(g, 13, 25, 11 + stride, 32, 5, '#190d20', '#3d2035', '#704052');
+      limb(g, 21, 25, 22 - stride, 32, 5, '#190d20', '#3d2035', '#704052');
+      rrect(g, 7 + stride, 32, 8, 4.5, 1.4, '#160d1b');
+      rrect(g, 19 - stride, 32, 8, 4.5, 1.4, '#160d1b');
+      line(g, 8 + stride, 34.8, 14 + stride, 34.8, 0.6, '#d36870');
+      line(g, 20 - stride, 34.8, 26 - stride, 34.8, 0.6, '#d36870');
+      limb(g, 11, 16, 7, 22, 4.5, '#240f1c', '#633047', '#b95a68');
+      limb(g, 24, 16, 26, 23, 4.5, '#240f1c', '#633047', '#b95a68');
+      rrect(g, 9, 12, 16, 16, 3.2, lg(g, 9, 12, 25, 28, [[0, '#c76b78'], [0.35, '#713449'], [1, '#28101e']]));
+      line(g, 17, 15, 17, 26, 0.7, '#ec8a85');
+      line(g, 11, 24, 15, 24, 0.7, '#321321');
+      line(g, 19, 24, 23, 24, 0.7, '#321321');
+      hackerHood(g);
+      ell(g, 8.3, 21.3, 2.2, 2.1, '#dfa59c');
+      hackerTerminal(g);
+    };
+  }
+  reg2('hacker_0', 32, 37, hackerFrame(0), { shade: 0.5 });
+  reg2('hacker_1', 32, 37, hackerFrame(1), { shade: 0.5 });
 
   /* climb walls: a steel grip rail tile on the wall face and a WALL JUMP marker at its foot */
   reg2('climb_face', 10, 16, function (g) {
@@ -6586,6 +6674,7 @@ const CL = GEAR === 'clogs' ? (y0, y1) => lg(g, 0, y0, 0, y1, [[0, '#fff090'], [
       };
       mk('coin_spin', ['coin0', 'coin1', 'coin2', 'coin3'], 8);
       mk('robot_walk', ['robot_0', 'robot_1'], 5);
+      mk('hacker_walk', ['hacker_0', 'hacker_1'], 5);
       mk('drone_fly', ['drone_0', 'drone_1'], 16);
       mk('spider_crawl', ['spider_0', 'spider_1'], 8);
       mk('phish_swim', ['phish_0', 'phish_1'], 6);

@@ -96,6 +96,41 @@ test('random worlds have distinct, disjoint, substantial cloud challenges and ve
     for (let run = 0; run < 80; run++) {
       const L = Levels.make(meta.id);
       assert.ok(L.width > 6000);
+      const hackers = L.enemies.filter((e) => e.type === 'hacker');
+      if (meta.mode === 'fly') {
+        assert.equal(hackers.length, 0, 'flight-only worlds keep airborne threats');
+      } else {
+        assert.ok(hackers.length > 0, meta.city + ' has a rogue hacker');
+        for (const e of hackers) {
+          assert.ok(Math.abs(e.x - L.spawn.x) - e.range > 200, 'spawn stays clear of the patrol');
+          assert.ok(L.checkpoints.every((c) => Math.abs(e.x - c.x) - e.range > 80), 'checkpoints stay clear of the patrol');
+          assert.ok(e.x + e.range + 10 < L.boss.left, 'patrol stays outside the boss arena');
+          const ground = L.platforms.find((p) => p.y === e.y && e.x - e.range - 10 >= p.x && e.x + e.range + 10 <= p.x + p.w);
+          assert.ok(ground, 'the whole patrol stays on its ground platform');
+          if (meta.theme === 'rack') {
+            for (const other of L.enemies.filter((o) => o !== e && o.y === e.y)) {
+              assert.ok(Math.abs(e.x - other.x) - e.range - (other.range || 0) > 60,
+                'ground patrols have space to remain distinct');
+            }
+          } else {
+            assert.ok(!L.enemies.some((o) => o !== e && o.y === e.y && o.x >= ground.x && o.x <= ground.x + ground.w),
+              'the hacker has a separate street platform from other ground threats');
+          }
+          for (const o of L.obstacles || []) {
+            if (o.y + o.h === e.y) assert.ok(e.x + e.range + 10 <= o.x || e.x - e.range - 10 >= o.x + o.w,
+              'patrol does not overlap a solid street obstacle');
+          }
+          for (const bike of L.vehicles || []) {
+            if (bike.y === e.y) assert.ok(Math.abs(e.x - bike.x) > e.range + 39, 'patrol does not overlap a parked bike');
+          }
+          if (meta.theme === 'rack') {
+            for (const rack of L.platforms.filter((p) => p.y < e.y && p.y + p.h === e.y)) {
+              assert.ok(e.x + e.range + 10 <= rack.x || e.x - e.range - 10 >= rack.x + rack.w,
+                'patrol does not overlap a solid data-center rack');
+            }
+          }
+        }
+      }
       if (meta.mode !== 'run' || meta.theme === 'rack') continue;
       assert.equal(L.pipeZones.length, 2, meta.city + ' has two pipe challenges');
       assert.notEqual(L.pipeZones[0].theme, L.pipeZones[1].theme);
@@ -291,7 +326,7 @@ test('all cloud threat types retain two-hit health, shared behavior and credit d
     assert.ok(spec.label && spec.info && cats.includes(spec.cat), type + ' has a nameplate, threat category and guide text');
     assert.match(spec.label + spec.info, /^[A-Z0-9 .!':\/+,?-]+$/, type + ' text fits the pixel font');
   }
-  for (const type of ['bug', 'image', 'rbac', 'endpoint', 'guest']) {
+  for (const type of ['bug', 'image', 'rbac', 'endpoint', 'guest', 'hacker']) {
     const body = { setSize() {}, setOffset() {}, setAllowGravity() {}, setVelocityX() {}, setVelocityY() {} };
     const sprite = {
       x: 200, y: 300, body, setOrigin() { return this; }, setDepth() { return this; },
@@ -311,7 +346,58 @@ test('all cloud threat types retain two-hit health, shared behavior and credit d
     assert.equal(e.dead, true);
     assert.equal(tags[tags.length - 1].destroyed, true, 'nameplate is removed with the enemy');
   }
-  assert.equal(drops, 5);
+  assert.equal(drops, 6);
+});
+
+test('rogue hacker patrols, shoots toward the player and drops one credit with an MFA tip', () => {
+  const bolts = [], coins = [], tips = [];
+  class PixelText {
+    setDepth() { return this; } setVisible() { return this; } setPosition() { return this; }
+    destroy() { this.destroyed = true; }
+  }
+  const AH = load('systems/enemies.js', { Levels: { ids: [1] }, Art: { D: 2 }, Audio: { play() {} }, PixelText });
+  load('systems/scenes.js', AH, 1, { Phaser: { Scene: class {} } });
+  const body = {
+    blocked: { left: false, right: false }, setSize() {}, setOffset() {}, setAllowGravity() {},
+    setVelocityX(v) { this.vx = v; }, setVelocityY(v) { this.vy = v; }
+  };
+  const sprite = {
+    x: 200, y: 300, displayHeight: 37, body,
+    setOrigin() { return this; }, setDepth() { return this; }, play(key) { this.animation = key; },
+    setFlipX(v) { this.flipped = v; }, setTint() {}, clearTint() {}, setTintFill() {}, destroy() {}
+  };
+  const scene = {
+    anims: { exists() { return false; } }, physics: { add: { sprite() { return sprite; }, collider() {} } },
+    time: { delayedCall() {} }, spawnEnemyBolt(...args) { bolts.push(args); },
+    stats: { kills: 0 }, achieve() {}, addScore() {}, burst() {},
+    spawnCoin(...args) { coins.push(args); }, toast(text) { tips.push(text); },
+    onEnemyKilled: AH.Scenes[5].prototype.onEnemyKilled
+  };
+  const e = new AH.Enemy(scene, { type: 'hacker', x: 200, y: 300, range: 24, skin: 'westeurope' });
+  assert.equal(sprite.animation, 'hacker_walk', 'regional skins fall back to the shared hacker art');
+  assert.equal(e.spec.cat, 'identity');
+  assert.equal(e.shoot, true);
+  e.shootCd = 0;
+  e.update(0.016, { x: 100, y: 280 });
+  assert.deepEqual(bolts[0], [186, 278, -1]);
+  assert.equal(sprite.flipped, false);
+  assert.equal(body.vx, -40);
+  e.shootCd = 0;
+  e.update(0.016, { x: 300, y: 280 });
+  assert.deepEqual(bolts[1], [214, 278, 1]);
+  assert.equal(sprite.flipped, true);
+  e.shootCd = 0;
+  e.update(0.016, { x: 600, y: 280 });
+  assert.equal(bolts.length, 2, 'the hacker cannot shoot outside the shared shooter range');
+  e.hit(1);
+  assert.equal(e.health, 1);
+  assert.equal(e.dead, false);
+  e.hit(1);
+  assert.equal(e.dead, true);
+  assert.deepEqual(coins, [[200, 282, true]], 'the shared death path drops one Azure Credit');
+  assert.deepEqual(tips, ['INTRUSION STOPPED - ENABLE ENTRA MFA']);
+  e.update(1, { x: 100, y: 280 });
+  assert.equal(bolts.length, 2, 'a defeated hacker cannot shoot');
 });
 
 test('every region has exactly one unlockable hero suit and locked suits are enforced', () => {

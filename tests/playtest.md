@@ -279,5 +279,55 @@ Chrome, Title, Hero Lab and Amsterdam Canal Run, Playwright harness.
 | Hijab | MOVED | It is headwear now (WORLDWIDE), not a hairstyle. It hides all hair (afro included), drapes behind the shoulders and uses the SCARF COLOUR row. Old `hair: 'hijab'` saves migrate to `hat: 'hijab'`. |
 | Cowboy / India Kurta outfits | PASS - visual | Open from the start. Checked in Hero Lab, idle, run, jump, duck, slide and fly, for both bodies. Fixed the base belt peeking below the cowboy belt. |
 | Heroine bust | PASS - visual | Modest contour, volume shading and an underbust line on the suit and on every outfit; no cleavage. |
-| Gold Mode | PASS | The Konami code on the Title screen shows a gold portrait and a toast; the level HUD showed X30 lives and resume stayed null. The unit test checks there is no submit, record, unlock or resume, that restart keeps 30 lives, and that `suit: 'gold'` cannot load from a save. |
+| Gold Mode | PASS | The full key sequence entered through the browser keyboard on Title showed a gold portrait and toast; Enter then reached Select and launched a level with `AH.Run.gold === true` and 30 lives. Key events accept `code` or `key`, ignore held-key repeats and swallow interrupted partial sequences. The unit test checks there is no submit, record, unlock or resume, that restart keeps 30 lives, and that `suit: 'gold'` cannot load from a save. |
 | Declined | N/A | The request for a nude mode was declined; Gold Mode was built instead. |
+
+## Round: bowler fit and hacker characters
+
+Chrome, isolated guest profiles, Hero Lab, Amsterdam and Virginia. Level selection
+and encounter positioning used existing scene APIs; the player was teleported for the
+encounter checks. The shooter's cooldown was shortened for the shield check.
+
+| Check | Result | Notes |
+|-------|--------|-------|
+| Bowler fit | FIXED | The crown clip ended above the brim, exposing a gap. The fuller dome now reaches its band and brim. Reviewed six hairstyles on both bodies in HD, plus afro and ponytail across gameplay and HD poses. Automated tests cover all eleven poses and hair clipping. |
+| Cloud Hacker hero | PASS - scoped | The hood is loose and open at the neck, with visible hair and hoodie drawstrings rather than a chin wrap. After loading fresh art, checked both bodies, six hairstyles and bowler/hijab overrides in Hero Lab or HD previews, plus all eleven gameplay poses in a texture sheet. Pixel comparisons confirmed visible hair-colour changes for seven classic styles on both bodies. Set a look with scene APIs, switched hijab/hood and saved with the keyboard, then reloaded and confirmed the saved look. In Amsterdam, the saved hoodie appeared in idle, duck and slide; no teleport was used for those checks. Automated tests cover both bodies, five hairstyles, five headwear choices and all gameplay/HD frames. |
+| Rogue Hacker | PASS | In Virginia, the nameplate and terminal are visible; an actual fired bolt was blocked by E, with health remaining 100. Two ordinary keyboard-fired blasts reduced health 2 to 1 to 0, produced one Azure Credit and showed the Entra MFA tip. |
+| Threat guide | PASS | H and Right opened the guide; the new identity entry and its shield advice fit in the existing panel. |
+| Generated placement | PASS | 800 seeded world generations check street/data-center hackers, safe patrols and separation from ground enemies, obstacles, bikes, racks, spawn, checkpoints and boss arenas. Flight-only worlds have none. |
+| Browser errors | PASS - scoped | No JavaScript page errors in the final Amsterdam encounter; the existing missing favicon returned 404. |
+
+Not tested in this round: full unassisted level completion, real touch devices or
+mobile Safari. The teleported checks verify integration, not overall combat balance.
+
+## Round: anonymous, capeless Cloud Hacker
+
+Chrome, isolated guest profiles with fresh art. Looks and level starts were set
+through existing scene APIs; no teleport, account login or score submission was used.
+
+| Check | Result | Notes |
+|-------|--------|-------|
+| Hero Lab | PASS - scoped | Black pullover and hood, drawstrings, chest `>_` logo, face mask and dark lenses; no cape. Reviewed both bodies with five hairstyles, bowler and hijab overrides, and a classic hero control in HD previews. A texture sheet covered all eleven gameplay poses. |
+| Amsterdam | PASS - visual | Female long-haired hacker appeared capeless at the level start; abilities remained available. |
+| Tokyo | PASS - visual | Male hacker used the capeless flight texture; automatic flight continued while the level was running. |
+| Automated | PASS | Wardrobe tests cover both bodies, five hairstyles, five headwear choices and all normal/HD poses, with classic, regional and Gold Mode cape controls. `npm test` passed all 43 tests. |
+
+These are scoped visual checks, not complete level playthroughs or real-device tests.
+The existing missing favicon produced a 404; no other console errors were observed.
+
+## Round: enemy-style Cloud Hacker
+
+Chrome guest profiles with fresh art. Amsterdam was entered through the keyboard;
+Tokyo and its look were selected through scene APIs. The player was teleported
+next to the existing Amsterdam hacker for the side-by-side encounter check.
+
+| Check | Result | Notes |
+|-------|--------|-------|
+| Enemy appearance | PASS - scoped | The hero uses the enemy's enclosed hood, red visor and terminal, with a matching dark zip hoodie and no cape. Pixel hashes for both enemy frames were unchanged by the shared-art refactor. |
+| Hero Lab | PASS - scoped | Selected Cloud Hacker with the keyboard, saved it and reloaded; the title portrait retained the selection. Compared both bodies, all eleven gameplay poses, and bowler/hijab overrides in previews. |
+| Amsterdam | PASS - scoped | Keyboard movement and a quick-release blast worked; the teleported encounter showed the hero beside the named Rogue Hacker. No invulnerability was applied, and the player took damage. |
+| Tokyo | PASS - scoped | The capeless flight texture advanced with the level, and a quick-release blast consumed Boost and spawned a projectile. |
+| Automated | PASS | Tests cover normal and HD textures for every pose, both bodies, five hairstyles and five headwear choices, old saves and caped controls. Pixel comparisons of 80 generated images confirmed the built-in hood hides hair; the bowler still shows hair colour. `npm test` passed all 44 tests. |
+
+These are scoped visual and control checks, not complete level playthroughs or
+real-device tests. The Tokyo browser console reported only the existing favicon 404.

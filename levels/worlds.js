@@ -106,13 +106,20 @@
     for (let i = free.length - 1; i >= 0; i--) if (pipeAt[free[i]]) free.splice(i, 1);
     shuffle(free);
 
-    const lasers = [], enemies = [], used = {};
+    const lasers = [], enemies = [], used = {}, hackerAt = {};
+    const hackerPlatforms = free.slice(0, Math.max(1, Math.floor(free.length / 9)));
+    hackerPlatforms.forEach((i) => {
+      const p = P[i];
+      hackerAt[i] = 1;
+      used[i] = 1;
+      enemies.push({ type: 'hacker', x: Math.round(p.x + p.w * 0.25), y: p.y, range: 24 });
+    });
     const share = (rate) => Math.round(free.length * rate);
     let k = 0;
     const take = (count, fn, minW) => {
       for (let c = 0; c < count && k < free.length; k++) {
         const p = P[free[k]];
-        if (p.w < minW) continue;
+        if (hackerAt[free[k]] || p.w < minW) continue;
         used[free[k]] = 1; c++;
         fn(p);
       }
@@ -130,7 +137,7 @@
     shuffle(free.slice()).slice(0, share(o.droneRate)).forEach((i) => enemies.push({ type: 'drone', x: Math.round(P[i].x + P[i].w * rnd(0.3, 0.7)), y: Math.max(80, P[i].y - ri(90, 130)), range: 0 }));
     free.forEach((i) => {
       const p = P[i];
-      if (p.w < 250 || Math.random() > (o.extraRate || 0)) return;
+      if (hackerAt[i] || p.w < 250 || Math.random() > (o.extraRate || 0)) return;
       const t = pick(['robot', 'robot', 'spider', 'spider', 'phish']);
       enemies.push({ type: t, x: Math.round(p.x + p.w * rnd(0.72, 0.85)), y: p.y, range: 26, shoot: t === 'robot' && shoot() });
     });
@@ -151,7 +158,7 @@
       }
     }
     floaters.forEach((f) => { if (f.w >= 80 && Math.random() < (o.floatEnemyRate || 0)) enemies.push({ type: 'robot', x: Math.round(f.x + f.w / 2), y: f.y, range: Math.round(f.w / 2 - 22), shoot: shoot() }); });
-    shuffle(free.filter((i) => !lasered[i])).slice(0, Math.ceil(free.length * 0.65)).forEach((i, j) => {
+    shuffle(free.filter((i) => !lasered[i] && !hackerAt[i])).slice(0, Math.ceil(free.length * 0.65) - hackerPlatforms.length).forEach((i, j) => {
       const p = P[i], type = ['bug', 'guest', 'rbac', 'endpoint', 'image'][j % 5];
       enemies.push({ type, x: Math.round(p.x + p.w * 0.25), y: p.y, range: type === 'endpoint' ? 0 : 24 });
     });
@@ -184,7 +191,7 @@
     }
 
     // street obstacles (solid, stand on them), ride-on bikes, the secret phone box and moored houseboats
-    const open = free.filter((i) => !lasered[i] && P[i].w >= 240);
+    const open = free.filter((i) => !lasered[i] && !hackerAt[i] && P[i].w >= 240);
     shuffle(open);
     let oc = 0;
     const secret = o.secret ? open.filter((i) => i >= 3 && i < n * 0.6)[0] : undefined;
@@ -435,10 +442,15 @@
       if (s.boss) { checkpoints.push({ x: bossLeft - 280, y: F }); s.occ.push([bossLeft - 360, bossLeft - 200], [bossLeft - 60, end]); }
 
       const en = s.boss ? 3 : ri(5, 7);
+      const threats = ['spider', 'robot', 'drone', 'bug', 'rbac', 'endpoint', 'guest', 'image'];
+      if (!s.boss) threats.push('hacker');
       for (let e = 0; e < en; e++) {
-        const t = pick(['spider', 'robot', 'drone', 'bug', 'rbac', 'endpoint', 'guest', 'image']);
+        const firstHacker = s.i === 0 && e === 0;
+        const t = firstHacker ? 'hacker' : pick(threats);
         const range = t === 'drone' || t === 'endpoint' ? 0 : ri(40, 70);
-        const ex = take(s, 36, s.x + 260, limit);
+        const half = t === 'hacker' ? range + 95 : 36;
+        const ex = firstHacker ? ri(s.x + 400, s.x + 760) : take(s, half, s.x + 260, limit);
+        if (firstHacker) s.occ.push([ex - half, ex + half]);
         if (ex !== null) enemies.push({ type: t, x: ex, y: t === 'drone' ? ri(180, 230) : F, range: range, shoot: t === 'robot' && Math.random() < 0.4 });
       }
       const racks = ri(2, 4);

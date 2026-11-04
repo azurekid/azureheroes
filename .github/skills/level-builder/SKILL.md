@@ -32,3 +32,7 @@ description: 'Build Azure Heroes generated layouts, vertical streets, undergroun
 5. Service ducts must fit the 20px crouched body and block the 40px standing body.
    Offer a reachable roof route as well; do not trap players beneath overlapping solids.
 6. Test multiple seeds in `tests/game.test.js` and traverse rooms in the browser.
+- Street and data-center generators include a grounded hacker, not flight-only worlds.
+  Keep its randomized patrol away from spawn, checkpoints, pipes, obstacles and the boss arena.
+  Reserve its street platform from other ground threats and solid objects; in the data
+  center, reserve clearance for both its patrol and neighboring patrols.

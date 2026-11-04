@@ -25,6 +25,9 @@ description: 'Build Azure Heroes movement, charged shots, temporary weapon picku
 - Slides hit each low enemy once per slide; low blasts originate near the feet.
 - Cloud threats reuse shared AI behaviors without changing the two-hit/one-credit invariant.
   Keep remediation tips educational: fix insecure configuration, do not portray guest access itself as malicious.
+- The ground `hacker` is a rogue shooter using the existing robot patrol and bolt logic;
+  its identity-category defeat tip recommends Entra MFA. Do not change the playable
+  Cloud Hacker's abilities or add account permissions for either character.
 - Boss: three escalating phases, fair windup, and guaranteed open windows after three
   volleys. Block two shots/a charge, or dodge a charge, for earlier windows. Clear old
   projectiles on exposure. `boss.vulnerable` drives damage, HUD OPEN countdown and

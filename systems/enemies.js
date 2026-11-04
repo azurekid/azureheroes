@@ -1,6 +1,5 @@
-/* Enemies: patrol robot, drone, spider bot, plus the cyber-threat trio: phish (hopper),
-   ram (Ransomware charger) and botnet (DDoS bomber). Every enemy dies in 2 hits and drops 1 Azure Credit.
-   Some patrol robots (def.shoot) fire slow energy bolts at the hero; the MFA Shield blocks them. */
+/* Enemies: patrol robots, drones, spider bots and cloud threats. Every enemy dies in 2 hits
+   and drops 1 Azure Credit. Shooters fire slow energy bolts that the MFA Shield blocks. */
 (function () {
   'use strict';
   const AH = (window.AH = window.AH || {});
@@ -16,7 +15,8 @@
     image: { tex: 'image_0', anim: 'image_move', body: [26, 20, 3, 8], gravity: true, speed: 40, origin: 1, behaviour: 'ram', fix: 'IMAGE PATCHED - SCAN WITH DEFENDER FOR CLOUD' },
     rbac: { tex: 'rbac_0', anim: 'rbac_move', body: [20, 34, 6, 3], gravity: true, speed: 40, origin: 1, behaviour: 'robot', fix: 'RBAC FIXED - USE LEAST PRIVILEGE IN ENTRA' },
     endpoint: { tex: 'endpoint_0', anim: 'endpoint_move', body: [26, 20, 3, 8], gravity: true, speed: 0, origin: 1, behaviour: 'robot', fix: 'ENDPOINT SECURED - USE AZURE PRIVATE LINK' },
-    guest: { tex: 'guest_0', anim: 'guest_move', body: [26, 12, 3, 8], gravity: true, speed: 65, origin: 1, behaviour: 'spider', fix: 'GUEST REVIEWED - ENTRA ACCESS REVIEWS' }
+    guest: { tex: 'guest_0', anim: 'guest_move', body: [26, 12, 3, 8], gravity: true, speed: 65, origin: 1, behaviour: 'spider', fix: 'GUEST REVIEWED - ENTRA ACCESS REVIEWS' },
+    hacker: { tex: 'hacker_0', anim: 'hacker_walk', body: [20, 34, 6, 3], gravity: true, speed: 40, origin: 1, behaviour: 'robot', fix: 'INTRUSION STOPPED - ENABLE ENTRA MFA' }
   };
   // threat category drives the nameplate colour, so the hero can read what each enemy is at a glance
   const CATS = {
@@ -36,7 +36,8 @@
     rbac: ['OVERPRIVILEGED ROLE', 'identity', 'TOO MANY RIGHTS AND IT SHOOTS'],
     guest: ['STALE GUEST', 'identity', 'FORGOTTEN ACCOUNT. DUCK + SLIDE'],
     bug: ['PIPELINE BUG', 'devops', 'HOPS AROUND BUILDS. TEST IT AWAY'],
-    image: ['VULNERABLE IMAGE', 'devops', 'UNPATCHED CONTAINER. IT CHARGES']
+    image: ['VULNERABLE IMAGE', 'devops', 'UNPATCHED CONTAINER. IT CHARGES'],
+    hacker: ['ROGUE HACKER', 'identity', 'FIRES BOLTS. BLOCK WITH MFA SHIELD']
   };
   Object.keys(INFO).forEach((k) => { SPEC[k].label = INFO[k][0]; SPEC[k].cat = INFO[k][1]; SPEC[k].info = INFO[k][2]; });
   const TAG_RANGE = 230;
@@ -55,7 +56,7 @@
       this.dead = false;
       this.flash = 0;
       this.phase = Math.random() * 6;
-      this.shoot = (def.type === 'rbac' || def.type === 'endpoint') || (!!def.shoot && def.type === 'robot');
+      this.shoot = (def.type === 'rbac' || def.type === 'endpoint' || def.type === 'hacker') || (!!def.shoot && def.type === 'robot');
       this.shootCd = 1 + Math.random() * 1.5;
       this.act = 0;
       this.mode = 'walk';

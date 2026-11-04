@@ -91,6 +91,9 @@ Touch run controls include DUCK, SHIELD, PAUSE and HELP. On the title screen E o
 ## Addendum: regions, pipes, threats and online play
 
 - Enemy types (behaviour in `systems/enemies.js` SPEC): `robot`, `drone`, `spider`, plus the region-neutral cyber threats `phish` (hopper), `ram` (Ransomware: walk, wind up, dash) and `botnet` (DDoS cloud, no gravity, drops `ebomb` bombs). All still take 2 hits and drop 1 Azure Credit.
+- The shared ground `hacker` enemy uses `hacker_0`, `hacker_1` and `hacker_walk`, with the
+  existing patrol/shoot behavior. It appears in generated street and data-center levels,
+  takes two hits, drops one Azure Credit and teaches Entra MFA; flight-only worlds are unchanged.
 - `pipes: [{ x, y, zone }]` entry pipes. `pipeZones: [{ x, w, platforms, coins, enemies, lasers, token, entry, exit, back: {x,y} }]` underground bonus zones past the level end. Down (or standing still) on an entry pipe warps to the zone, and its exit pipe returns to `back`.
 - `secret` is `{ x, y, name }` and `bonus.theme` is `'cloud'`, `'retro'` or `'xbox'`. The world row's `opt.secret` is `true` or a theme name.
 - World rows may set `ambient: { sky, birds, road, balls, fx }` (moving background objects). The time of day is chosen at random per run (`sunrise`, `morning`, `day`, `afternoon`, `sunset`, `night`).
@@ -143,6 +146,13 @@ Touch run controls include DUCK, SHIELD, PAUSE and HELP. On the title screen E o
   so saved suit indexes stay valid. The hijab is headwear (`hat: 'hijab'`), not a
   hairstyle; `lookOf` migrates old `hair: 'hijab'` saves. The Gold Mode suit
   (`suit: 'gold'`) is runtime-only and never opens through saves or Hero Lab.
+- The always-open `CLOUD HACKER` outfit is an appended playable hero style with the
+  normal abilities. Its built-in hood is shown when headwear is `none`; explicitly
+  selected headwear replaces the hood without changing the saved look or hair. Its
+  dark, red-accented zip hoodie, enclosed face, red visor and portable terminal match
+  the Rogue Hacker enemy. The built-in hood conceals the hair; other headwear still
+  follows its own hair-coverage rules. No pose, including flight, draws a cape or
+  changes the hero's abilities.
 - Clearing each region grants one outfit, hairstyle and accessory at
   `Save.unlocked >= regionIndex + 2`. Existing classic styles, hats and extras stay open.
 - `AH.Art.hero` exposes `hairNames`, `hairUnlock`, `gearUnlock`, `wardrobeOpen(category, value, unlocked)`,
