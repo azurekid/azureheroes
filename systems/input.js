@@ -22,7 +22,7 @@
 
     addButton(x, y, label, key, scale, o) {
       const s = this.scene;
-      const img = s.add.image(x, y, 'btn').setScrollFactor(0).setDepth(1000).setScale(scale || 1).setAlpha(0.85);
+      const img = s.add.image(x, y, 'btn').setScrollFactor(0).setDepth(1000).setScale((scale || 1) / AH.Art.D).setAlpha(0.85);
       const txt = new AH.PixelText(s, x, y, label, { scale: (o && o.ts) || 1, color: '#ffffff', ox: 0.5, oy: 0.5 }).setScrollFactor(0).setDepth(1001);
       img.setInteractive();
       const set = (v) => {

@@ -14,12 +14,12 @@
       const b = this.sprite.body;
       if (mode === 'fly') {
         b.setAllowGravity(false);
-        b.setSize(24, 14);
-        b.setOffset(4, 17);
+        b.setSize(24 * AH.Art.D, 14 * AH.Art.D);
+        b.setOffset(4 * AH.Art.D, 17 * AH.Art.D);
       } else {
         b.setGravityY(GRAV - scene.physics.world.gravity.y);
-        b.setSize(14, 40);
-        b.setOffset(9, 7);
+        b.setSize(14 * AH.Art.D, 40 * AH.Art.D);
+        b.setOffset(9 * AH.Art.D, 7 * AH.Art.D);
         b.setMaxVelocity(400, 720);
       }
       this.shieldFx = scene.add.image(x, y, 'shield_fx').setDepth(51).setVisible(false);

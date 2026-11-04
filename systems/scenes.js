@@ -38,7 +38,7 @@
       g.fillStyle(0x0a0720, 1).fillTriangle(430, 360, 520, 300, 640, 360);
       g.fillStyle(0xff7ad9, 1).fillRect(0, 332, 640, 2);
 
-      this.hero = this.add.image(545, 238, 'hero_idle').setScale(4.5).setDepth(5);
+      this.hero = this.add.image(545, 238, 'hero_idle').setScale(4.5 / AH.Art.D).setDepth(5);
       this.add.tween({ targets: this.hero, y: 232, yoyo: true, repeat: -1, duration: 1400, ease: 'Sine.easeInOut' });
 
       const W = 10;
@@ -103,7 +103,7 @@
         T(this, x + 98, y + 12, 'LEVEL ' + id, { scale: 3, color: locked ? '#6a6a8a' : '#ffffff', ox: 0.5 }).setDepth(6);
         c.title.forEach((line, k) => T(this, x + 98, y + 44 + k * 18, line, { scale: 2, color: locked ? '#6a6a8a' : '#ffe14a', ox: 0.5 }).setDepth(6));
         const icon = this.add.image(x + 98, y + 132, locked ? 'hero_idle' : c.icon).setDepth(6);
-        if (id === 4 && !locked) icon.setScale(0.9);
+        if (id === 4 && !locked) icon.setScale(0.9 / AH.Art.D);
         if (locked) icon.setTintFill(0x2a2a4a);
         c.desc.forEach((line, k) => T(this, x + 98, y + 178 + k * 10, line, { scale: 1, color: locked ? '#55557a' : '#c9a0ff', ox: 0.5 }).setDepth(6));
         const bs = AH.Save.data.bests[id] || 0;
@@ -190,8 +190,8 @@
 
       const bg = THEME_BG[L.theme];
       this.add.image(0, 0, bg[0]).setOrigin(0).setScrollFactor(0).setDepth(-30);
-      this.far = this.add.tileSprite(0, 360 - this.textures.get(bg[1]).getSourceImage().height, 640, this.textures.get(bg[1]).getSourceImage().height, bg[1]).setOrigin(0).setScrollFactor(0).setDepth(-20);
-      this.near = this.add.tileSprite(0, 360 - this.textures.get(bg[2]).getSourceImage().height, 640, this.textures.get(bg[2]).getSourceImage().height, bg[2]).setOrigin(0).setScrollFactor(0).setDepth(-19);
+      this.far = this.add.tileSprite(0, 360 - this.textures.get(bg[1]).getSourceImage().height / AH.Art.D, 640, this.textures.get(bg[1]).getSourceImage().height / AH.Art.D, bg[1]).setOrigin(0).setScrollFactor(0).setDepth(-20);
+      this.near = this.add.tileSprite(0, 360 - this.textures.get(bg[2]).getSourceImage().height / AH.Art.D, 640, this.textures.get(bg[2]).getSourceImage().height / AH.Art.D, bg[2]).setOrigin(0).setScrollFactor(0).setDepth(-19);
 
       this.solids = this.physics.add.staticGroup();
       this.rects = []; // solid / hazard rectangles used for blasts and rock damage

@@ -25,8 +25,8 @@
       this.phase = Math.random() * 6;
       this.sprite = scene.physics.add.sprite(def.x, def.y, spec.tex).setOrigin(0.5, spec.origin).setDepth(40);
       this.sprite.play(spec.anim);
-      this.sprite.body.setSize(spec.body[0], spec.body[1]);
-      this.sprite.body.setOffset(spec.body[2], spec.body[3]);
+      this.sprite.body.setSize(spec.body[0] * AH.Art.D, spec.body[1] * AH.Art.D);
+      this.sprite.body.setOffset(spec.body[2] * AH.Art.D, spec.body[3] * AH.Art.D);
       this.sprite.body.setAllowGravity(spec.gravity);
       if (spec.gravity) scene.physics.add.collider(this.sprite, scene.solids);
       this.sprite.enemy = this;
