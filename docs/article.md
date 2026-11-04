@@ -1,6 +1,6 @@
 # Building Microsoft Azure Heroes 2027 with no assets and no build step
 
-Microsoft Azure Heroes 2027 is a retro side-scroller about a caped security hero: blue suit, glowing **A** on the chest, sunglasses. The hero runs across neon rooftops, flies through a sky canyon and infiltrates a data center, where a High-Risk CyberGuardian waits at the end.
+Microsoft Azure Heroes 2027 is a retro side-scroller about a caped security hero: blue suit, glowing **A** on the chest, sunglasses. The hero travels the Azure world map through ten regions, from the canals of Amsterdam to the Microsoft campus in Redmond, and ends in a Virginia data center where a High-Risk CyberGuardian waits.
 
 The constraints shaped everything: HTML, CSS and JavaScript only, Phaser 3 from a CDN, no image files, no audio files, and the game must run by opening `index.html`.
 
@@ -28,31 +28,43 @@ The scenery strip never shows the same landmark twice on one screen. The far sky
 ![Amsterdam landmarks](screenshots/amsterdam-landmarks.png)
 ![Amsterdam pull-up bridge](screenshots/amsterdam-drawbridge.png)
 
-## Three levels, three ways to play
+## Ten regions, three ways to play
 
-- **Azure region worlds**: six levels, each themed on a region with recognisable landmarks (Amsterdam, London, Tokyo, Sydney, Rio, Virginia) and a randomly generated layout on every run.
+- **Azure region worlds**: ten levels, each themed on an Azure region (Amsterdam, London, Paris, Tokyo, Sydney, Venice, Rio, Mexico City, Redmond, Virginia). Landmarks come from the whole country, not only the region's city: the Colosseum and the Leaning Tower of Pisa appear in the Italy level, the Space Needle and Mt Rainier in Redmond, and Stonehenge and Edinburgh in the UK level. Every run has a new random layout and a random time of day.
 - **Rooftop runs** are classic platformers. Gaps that need a double jump and timed red laser traps keep it varied.
 - **Sky Canyon Pursuit** switches to an auto-scrolling flight mode. Drones chase the hero, rocks block the canyon and gold rings add score.
 - **Data Center Infiltration** adds hack terminals that fill a Hack Progress bar, Sec Gates that stay closed until the hack is done, cables to jump over and spider bots.
 
-![Sky Canyon Pursuit](screenshots/world3.png)
+![Tokyo Skyway Pursuit](screenshots/world4.png)
 
 Levels are plain data objects (`platforms`, `lasers`, `coins`, `mfaTokens`, `enemies`, `exit`), so adding one means adding one file.
 
-![Data Center Infiltration](screenshots/world6.png)
+![Data Center Infiltration](screenshots/world10.png)
 
 ## Local bosses, local enemies, power-ups
 
-Every region has its own boss in the local style: a Windmill Titan in Amsterdam, a Bearskin Sentinel in London, a hovering Sumo Shogun in Tokyo, a Boxing Roo in Sydney, Carnaval Rei in Rio and the original High-Risk CyberGuardian in Virginia. Enemies, coins and scenery props are re-skinned per region (sushi drones, emus and crocodiles, clog bots and so on).
+Every region has its own boss in the local style: a Windmill Titan in Amsterdam, a Bearskin Sentinel in London, a hovering Sumo Shogun in Tokyo, a Chef de Chaos in Paris, a Boxing Roo in Sydney, Gladiator Maximus in Venice, Carnaval Rei in Rio, El Luchador Supremo in Mexico City, the Blitz Linebacker in Redmond and the original High-Risk CyberGuardian in Virginia. Enemies, coins and scenery props are re-skinned per region (sushi drones, emus and crocodiles, clog bots and so on).
 
 Ground bosses cannot be hit head-on. The player holds the **MFA Shield** to block bolts and charges. After enough blocks the boss is stunned, and only then does an Azure Blast hurt it. Hovering bosses cannot be blocked, so the player dodges and blasts them in an exposed window. All have three attack phases and a health bar with a blinking **RISK LEVEL: HIGH** label.
 
 ![The Boxing Roo](screenshots/boss4.png)
 ![The Sumo Shogun](screenshots/boss3.png)
 
-Floating orbs add Copilot (an auto-firing sidekick), Defender, GitHub Actions, Power BI and Teams power-ups, plus Clippy tips and achievement toasts. The hero can be male or female.
+Floating orbs add Copilot (an auto-firing sidekick), Defender, GitHub Actions, Power BI and Teams power-ups, plus Clippy tips and achievement toasts. The Hero Lab lets players build a male or female hero with six skin tones, several hair styles and colours, and suit colours. Phishing hoppers, Ransomware chargers and DDoS botnet clouds that drop bombs appear in every region, and Azure Pipelines warp pipes lead to underground bonus zones.
+
+![Hero Lab](screenshots/hero-lab.png)
+![Azure Pipelines bonus zone](screenshots/pipe-zone.png)
 
 ![Female hero](screenshots/title-female.png)
+
+## A world map, accounts and a global high score table
+
+Levels are chosen on a pixel-art Azure world map. Cleared regions are linked by gold flight routes with a plane flying the latest leg. Players can continue from the level where they left off, even after a game over.
+
+When the game is hosted with `server.js` on Azure App Service, players register with a hero name and location, their progress syncs between devices and every game over or cleared level posts to a global leaderboard. The server is a single zero-dependency Node.js file with salted scrypt passwords, hashed tokens, rate limits and a JSON store on App Service persistent storage. On a static host the same page runs in guest mode.
+
+![World map](screenshots/world-map-cleared.png)
+![Leaderboard](screenshots/leaderboard.png)
 
 ## Sound without files
 
@@ -64,4 +76,4 @@ Because the game exposes its state, a headless Chrome script can drive it. A sim
 
 ## Run it
 
-Open `index.html`, or deploy the folder to GitHub Pages or Azure Static Web Apps. There is nothing to build. See the [README](../README.md) for controls and deployment.
+Open `index.html`, or deploy the folder to GitHub Pages or Azure Static Web Apps for guest mode. Run `npm start` locally, or deploy to Azure App Service, for accounts and the leaderboard. There is nothing to build. See the [README](../README.md) for controls and deployment.

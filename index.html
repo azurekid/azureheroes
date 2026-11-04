@@ -16,17 +16,47 @@
     #rotate { display: none; position: fixed; left: 0; right: 0; top: 0; padding: 8px; text-align: center; background: #0b0830; color: #ffe14a; font: bold 13px monospace; letter-spacing: 1px; border-bottom: 2px solid #27e0ff; z-index: 5; }
     @media (orientation: portrait) and (pointer: coarse) { #rotate { display: block; } }
     noscript { color: #fff; font: 16px monospace; }
+    #acct { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(10, 7, 32, 0.78); z-index: 10; }
+    #acct[hidden] { display: none; }
+    #acct form { width: min(340px, 92vw); padding: 18px 20px; background: #0b0830; border: 3px solid #27e0ff; box-shadow: 0 0 0 3px #0b0830, 0 0 0 5px #ff7ad9, 0 0 24px #3a1fb0; font: bold 13px monospace; color: #c9a0ff; letter-spacing: 1px; -webkit-user-select: text; user-select: text; touch-action: manipulation; }
+    #acct h2 { margin: 0 0 12px; color: #7fe8ff; font-size: 20px; text-align: center; text-shadow: 2px 2px #3a1fb0; }
+    #acct label { display: block; margin: 8px 0 3px; }
+    #acct input { width: 100%; box-sizing: border-box; padding: 8px; background: #14083a; border: 2px solid #5a3fc0; color: #ffe14a; font: bold 16px monospace; text-transform: uppercase; outline: none; }
+    #acct input[type=password] { text-transform: none; }
+    #acct input:focus { border-color: #27e0ff; }
+    #acct .row { display: flex; gap: 8px; margin-top: 14px; }
+    #acct button { flex: 1; padding: 9px; font: bold 14px monospace; letter-spacing: 1px; border: 2px solid #27e0ff; background: #1a3a9a; color: #fff; cursor: pointer; }
+    #acct button.cancel { background: #2a1450; border-color: #ff7ad9; }
+    #acct .swap { display: block; width: 100%; margin-top: 10px; background: none; border: none; color: #7fe8ff; text-decoration: underline; font-size: 12px; }
+    #acct .err { min-height: 16px; margin-top: 8px; color: #ff6a8a; text-align: center; }
+    #acct .note { margin-top: 6px; color: #7a6aaa; font-size: 11px; text-align: center; }
   </style>
 </head>
 <body>
   <div id="rotate">ROTATE YOUR DEVICE FOR THE BEST EXPERIENCE</div>
   <div id="game"><noscript>Microsoft Azure Heroes 2027 needs JavaScript enabled.</noscript></div>
+  <div id="acct" hidden>
+    <form autocomplete="on" novalidate>
+      <h2>HERO LOGIN</h2>
+      <label for="ah-hero">HERO NAME</label>
+      <input id="ah-hero" name="hero" autocomplete="username" maxlength="15" required>
+      <label for="ah-pass">PASSWORD</label>
+      <input id="ah-pass" name="pass" type="password" maxlength="128" required>
+      <div class="loc"><label for="ah-loc">LOCATION (CITY, COUNTRY)</label>
+      <input id="ah-loc" name="loc" maxlength="20" placeholder="AMSTERDAM, NL"></div>
+      <div class="row"><button type="submit">LOG IN</button><button type="button" class="cancel">CANCEL</button></div>
+      <button type="button" class="swap">CREATE A NEW ACCOUNT</button>
+      <div class="err"></div>
+      <div class="note">NAME AND LOCATION APPEAR ON THE PUBLIC HIGH SCORE BOARD</div>
+    </form>
+  </div>
 
   <script src="https://cdn.jsdelivr.net/npm/phaser@3.80.1/dist/phaser.min.js"></script>
   <script src="art/sprites.js"></script>
   <script src="ui/hud.js"></script>
   <script src="levels/worlds.js"></script>
   <script src="systems/audio.js"></script>
+  <script src="systems/online.js"></script>
   <script src="systems/input.js"></script>
   <script src="systems/player.js"></script>
   <script src="systems/enemies.js"></script>

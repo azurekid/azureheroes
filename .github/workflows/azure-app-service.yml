@@ -1,0 +1,37 @@
+# Tests the API, then deploys the game + server.js to Azure App Service (Linux, Node 20).
+# Setup: create the Web App, then add repository variable AZURE_WEBAPP_NAME and
+# secret AZURE_WEBAPP_PUBLISH_PROFILE (Web App > Overview > Download publish profile).
+name: Deploy to Azure App Service
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm test
+
+  deploy:
+    needs: test
+    if: ${{ vars.AZURE_WEBAPP_NAME != '' }}
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+      - name: Package the app
+        run: zip -r app.zip index.html server.js package.json art ui levels systems
+      - uses: azure/webapps-deploy@v3
+        with:
+          app-name: ${{ vars.AZURE_WEBAPP_NAME }}
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+          package: app.zip

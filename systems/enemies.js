@@ -1,4 +1,5 @@
-/* Enemies: patrol robot, drone, spider bot. Every enemy dies in 2 hits and drops 1 Azure Credit.
+/* Enemies: patrol robot, drone, spider bot, plus the cyber-threat trio: phish (hopper),
+   ram (Ransomware charger) and botnet (DDoS bomber). Every enemy dies in 2 hits and drops 1 Azure Credit.
    Some patrol robots (def.shoot) fire slow energy bolts at the hero; the MFA Shield blocks them. */
 (function () {
   'use strict';
@@ -7,7 +8,10 @@
   const SPEC = {
     robot: { tex: 'robot_0', anim: 'robot_walk', body: [20, 34, 6, 3], gravity: true, speed: 45, origin: 1 },
     drone: { tex: 'drone_0', anim: 'drone_fly', body: [24, 16, 4, 4], gravity: false, speed: 75, origin: 0.5 },
-    spider: { tex: 'spider_0', anim: 'spider_crawl', body: [26, 12, 3, 8], gravity: true, speed: 55, origin: 1 }
+    spider: { tex: 'spider_0', anim: 'spider_crawl', body: [26, 12, 3, 8], gravity: true, speed: 55, origin: 1 },
+    phish: { tex: 'phish_0', anim: 'phish_swim', body: [24, 16, 4, 6], gravity: true, speed: 95, origin: 1 },
+    ram: { tex: 'ram_0', anim: 'ram_run', body: [26, 20, 3, 8], gravity: true, speed: 35, origin: 1 },
+    botnet: { tex: 'botnet_0', anim: 'botnet_float', body: [26, 16, 3, 3], gravity: false, speed: 70, origin: 0.5 }
   };
 
   AH.Enemy = class Enemy {
@@ -26,6 +30,8 @@
       this.phase = Math.random() * 6;
       this.shoot = !!def.shoot && def.type === 'robot';
       this.shootCd = 1 + Math.random() * 1.5;
+      this.act = 0;
+      this.mode = 'walk';
       const skin = def.skin ? 'en_' + def.skin + '_' + def.type : null;
       const local = skin && scene.anims.exists(skin);
       this.sprite = scene.physics.add.sprite(def.x, def.y, local ? skin + '_0' : spec.tex).setOrigin(0.5, spec.origin).setDepth(40);
@@ -77,6 +83,60 @@
         const out = (this.dir > 0 && s.x > this.homeX + lim) || (this.dir < 0 && s.x < this.homeX - lim);
         b.setVelocityX(out ? 0 : this.dir * (near ? sp * 1.8 : sp));
         s.setFlipX(this.dir < 0);
+      } else if (this.type === 'phish') {
+        // waits on the ground, then leaps at the hero like a lure
+        const onGround = b.blocked.down || b.touching.down;
+        const dx = player.x - s.x;
+        this.act -= dt;
+        if (onGround) {
+          b.setVelocityX(0);
+          if (this.act <= 0) {
+            const near = Math.abs(dx) < 240 && Math.abs(player.y - s.y) < 120;
+            let d = near ? (dx > 0 ? 1 : -1) : (s.x > this.homeX ? -1 : 1);
+            if ((d > 0 && s.x > this.homeX + this.range) || (d < 0 && s.x < this.homeX - this.range)) d = -d;
+            this.dir = d;
+            this.act = near ? 1.1 + Math.random() * 0.5 : 1.6 + Math.random() * 0.8;
+            b.setVelocity(d * (near ? sp : sp * 0.5), near ? -300 : -200);
+            s.setFlipX(d < 0);
+          }
+        } else if ((this.dir > 0 && s.x > this.homeX + this.range + 20) || (this.dir < 0 && s.x < this.homeX - this.range - 20)) b.setVelocityX(0);
+      } else if (this.type === 'ram') {
+        // patrols slowly, lowers its horns, then charges across its rooftop
+        const dx = player.x - s.x;
+        const lo = this.homeX - this.range - 30, hi = this.homeX + this.range + 30;
+        this.act -= dt;
+        if (this.mode === 'walk') {
+          if (s.x > this.homeX + this.range) this.dir = -1;
+          else if (s.x < this.homeX - this.range) this.dir = 1;
+          b.setVelocityX(this.dir * sp);
+          if (this.act <= 0 && Math.abs(dx) < 230 && Math.abs(player.y - s.y) < 50) {
+            this.mode = 'wind'; this.act = 0.55; this.dir = dx > 0 ? 1 : -1;
+            b.setVelocityX(0); s.setTint(0xff7060);
+          }
+        } else if (this.mode === 'wind') {
+          b.setVelocityX(0);
+          s.x += Math.sin(this.phase * 60) * 0.6;
+          if (this.act <= 0) { this.mode = 'dash'; this.act = 0.9; s.clearTint(); }
+        } else {
+          b.setVelocityX(this.dir * 240);
+          if (this.act <= 0 || (this.dir > 0 && s.x >= hi) || (this.dir < 0 && s.x <= lo) || b.blocked.left || b.blocked.right) {
+            this.mode = 'walk'; this.act = 1.4; this.dir = -this.dir; b.setVelocityX(0);
+          }
+        }
+        s.setFlipX(this.dir < 0);
+      } else if (this.type === 'botnet') {
+        // shadows the hero from above and drops DDoS bombs
+        const dx = player.x - s.x;
+        const lim = this.range || 160;
+        let vx = 0;
+        if (Math.abs(dx) < 380) vx = Math.max(-sp, Math.min(sp, dx * 1.5));
+        if ((vx > 0 && s.x > this.homeX + lim) || (vx < 0 && s.x < this.homeX - lim)) vx = 0;
+        b.setVelocity(vx, (this.homeY + Math.sin(this.phase * 1.6) * 8 - s.y) * 3);
+        this.shootCd -= dt;
+        if (this.shootCd <= 0 && Math.abs(dx) < 36 && player.y > s.y + 30 && player.y - s.y < 300) {
+          this.shootCd = 1.7 + Math.random() * 0.6;
+          this.scene.spawnEnemyBolt(s.x, s.y + 12, 0, 150);
+        }
       } else {
         const fly = this.scene.mode === 'fly';
         const dx = player.x - s.x, dy = player.y - s.y;
@@ -101,7 +161,8 @@
       s.setTintFill(0xffffff);
       this.flash = 0.12;
       s.body.setVelocityX((dir || 1) * 140);
-      if (this.type !== 'drone') s.body.setVelocityY(-120);
+      if (this.spec.gravity) s.body.setVelocityY(-120);
+      if (this.type === 'ram') { this.mode = 'walk'; this.act = 1; }
       this.scene.burst(s.x, s.y - 10, 'spark', 5, 100);
       return true;
     }

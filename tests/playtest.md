@@ -73,3 +73,23 @@ Headless Chrome (1280x720 and 1920x1080), all 6 levels, no console errors beside
 - PASS: power-up orbs are picked up and the effect timers appear in the HUD (Copilot, Power BI seen live; Defender, Actions and Teams only code-reviewed).
 - PASS: pressing H on the title swaps to the female hero, which renders in levels.
 - NOT TESTED: a bot or human playing a boss fight unassisted, the Copilot sidekick killing enemies, Defender and Actions effects in play, and touch devices. The bosses were forced into the stunned state in these runs.
+
+## 10 regions, world map, accounts and resume (latest pass)
+
+Headless Chrome, 1280x720. One browser process per level.
+
+| Check | Result | Evidence |
+|-------|--------|----------|
+| All 10 levels load and play | PASS | Each level reached the `play` state with the player teleported 2,500px in. No console errors. |
+| All 10 bosses beatable | PASS | Boss forced through stun and blasts in each level. The exit opens and the level complete panel shows. |
+| New enemies (phish, ransomware, botnet) | PASS | They spawn, damage the player, die in 2 hits and drop a credit. Botnet bombs can be blocked with the MFA Shield. |
+| Secret rooms and warp pipes | PASS | Paris Metro secret and pipe round trips on levels 3, 5 and 9. |
+| World map | PASS | Pins, gold routes for cleared legs, plane on the latest leg. Arrow keys plus Enter, and tap twice to deploy, both start the chosen level. |
+| All regions cleared | PASS | Clearing level 10 sets `unlocked` to 11, every pin shows a tick and the resume point is cleared. |
+| Resume / continue | PASS | Continue starts the saved level with the saved score and lives. After a game over it restarts that level with score 0. |
+| Complete, then WORLD MAP, then deploy | PASS | The next level reaches `play` with no errors. |
+| Register, play, game over, world rank | PASS | Against `server.js`: register on the HTML form, game over posts the score, and the panel shows WORLD RANK. The leaderboard lists name, location and score. |
+| Server API | PASS | `npm test`: register, duplicate name, login, wrong password, progress merge, score and rank, leaderboard, logout, static whitelist. |
+| Static host / file:// | PASS | No `/api/health`, so the game stays in guest mode with no account menu and no errors. |
+
+Not tested: real phones and mobile Safari, App Service itself (only the same Node server locally), and many concurrent users.

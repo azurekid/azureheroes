@@ -10,7 +10,7 @@
     constructor(scene, x, y, mode) {
       this.scene = scene;
       this.mode = mode;
-      this.pre = AH.Save.data.hero === 'f' ? 'hero_f_' : 'hero_';
+      this.pre = AH.Art.buildHero(scene, AH.Art.lookOf(AH.Save.data));
       this.speedMul = 1;
       this.defender = 0;
       this.riding = false;

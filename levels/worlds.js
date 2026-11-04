@@ -82,12 +82,16 @@
     take(share(o.laserRate), (p) => { lasered[P.indexOf(p)] = 1; lasers.push({ x: Math.round(p.x + p.w * rnd(0.42, 0.62)), y: p.y - 56, w: 6, h: 56, on: ri(1200, 1700), off: ri(900, 1300), phase: ri(0, 1500) }); }, 220);
     take(share(o.robotRate), (p) => enemies.push({ type: 'robot', x: Math.round(p.x + p.w * rnd(0.4, 0.6)), y: p.y, range: Math.round(Math.min(60, p.w / 2 - 60)), shoot: shoot() }), 200);
     take(share(o.spiderRate || 0), (p) => enemies.push({ type: 'spider', x: Math.round(p.x + p.w * rnd(0.4, 0.6)), y: p.y, range: Math.round(Math.min(70, p.w / 2 - 50)) }), 200);
+    // cyber-threat trio: Phish hoppers, Ransomware rams, Botnet bombers
+    take(share(o.phishRate === undefined ? 0.06 : o.phishRate), (p) => enemies.push({ type: 'phish', x: Math.round(p.x + p.w * rnd(0.4, 0.6)), y: p.y, range: Math.round(Math.min(60, p.w / 2 - 60)) }), 200);
+    take(share(o.ramRate === undefined ? 0.06 : o.ramRate), (p) => enemies.push({ type: 'ram', x: Math.round(p.x + p.w / 2), y: p.y, range: Math.round(Math.min(80, p.w / 2 - 70)) }), 240);
+    shuffle(free.slice()).slice(0, share(o.botnetRate === undefined ? 0.05 : o.botnetRate)).forEach((i) => enemies.push({ type: 'botnet', x: Math.round(P[i].x + P[i].w / 2), y: Math.max(70, P[i].y - ri(150, 175)), range: 140 }));
     // drones hover above rooftops without claiming them; extra walkers double up on long rooftops
     shuffle(free.slice()).slice(0, share(o.droneRate)).forEach((i) => enemies.push({ type: 'drone', x: Math.round(P[i].x + P[i].w * rnd(0.3, 0.7)), y: P[i].y - ri(90, 130), range: 0 }));
     free.forEach((i) => {
       const p = P[i];
       if (p.w < 250 || Math.random() > (o.extraRate || 0)) return;
-      const t = Math.random() < 0.55 ? 'robot' : 'spider';
+      const t = pick(['robot', 'robot', 'spider', 'spider', 'phish']);
       enemies.push({ type: t, x: Math.round(p.x + p.w * rnd(0.72, 0.85)), y: p.y, range: 26, shoot: t === 'robot' && shoot() });
     });
     bridges.forEach((b) => { if (!b.draw && Math.random() < 0.5) enemies.push({ type: 'robot', x: Math.round(b.x + b.w / 2), y: b.y, range: Math.max(10, Math.round(b.w / 2 - 34)), shoot: shoot() }); });
@@ -141,13 +145,22 @@
     const vehicles = [], obstacles = [];
     let sx = null;
     if (secret !== undefined) sx = { x: Math.round(P[secret].x + P[secret].w * 0.78), y: P[secret].y };
+    // warp pipes (Azure Pipelines): entry pipe -> underground stage -> exit pipe further ahead
+    const pipeAt = {}, pipePairs = [];
+    const want = o.pipes === undefined ? 2 : o.pipes;
+    open.filter((i) => i !== secret && i >= 2 && i < n * 0.7).sort((a, b) => a - b).forEach((i) => {
+      if (pipePairs.length >= want || pipePairs.some((q) => Math.abs(q[0] - i) < 6)) return;
+      for (let j = i + 4; j <= Math.min(i + 9, n - 2); j++) {
+        if (j !== secret && !used[j] && !lasered[j] && P[j].w >= 200 && !pipeAt[j]) { pipePairs.push([i, j]); pipeAt[i] = pipeAt[j] = 1; break; }
+      }
+    });
     open.forEach((i) => {
-      if (i === secret) return;
+      if (i === secret || pipeAt[i]) return;
       const p = P[i];
       if (vehicles.length < (o.bikes || 0) && i < n * 0.75) { vehicles.push({ kind: 'bike', x: Math.round(p.x + p.w * 0.3), y: p.y }); return; }
       if (oc < Math.round(open.length * (o.obstacleRate || 0))) {
         oc++;
-        const kind = pick(o.obstacles), sz = OB_SIZE[kind];
+        const kind = pick(o.obstacles), sz = (AH.Art && AH.Art.obSize && AH.Art.obSize[kind]) || OB_SIZE[kind];
         const ox = Math.round(p.x + p.w * rnd(0.3, 0.6) - sz[0] / 2);
         obstacles.push({ kind: kind, x: ox, y: p.y - sz[1], w: sz[0], h: sz[1] });
         coins.push({ x: ox + sz[0] / 2, y: p.y - sz[1] - 26 });
@@ -164,10 +177,26 @@
     const arena = { x: last.x + last.w + 120, y: last.y, w: 760, h: 400 - last.y };
     P.push(arena);
     const width = arena.x + arena.w;
+    const pipes = [], pipeZones = [], pipeSolids = [];
+    pipePairs.forEach((q, k) => {
+      const a = P[q[0]], b = P[q[1]];
+      const ex = Math.round(a.x + a.w * 0.62 - 22), bx = Math.round(b.x + b.w * 0.4 - 22);
+      pipeSolids.push({ x: ex, y: a.y - 46, w: 44, h: 46, pipe: true }, { x: bx, y: b.y - 46, w: 44, h: 46, pipe: true });
+      for (let c = 0; c < 3; c++) coins.push({ x: ex + 22, y: a.y - 70 - c * 22 });
+      const Z = makePipeZone(width + 1200 + k * 1800, m);
+      Z.back = { x: bx + 22, y: b.y - 46 };
+      pipes.push({ x: ex + 22, y: a.y - 46, zone: k });
+      pipeZones.push(Z);
+      Z.coins.forEach((c) => coins.push(c));
+      Z.enemies.forEach((e) => enemies.push(e));
+      Z.lasers.forEach((l) => lasers.push(l));
+      mfaTokens.push(Z.token);
+    });
     return {
-      width: width, platforms: P.concat(floaters, bridges), lasers: lasers, coins: coins, mfaTokens: mfaTokens, powerups: powerups, props: props, enemies: enemies,
+      pipes: pipes, pipeZones: pipeZones,
+      width: width, platforms: P.concat(floaters, bridges, pipeSolids, [].concat.apply([], pipeZones.map((z) => z.platforms))), lasers: lasers, coins: coins, mfaTokens: mfaTokens, powerups: powerups, props: props, enemies: enemies,
       movers: movers, obstacles: obstacles, vehicles: vehicles, deco: deco,
-      secret: sx, bonus: sx ? makeBonus(width + 400) : null,
+      secret: sx ? Object.assign(sx, { name: o.secretName || 'PHONE BOX' }) : sx, bonus: sx ? makeBonus(width + 400, typeof o.secret === 'string' ? o.secret : 'cloud') : null,
       checkpoints: cpIdx.map((i) => ({ x: P[i].x + 40, y: P[i].y })),
       spawn: { x: 60, y: 230 },
       boss: Object.assign({ trigger: arena.x + 40, left: arena.x, right: arena.x + 640, floor: arena.y }, m.boss),
@@ -177,21 +206,62 @@
 
   const OB_SIZE = { bus: [96, 56], cab: [48, 28], flowers: [56, 34], bikes: [60, 24], icecream: [64, 38], lifeguard: [34, 52] };
 
-  // Secret room behind the London phone box: one screen of cloud platforms over a Bliss-style hill, packed with credits.
-  function makeBonus(x) {
+  // Secret bonus room: one screen of floating platforms over a themed floor, packed with credits.
+  // Themes: cloud (Bliss hill), retro (classic desktop), xbox (Game Pass arena).
+  const BONUS = { cloud: ['grass', 'cloud_plat'], retro: ['retro', 'retro_plat'], xbox: ['xbox', 'xbox_plat'] };
+  function makeBonus(x, theme) {
+    const T = BONUS[theme] ? theme : 'cloud';
     const clouds = [], coins = [];
     let cx = x + 90;
     for (let k = 0; k < 4; k++) {
       const cy = ri(170, 225) - (k % 2) * 40;
-      clouds.push({ x: cx, y: cy, w: 80, h: 16, cloud: true });
+      clouds.push({ x: cx, y: cy, w: 80, h: 16, cloud: BONUS[T][1] });
       for (let c = 0; c < 3; c++) coins.push({ x: cx + 16 + c * 24, y: cy - 24 });
       cx += ri(110, 130);
     }
     for (let c = 0; c < 14; c++) coins.push({ x: x + 60 + c * 36, y: 300 - 30 - Math.round(Math.sin(c / 13 * Math.PI) * 50) });
     return {
-      x: x, w: 640, floor: { x: x, y: 300, w: 640, h: 100, bliss: true }, clouds: clouds, coins: coins,
+      x: x, w: 640, theme: T, floor: { x: x, y: 300, w: 640, h: 100, bliss: BONUS[T][0] }, clouds: clouds, coins: coins,
       token: { x: clouds[2].x + 40, y: clouds[2].y - 60 }, power: { kind: pick(['copilot', 'powerbi', 'defender']), x: clouds[1].x + 40, y: clouds[1].y - 50 },
       exit: { x: x + 590, y: 300 }
+    };
+  }
+
+  // Underground Azure Pipelines stage: BUILD > TEST > DEPLOY. Brick walls, floating blocks, lasers and walkers
+  // guard a long trail of credits and one MFA token. The exit pipe returns the hero further along the level.
+  function makePipeZone(x0, m) {
+    const W = 1440, F = 300, platforms = [{ x: x0, y: F, w: W, h: 100, pipeFloor: true }], coins = [], enemies = [], lasers = [];
+    platforms.push({ x: x0, y: -60, w: W, h: 90, pipeFloor: true, ceil: true });
+    let x = x0 + 200;
+    const blocks = [];
+    while (x < x0 + W - 260) {
+      const kind = Math.random();
+      if (kind < 0.4) {
+        const h = ri(36, 84);
+        platforms.push({ x: x, y: F - h, w: 48, h: h, brick: true });
+        for (let c = 0; c < 4; c++) coins.push({ x: x - 30 + c * 36, y: F - h - 26 - Math.round(Math.sin(c / 3 * Math.PI) * 30) });
+        x += ri(170, 220);
+      } else if (kind < 0.75) {
+        const y = ri(196, 222), w = ri(96, 144);
+        platforms.push({ x: x, y: y, w: w, h: 16, brick: true });
+        blocks.push({ x: x, y: y, w: w });
+        for (let c = 0; c < Math.floor(w / 24); c++) coins.push({ x: x + 12 + c * 24, y: y - 22 });
+        if (Math.random() < 0.6) enemies.push({ type: Math.random() < 0.35 ? 'phish' : 'spider', x: Math.round(x + w / 2 + 40), y: F, range: 60 });
+        x += w + ri(90, 130);
+      } else {
+        lasers.push({ x: x + 30, y: F - 56, w: 6, h: 56, on: ri(1000, 1400), off: ri(900, 1200), phase: ri(0, 1500) });
+        for (let c = 0; c < 3; c++) coins.push({ x: x + 6 + c * 24, y: F - 96 - (c === 1 ? 12 : 0) });
+        x += ri(160, 200);
+      }
+    }
+    for (let e = 0; e < 2; e++) enemies.push({ type: 'robot', x: Math.round(x0 + 420 + e * 520 + ri(0, 80)), y: F, range: 50, shoot: e === 1 });
+    const hi = blocks.length ? blocks[Math.floor(blocks.length / 2)] : { x: x0 + 700, y: 220, w: 80 };
+    platforms.push({ x: hi.x + 10, y: hi.y - 64, w: 64, h: 14, brick: true });
+    platforms.push({ x: x0 + W - 112, y: F - 46, w: 44, h: 46, pipe: true });
+    return {
+      x: x0, w: W, platforms: platforms, coins: coins, enemies: enemies, lasers: lasers,
+      token: { x: hi.x + 42, y: hi.y - 92 },
+      entry: { x: x0 + 70, y: 120 }, exit: { x: x0 + W - 90, y: F - 46 }
     };
   }
 
@@ -225,6 +295,7 @@
       const dx = 1100 + Math.round((lastX - 1500) * (d + Math.random() * 0.8) / o.drones);
       enemies.push({ type: 'drone', x: dx, y: ri(110, 270), range: 0 });
     }
+    for (let d = 0; d < (o.botnets === undefined ? 3 : o.botnets); d++) enemies.push({ type: 'botnet', x: 1600 + Math.round((lastX - 2400) * (d + 0.5) / 3), y: ri(60, 90), range: 160 });
     const cps = [];
     for (let i = o.cpEvery; i < o.cols - 3; i += o.cpEvery) cps.push({ x: xs[i] + 28, y: Math.round(centers[i]) });
     const powerups = powerKinds(3, POWER_FLY).map((kind, i) => Object.assign({ kind: kind }, { x: mid(idx[i] || 5 + i * 4).x, y: clamp(mid(idx[i] || 5 + i * 4).y, 80, 290) }));
@@ -279,7 +350,7 @@
 
       const en = s.boss ? 2 : ri(3, 5);
       for (let e = 0; e < en; e++) {
-        const t = pick(['spider', 'spider', 'robot', 'drone']);
+        const t = pick(['spider', 'spider', 'robot', 'drone', 'phish', 'ram']);
         const range = t === 'drone' ? 0 : ri(60, 100);
         const ex = take(s, 36, s.x + 260, limit);
         if (ex !== null) enemies.push({ type: t, x: ex, y: t === 'drone' ? ri(180, 230) : F, range: range, shoot: t === 'robot' && Math.random() < 0.4 });
@@ -318,37 +389,88 @@
   /* ---------------------------------------------------------------- WORLD TABLE */
   const WORLDS = [
     {
-      id: 1, region: 'westeurope', regionName: 'WEST EUROPE', city: 'AMSTERDAM', name: 'Amsterdam Canal Run', mode: 'run', theme: 'roof',
-      tint: 0xffc0a0, landmarks: 'CENTRAAL - SCHIPHOL - MICROSOFT HQ - AMSTEL HOTEL - CANALS', hint: 'RIDE CANAL BOATS, MIND THE PULL-UP BRIDGES, GRAB THE AZURE BIKE', ground: 'quay', water: true, rail: 'quay',
+      id: 1, region: 'westeurope', ambient: { sky: ['plane', 'plane', 'balloon'], birds: 'gull', road: ['tram', 'cyclist', 'cyclist', 'mini'] }, regionName: 'WEST EUROPE', city: 'AMSTERDAM', name: 'Amsterdam Canal Run', mode: 'run', theme: 'roof',
+      tint: 0xffc0a0, landmarks: 'AMSTERDAM - SCHIPHOL - MICROSOFT HQ - KINDERDIJK - ROTTERDAM - UTRECHT - THE HAGUE', hint: 'RIDE CANAL BOATS, MIND THE PULL-UP BRIDGES, GRAB THE AZURE BIKE', ground: 'quay', water: true, rail: 'quay',
       boss: { kind: 'molen', name: 'WINDMILL TITAN', proj: 'molen' },
       opt: { count: 24, gapMin: 100, gapMax: 175, minW: 220, maxW: 340, cpEvery: 7, laserRate: 0.2, robotRate: 0.34, spiderRate: 0.24, droneRate: 0.16, stepRate: 0.14, dropRate: 0.12, floatRate: 0.55, stoneRate: 0.45, power: 4, props: ['tulips', 'bike'], water: true, bridgeRate: 0.2, drawRate: 0.6, boatRate: 0.14, obstacles: ['flowers', 'bikes'], obstacleRate: 0.3, bikes: 2, extraRate: 0.35, floatEnemyRate: 0.3, shootRate: 0.3 }
     },
     {
-      id: 2, region: 'uksouth', regionName: 'UK SOUTH', city: 'LONDON', name: 'London Thames Run', mode: 'run', theme: 'roof',
-      tint: 0xb4c8ff, landmarks: 'THAMES - BIG BEN - EYE - BUCKINGHAM - TOWER OF LONDON', hint: 'RUN THE THAMES EMBANKMENT. A RED PHONE BOX HIDES A SECRET LEVEL!', ground: 'embank', water: true, rail: 'embank',
+      id: 2, region: 'uksouth', ambient: { sky: ['plane', 'heli'], birds: 'pigeon', road: ['redbus', 'cab', 'cab', 'cyclist'] }, regionName: 'UK SOUTH', city: 'LONDON', name: 'London Thames Run', mode: 'run', theme: 'roof',
+      tint: 0xb4c8ff, landmarks: 'BIG BEN - THAMES - STONEHENGE - EDINBURGH - LIVERPOOL - BLACKPOOL - GLENFINNAN', hint: 'RUN THE THAMES EMBANKMENT. A RED PHONE BOX HIDES A SECRET LEVEL!', ground: 'embank', water: true, rail: 'embank',
       boss: { kind: 'guard', name: 'BEARSKIN SENTINEL', proj: 'guard' },
       opt: { count: 28, gapMin: 105, gapMax: 185, minW: 210, maxW: 330, cpEvery: 7, laserRate: 0.22, robotRate: 0.36, spiderRate: 0.25, droneRate: 0.2, stepRate: 0.16, dropRate: 0.12, floatRate: 0.55, stoneRate: 0.5, power: 5, props: ['postbox', 'phone'], water: true, bridgeRate: 0.12, boatRate: 0.14, obstacles: ['bus', 'cab', 'cab'], obstacleRate: 0.35, bikes: 1, secret: true, extraRate: 0.4, floatEnemyRate: 0.35, shootRate: 0.35 }
     },
     {
-      id: 3, region: 'japaneast', regionName: 'JAPAN EAST', city: 'TOKYO', name: 'Tokyo Skyway Pursuit', mode: 'fly', theme: 'neon',
-      tint: 0xffffff, landmarks: 'MOUNT FUJI - TOKYO TOWER - TORII - PAGODA', hint: 'FLY WITH ARROWS / WASD. DODGE DRONES, FLY THROUGH GOLD RINGS. SHIFT = BOOST',
+      id: 3, region: 'francecentral', ambient: { sky: ['plane', 'balloon', 'heli'], birds: 'pigeon', road: ['citroen', 'vespa', 'cyclist', 'cab'] }, regionName: 'FRANCE CENTRAL', city: 'PARIS', name: 'Paris Seine Run', mode: 'run', theme: 'roof',
+      tint: 0xffc7d7, landmarks: 'EIFFEL TOWER - LOUVRE - MONT-SAINT-MICHEL - CARCASSONNE - PONT DU GARD - NICE',
+      hint: 'DODGE THE VESPAS. A METRO ENTRANCE HIDES A RETRO SECRET!', ground: 'quai_paris', water: true, rail: 'quai_paris',
+      boss: { kind: 'chef', name: 'CHEF DE CHAOS', proj: 'chef' },
+      opt: {
+        count: 24, gapMin: 105, gapMax: 185, minW: 210, maxW: 330, cpEvery: 7,
+        laserRate: 0.18, robotRate: 0.34, spiderRate: 0.24, droneRate: 0.2,
+        stepRate: 0.16, dropRate: 0.13, floatRate: 0.52, stoneRate: 0.45, power: 5,
+        props: ['easel', 'macarons'], water: true, bridgeRate: 0.12, boatRate: 0.16,
+        obstacles: ['vespa', 'cafe', 'kiosk'], obstacleRate: 0.32, secret: 'retro', secretName: 'METRO ENTRANCE',
+        extraRate: 0.38, floatEnemyRate: 0.34, shootRate: 0.28
+      }
+    },
+    {
+      id: 4, region: 'japaneast', ambient: { sky: ['plane', 'heli'], birds: 'crane', fx: 'petals' }, regionName: 'JAPAN EAST', city: 'TOKYO', name: 'Tokyo Skyway Pursuit', mode: 'fly', theme: 'neon',
+      tint: 0xffffff, landmarks: 'MOUNT FUJI - TOKYO TOWER - HIMEJI - OSAKA CASTLE - MIYAJIMA - KYOTO - SHINKANSEN', hint: 'FLY WITH ARROWS / WASD. DODGE DRONES, FLY THROUGH GOLD RINGS. SHIFT = BOOST',
       boss: { kind: 'sumo', name: 'SUMO SHOGUN', proj: 'sumo', air: true },
       opt: { cols: 28, spaceMin: 260, spaceMax: 320, halfMin: 68, halfMax: 86, rings: 8, coins: 8, drones: 14, scroll: 100, cpEvery: 8, props: ['lantern', 'carp'] }
     },
     {
-      id: 4, region: 'australiaeast', regionName: 'AUSTRALIA EAST', city: 'SYDNEY', name: 'Sydney Harbour Run', mode: 'run', theme: 'roof',
-      tint: 0xffe0a0, landmarks: 'HARBOUR PIERS - OPERA HOUSE - HARBOUR BRIDGE - LUNA PARK', hint: 'HOP THE FERRIES ALONG THE HARBOUR PIERS. ENEMIES SHOOT BACK!', ground: 'pier', water: true, rail: 'pier',
+      id: 5, region: 'australiaeast', ambient: { sky: ['plane', 'heli', 'balloon'], birds: 'cockatoo', road: ['pickup', 'muscle', 'mini'] }, regionName: 'AUSTRALIA EAST', city: 'SYDNEY', name: 'Sydney Harbour Run', mode: 'run', theme: 'roof',
+      tint: 0xffe0a0, landmarks: 'OPERA HOUSE - HARBOUR BRIDGE - ULURU - MELBOURNE - TWELVE APOSTLES - BRISBANE', hint: 'HOP THE FERRIES ALONG THE HARBOUR PIERS. ENEMIES SHOOT BACK!', ground: 'pier', water: true, rail: 'pier',
       boss: { kind: 'roo', name: 'BOXING ROO', proj: 'roo' },
       opt: { count: 34, gapMin: 110, gapMax: 195, minW: 200, maxW: 320, cpEvery: 8, laserRate: 0.22, robotRate: 0.38, spiderRate: 0.28, droneRate: 0.24, stepRate: 0.18, dropRate: 0.15, floatRate: 0.55, stoneRate: 0.5, power: 6, props: ['surf', 'sign'], water: true, bridgeRate: 0.1, boatRate: 0.16, obstacles: ['icecream', 'lifeguard'], obstacleRate: 0.3, extraRate: 0.45, floatEnemyRate: 0.4, shootRate: 0.4 }
     },
     {
-      id: 5, region: 'brazilsouth', regionName: 'BRAZIL SOUTH', city: 'RIO', name: 'Rio Sugarloaf Pursuit', mode: 'fly', theme: 'rock',
-      tint: 0xb8ff9a, landmarks: 'CHRIST THE REDEEMER - SUGARLOAF - COPACABANA', hint: 'NARROW PASSES AND MORE DRONES. KEEP YOUR BOOST METER READY. SHIFT = BOOST',
+      id: 6, region: 'italynorth', ambient: { sky: ['plane', 'heli'], birds: 'pigeon', road: ['vespa', 'vespa', 'mini', 'citroen'] }, regionName: 'ITALY', city: 'VENICE', name: 'Venice Lagoon Run', mode: 'run', theme: 'roof',
+      tint: 0xffc19b, landmarks: 'RIALTO - ST MARK\'S - GRAND CANAL - BURANO',
+      hint: 'RACE VENICE TURQUOISE CANALS. SEEK THE TREVI PORTAL!',
+      ground: 'itcanal', water: true, rail: 'itcanal',
+      boss: { kind: 'gladiator', name: 'GLADIATOR MAXIMUS', proj: 'gladiator' },
+      opt: {
+        count: 28, gapMin: 100, gapMax: 180, minW: 210, maxW: 320, cpEvery: 7,
+        laserRate: 0.2, robotRate: 0.34, spiderRate: 0.24, droneRate: 0.2,
+        stepRate: 0.15, dropRate: 0.12, floatRate: 0.55, stoneRate: 0.45, power: 5,
+        props: ['cypress', 'amphora'], water: true, bridgeRate: 0.13, boatRate: 0.15,
+        obstacles: ['vespa', 'fiat', 'gelato'], obstacleRate: 0.28, bikes: 1,
+        secret: 'cloud', secretName: 'TREVI PORTAL', extraRate: 0.4, floatEnemyRate: 0.35, shootRate: 0.35
+      }
+    },
+    {
+      id: 7, region: 'brazilsouth', ambient: { sky: ['heli', 'balloon', 'plane'], birds: 'parrot', fx: 'confetti' }, regionName: 'BRAZIL SOUTH', city: 'RIO', name: 'Rio Sugarloaf Pursuit', mode: 'fly', theme: 'rock',
+      tint: 0xb8ff9a, landmarks: 'CHRIST THE REDEEMER - SUGARLOAF - BRASILIA - IGUAZU - MANAUS - SAO PAULO', hint: 'NARROW PASSES AND MORE DRONES. KEEP YOUR BOOST METER READY. SHIFT = BOOST',
       boss: { kind: 'samba', name: 'CARNAVAL REI', proj: 'samba', air: true },
       opt: { cols: 36, spaceMin: 250, spaceMax: 310, halfMin: 66, halfMax: 80, rings: 9, coins: 9, drones: 18, scroll: 110, cpEvery: 9, props: ['balloon', 'kite'] }
     },
     {
-      id: 6, region: 'eastus', regionName: 'EAST US', city: 'VIRGINIA', name: 'Virginia Data Center', mode: 'run', theme: 'rack',
+      id: 8, region: 'mexicocentral', ambient: { sky: ['balloon', 'balloon', 'balloon', 'plane'], birds: 'parrot', fx: 'confetti' }, regionName: 'MEXICO CENTRAL', city: 'MEXICO CITY', name: 'Mexico City Skyway', mode: 'fly', theme: 'adobe',
+      tint: 0xffffff, landmarks: 'TEOTIHUACAN - CHICHEN ITZA - ANGEL - BELLAS ARTES - XOCHIMILCO',
+      hint: 'SOAR ABOVE THE PYRAMIDS. THREAD THE ADOBE PILLARS!',
+      boss: { kind: 'luchador', name: 'EL LUCHADOR SUPREMO', proj: 'luchador', air: true },
+      opt: { cols: 32, spaceMin: 255, spaceMax: 310, halfMin: 68, halfMax: 84, rings: 9, coins: 9, drones: 16, scroll: 105, cpEvery: 8, props: ['pinata', 'papel'] }
+    },
+    {
+      id: 9, region: 'westus2', ambient: { sky: ['plane', 'blimp', 'heli'], birds: 'crow', road: ['taxi', 'pickup', 'schoolbus', 'muscle'], balls: ['football', 'baseball'], fx: 'leaves' }, regionName: 'WEST US 2', city: 'REDMOND', name: 'Redmond Campus Lake Run', mode: 'run', theme: 'roof',
+      tint: 0x9bd5c7, landmarks: 'MICROSOFT CAMPUS - SPACE NEEDLE - MT RAINIER - SEATTLE',
+      hint: 'RUN THE LAKEFRONT. AN XBOX-GREEN DOOR HIDES A BONUS.',
+      ground: 'rd', water: true, rail: 'rd',
+      boss: { kind: 'linebacker', name: 'THE BLITZ LINEBACKER', proj: 'linebacker' },
+      opt: {
+        count: 24, gapMin: 100, gapMax: 170, minW: 210, maxW: 290, cpEvery: 8,
+        laserRate: 0.18, robotRate: 0.34, spiderRate: 0.24, droneRate: 0.2,
+        stepRate: 0.15, dropRate: 0.12, floatRate: 0.52, stoneRate: 0.45,
+        power: 5, props: ['coffee', 'mailbox'], water: true, bridgeRate: 0.12,
+        boatRate: 0.15, obstacles: ['pickup', 'schoolbus', 'taxi'], obstacleRate: 0.3,
+        secret: 'xbox', secretName: 'XBOX DOOR', extraRate: 0.35, floatEnemyRate: 0.3, shootRate: 0.3
+      }
+    },
+    {
+      id: 10, region: 'eastus', regionName: 'EAST US', city: 'VIRGINIA', name: 'Virginia Data Center', mode: 'run', theme: 'rack',
       tint: 0xffffff, landmarks: 'CAPITOL - WASHINGTON MONUMENT - LINCOLN MEMORIAL', hint: 'STAND ON HACK TERMINALS TO OPEN SEC GATES. HOLD E TO RAISE THE MFA SHIELD',
       boss: { kind: 'guardian', name: 'HIGH-RISK CYBERGUARDIAN' },
       opt: { sections: 4 }
@@ -365,7 +487,7 @@
     const body = m.theme === 'rack' ? makeDataCenter(m) : BUILD[m.mode](m);
     const L = Object.assign({
       id: m.id, name: m.name, region: m.region, regionName: m.regionName, city: m.city, landmarks: m.landmarks, hint: m.hint,
-      height: 360, mode: m.mode, theme: m.theme, tint: m.tint, ground: m.ground || null, water: !!m.water, rail: m.rail || null, mfaTokens: []
+      height: 360, mode: m.mode, theme: m.theme, tint: m.tint, ground: m.ground || null, water: !!m.water, rail: m.rail || null, ambient: m.ambient || null, mfaTokens: []
     }, body);
     L.enemies.forEach((e) => { e.skin = m.region; });
     L.time = m.mode === 'fly' ? Math.round(L.width / L.scroll + 90) : Math.round(L.width / 1000 * (m.theme === 'rack' ? 30 : 26) + 110);

@@ -8,3 +8,5 @@ description: Create 16-bit pixel art sprites and HUD for Azure Heroes 2027. Use 
 - Enemies: patrol robot, drone, spider bot, boss CyberGuardian, all in same neon sunset palette.
 - Draw with code / pixel arrays, no external image files.
 - Keep the HUD from the mockups: Health, Score, MFA, Credits, Lives, Time on top, ability + level name at bottom.
+- The world map (`world_map`, `map_plane`) is drawn from lon/lat polygons in `MAP`/`LAND`. Use `AH.Art.MAP.proj(lon, lat)` to place pins for new regions.
+- Cyber-threat enemies (`phish_*`, `ram_*`, `botnet_*`, `ebomb`) are shared by every region.

@@ -30,3 +30,9 @@ Design goal: every world must feel like its own place at a glance, the way each 
 - Boss and enemy logic stays in `systems/` (see gameplay-systems); only data goes in `levels/worlds.js`.
 - Verify with a headless bot on the new level several times: it must be completable, show no console errors, and the boss must be beatable.
 - Return: world id, region, length range, enemy skins, boss name, and how you tested it.
+
+## World map and save data
+- Add the region id with `[lon, lat, dx, dy]` (dx/dy nudge the pin in crowded areas) to `GEO` in `systems/scenes.js`, so its pin appears on the world map.
+- Appending a world keeps existing players' `unlocked` counts valid. Inserting one in the middle shifts level ids.
+- Landmarks can come from the whole country (e.g. Colosseum and Pisa for Italy), not only the region's city.
+- Optional: `ambient` moving objects, `opt.secret` theme, and `opt.pipes` warp pipes (see game-contract).
