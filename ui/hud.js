@@ -44,6 +44,7 @@
       this.time = mk(538, 25, '00:00', '#7fe8ff');
 
       mk(12, 328, 'POWER:', '#ffffff', { scale: 1 });
+      this.puText = mk(240, 327, '', '#ffe14a', { scale: 1 });
       this.power = mk(60, 327, 'AZURE BLAST READY', '#7fe8ff', { scale: 1 });
       const full = 'LEVEL ' + levelId + ' - ' + levelName.toUpperCase();
       const sc = full.length * 12 > 380 ? 1 : 2;
@@ -77,6 +78,8 @@
       const ready = s.boost >= s.blastCost;
       b.fillStyle(ready ? 0x27e0ff : 0x9a4cff, 1).fillRect(60, 337, Math.round(150 * s.boost / 100), 8);
       b.fillStyle(0xffffff, 0.4).fillRect(60, 337, Math.round(150 * s.boost / 100), 2);
+      const pw = s.powers || {};
+      this.puText.setText(Object.keys(pw).map((k) => k.toUpperCase() + ' ' + Math.ceil(pw[k]) + 'S').join('  '));
       this.power.setText(ready ? 'AZURE BLAST READY' : 'BLAST CHARGING...').setColor(ready ? '#7fe8ff' : '#c9a0ff');
 
       const showHack = s.hack !== null && s.hack !== undefined;

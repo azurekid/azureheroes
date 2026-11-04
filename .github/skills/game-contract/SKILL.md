@@ -47,3 +47,10 @@ F Azure Blast, Shift Flight Boost, E / S / Down = MFA Shield, P pause, R restart
 
 ## Level generation addendum
 - `AH.Levels.make(id)` returns a freshly randomised level in the Level format, with extra fields `region`, `regionName`, `city`, `landmarks`, `hint`, `tint`, `mode`.
+
+## Addendum: optional level fields
+
+- `powerups: [{ kind, x, y }]` with kind in `copilot`, `defender`, `actions`, `powerbi`, `teams`. Icons are `pu_<kind>` in art/sprites.js.
+- `props: [{ kind, x, y, float }]` decorative scenery (`prop_<kind>` textures).
+- `boss: { kind, name, proj, air, trigger, left, right, floor }` the regional boss arena. Use the region-world-generator skill.
+- Player API additions: `player.speedMul`, `player.defender` (seconds of invincibility), `AH.Save.data.hero` (`'m'` or `'f'`, textures `hero_*` or `hero_f_*`).

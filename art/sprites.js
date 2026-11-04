@@ -1737,6 +1737,24 @@
   };
   Object.keys(PROPS).forEach(function (k) { reg2('prop_' + k, PROPS[k][0], PROPS[k][1], PROPS[k][2], { shade: 0.4 }); });
 
+  /* ------------------------------------------------------------------ POWER-UP ICONS (20x20 orbs) */
+  const PU = {
+    copilot: ['#ffffff', '#7fe8ff', function (g) { rrect(g, 5, 7, 10, 7, 3, '#1a3fb0'); ell(g, 8, 10.4, 1.3, 1.6, '#9ff0ff'); ell(g, 12, 10.4, 1.3, 1.6, '#9ff0ff'); line(g, 10, 7, 10, 4.5, 1, '#1a3fb0'); ell(g, 10, 4, 1.2, 1.2, '#ff7ad9'); }],
+    defender: ['#9ff0ff', '#1a8fe0', function (g) { poly(g, [[10, 3.5], [15.5, 5.5], [15, 11], [10, 16], [5, 11], [4.5, 5.5]], '#ffffff'); poly(g, [[10, 6], [13, 7.2], [12.6, 10.4], [10, 13], [7.4, 10.4], [7, 7.2]], '#1a8fe0'); }],
+    actions: ['#7dffa0', '#1c8f44', function (g) { poly(g, [[6.5, 4.5], [15.5, 10], [6.5, 15.5]], '#ffffff'); line(g, 4.5, 10, 7, 10, 1.2, '#d6ffe0'); }],
+    powerbi: ['#ffe14a', '#c27a00', function (g) { rrect(g, 4.5, 11, 3, 5, 0.6, '#fff3b0'); rrect(g, 8.5, 7, 3, 9, 0.6, '#ffffff'); rrect(g, 12.5, 4, 3, 12, 0.6, '#fff3b0'); }],
+    teams: ['#c9a0ff', '#5a2fd0', function (g) { rrect(g, 4, 5, 12, 3.4, 1, '#ffffff'); rrect(g, 8.3, 5, 3.4, 11, 1, '#ffffff'); }]
+  };
+  Object.keys(PU).forEach((k) => {
+    const d = PU[k];
+    reg2('pu_' + k, 20, 20, function (g) {
+      ell(g, 10, 10, 9, 9, lg(g, 3, 2, 17, 18, [[0, d[0]], [1, d[1]]]));
+      ell(g, 10, 10, 7.6, 7.6, 'rgba(10,10,60,0.35)');
+      d[2](g);
+      ell(g, 6.5, 5.5, 2.2, 1.3, 'rgba(255,255,255,0.7)');
+    }, { shade: 0, glow: d[0] });
+  });
+
   /* ------------------------------------------------------------------ TITLE ART */
   reg('title_burst', 8, 8, function (g) { R(g, '#ffffff', 0, 0, 8, 8); }, true);
 

@@ -90,6 +90,13 @@
   }
 
   /* ---------------------------------------------------------------- LEVEL SELECT */
+  const POWERS = {
+    copilot: { time: 12, msg: 'COPILOT SIDEKICK! AUTO-BLAST' },
+    defender: { time: 8, msg: 'DEFENDER SHIELD! INVINCIBLE' },
+    actions: { time: 9, msg: 'GITHUB ACTIONS! TURBO SPEED' },
+    powerbi: { time: 12, msg: 'POWER BI! COIN MAGNET + 2X SCORE' },
+    teams: { time: 0, msg: 'TEAMS CALL! +30 HEALTH' }
+  };
   const KIND = { run: 'RUN AND JUMP', fly: 'FLIGHT PURSUIT', rack: 'HACK + BOSS FIGHT' };
   const COLS = 3;
 
@@ -236,6 +243,9 @@
       this.soundBtn = AH.UI.soundButton(this, 630, 98);
       this.toastText = T(this, 320, 110, '', { scale: 2, color: '#ffffff', ox: 0.5 }).setScrollFactor(0).setDepth(950).setVisible(false);
       this.toastT = 0;
+      this.powers = {};
+      this.pal = 0;
+      this.clippyAt = 0;
       this.buildIntro();
       AH.Audio.music('main');
       this.cameras.main.fadeIn(350, 10, 7, 32);
@@ -325,6 +335,11 @@
         const img = this.add.image(p.x, p.y, 'prop_' + p.kind).setOrigin(0.5, p.float ? 0.5 : 1).setDepth(p.float ? 8 : 12);
         if (p.float) this.tweens.add({ targets: img, y: p.y + 7, yoyo: true, repeat: -1, duration: 1400 + (p.x % 600), ease: 'Sine.easeInOut' });
       });
+      this.pups = (L.powerups || []).map((u) => {
+        const spr = this.add.image(u.x, u.y, 'pu_' + u.kind).setDepth(36);
+        this.tweens.add({ targets: spr, y: u.y - 6, yoyo: true, repeat: -1, duration: 700, ease: 'Sine.easeInOut' });
+        return { spr, def: u, taken: false };
+      });
       this.flags = (L.checkpoints || []).map((c) => ({
         def: c, hit: false, spr: this.add.image(c.x, c.y, 'flag_off').setOrigin(0.5, 1).setDepth(15)
       }));
@@ -368,10 +383,61 @@
     }
 
     addScore(n, x, y) {
+      if (this.powers && this.powers.powerbi) n *= 2;
       AH.Run.score += n;
       if (x === undefined) return;
       const t = T(this, x, y, '+' + n, { scale: 1, color: '#ffe14a', ox: 0.5 }).setDepth(70);
       this.tweens.add({ targets: t.img, y: y - 26, alpha: 0, duration: 700, onComplete: () => t.destroy() });
+    }
+
+    activatePower(kind, x, y) {
+      const P = POWERS[kind];
+      AH.Audio.play('power');
+      this.burst(x, y, 'spark_c', 14, 160);
+      this.addScore(300, x, y - 14);
+      if (kind === 'teams') this.player.health = Math.min(100, this.player.health + 30);
+      else this.powers[kind] = P.time;
+      this.toast(P.msg);
+      this.achieve('FIRST POWER-UP', 'power');
+    }
+
+    achieve(name, key) {
+      this.ach = this.ach || {};
+      if (this.ach[key]) return;
+      this.ach[key] = true;
+      const t = T(this, 320, 56, 'ACHIEVEMENT UNLOCKED: ' + name, { scale: 1, color: '#7dffa0', ox: 0.5 }).setScrollFactor(0).setDepth(960);
+      this.tweens.add({ targets: t.img, alpha: 0, delay: 2600, duration: 500, onComplete: () => t.destroy() });
+    }
+
+    updatePowers(dt, p) {
+      const pw = this.powers;
+      Object.keys(pw).forEach((k) => { pw[k] -= dt; if (pw[k] <= 0) delete pw[k]; });
+      this.player.speedMul = pw.actions ? 1.35 : 1;
+      this.player.defender = pw.defender ? 1 : 0;
+      this.player.sprite.setAlpha(pw.defender ? 0.55 + 0.3 * Math.sin(this.time.now / 60) : 1);
+      if (pw.copilot) {
+        this.pal -= dt;
+        if (this.pal <= 0) {
+          let tgt = null, bd = 340;
+          this.enemies.forEach((e) => { const d = Math.abs(e.x - p.x); if (!e.dead && d < bd) { bd = d; tgt = e; } });
+          if (tgt) {
+            this.pal = 0.9;
+            this.spawnBlast(p.x + (tgt.x > p.x ? 26 : -26), p.y - 30, tgt.x > p.x ? 1 : -1);
+            AH.Audio.play('blast');
+          }
+        }
+      }
+      if (pw.powerbi) {
+        this.coins.forEach((c) => {
+          if (c.taken) return;
+          const dx = p.x - c.spr.x, dy = p.y - c.spr.y, d = Math.hypot(dx, dy);
+          if (d < 170 && d > 1) { c.spr.x += dx / d * 260 * dt; c.spr.y += dy / d * 260 * dt; }
+        });
+      }
+      if (this.player.health < 35 && this.time.now > this.clippyAt && this.state === 'play') {
+        this.clippyAt = this.time.now + 20000;
+        this.toast('CLIPPY: LOW HEALTH! GRAB A TEAMS ORB');
+      }
     }
 
     toast(msg) {
@@ -381,6 +447,7 @@
 
     onEnemyKilled(e) {
       this.stats.kills++;
+      this.achieve('FIRST KO', 'ko');
       this.addScore(200, e.x, e.y - 20);
       AH.Audio.play('kill');
       this.burst(e.x, e.y - (e.type === 'drone' ? 0 : 14), 'spark_y', 12, 160);
@@ -401,7 +468,7 @@
       }
       return {
         levelId: this.levelId, levelName: this.L.name, health: p.health, score: AH.Run.score, mfa: p.mfa, credits: p.credits,
-        lives: AH.Run.lives, time: this.timeLeft, boost: p.boost, blastCost: AH.BLAST_COST, hack: hack,
+        lives: AH.Run.lives, time: this.timeLeft, powers: this.powers, boost: p.boost, blastCost: AH.BLAST_COST, hack: hack,
         boss: this.boss && !this.boss.dead ? this.boss.snapshot() : null, mode: this.mode
       };
     }
@@ -523,6 +590,7 @@
       const next = LEVEL_IDS[idx + 1];
       const lines = [
         'SCORE ' + AH.UI.pad(AH.Run.score, 6) + '  TIME BONUS ' + bonus,
+        'DEPLOYED TO ' + this.L.regionName.toUpperCase(),
         'CREDITS ' + this.player.credits + '  MFA ' + this.stats.mfa + '  KO ' + this.stats.kills
       ];
       const buttons = [];
@@ -561,6 +629,7 @@
     onBossDefeated() {
       const B = this.L.boss;
       this.addScore(5000, this.boss.x, this.boss.y - 90);
+      this.achieve('GIANT SLAYER', 'boss');
       this.boss.destroy();
       this.boss = null;
       this.bossDone = true;
@@ -649,6 +718,15 @@
           AH.Audio.play('coin');
         }
       });
+      this.pups.forEach((u) => {
+        if (u.taken) return;
+        if (ov(pr, { x: u.spr.x - 12, y: u.spr.y - 12, w: 24, h: 24 })) {
+          u.taken = true;
+          u.spr.destroy();
+          this.activatePower(u.def.kind, u.def.x, u.def.y);
+        }
+      });
+      this.updatePowers(dt, p);
       this.tokens.forEach((t) => {
         if (t.taken) return;
         if (ov(pr, { x: t.spr.x - 11, y: t.spr.y - 12, w: 22, h: 24 })) {
@@ -663,6 +741,7 @@
             AH.Run.lives += 1;
             AH.Audio.play('life');
             this.toast('5 MFA TOKENS = +1 LIFE!');
+            this.achieve('MFA ENABLED', 'mfa');
           }
         }
       });

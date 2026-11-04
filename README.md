@@ -15,16 +15,30 @@ python3 -m http.server 8080
 
 ## Levels
 
-| Level | Azure region | World | Mode |
-|-------|--------------|-------|------|
-| 1 | `westeurope` | Amsterdam Canal Run: windmill, canal houses, Westerkerk | Run |
-| 2 | `uksouth` | London Thames Run: Big Ben, Tower Bridge, London Eye, the Shard | Run |
-| 3 | `japaneast` | Tokyo Skyway Pursuit: Mount Fuji, Tokyo Tower, torii, pagoda | Flight |
-| 4 | `australiaeast` | Sydney Harbour Run: Opera House, Harbour Bridge | Run |
-| 5 | `brazilsouth` | Rio Sugarloaf Pursuit: Christ the Redeemer, Sugarloaf | Flight |
-| 6 | `eastus` | Virginia Data Center: Capitol, Washington Monument, hack terminals, Sec Gates and the High-Risk CyberGuardian boss | Data center |
+| Level | Azure region | World | Local enemies | Boss | Mode |
+|-------|--------------|-------|---------------|------|------|
+| 1 | `westeurope` | Amsterdam Canal Run: windmill, canal houses, Westerkerk | clog bots, windmill drones, cheese crawlers | Windmill Titan | Run |
+| 2 | `uksouth` | London Thames Run: Big Ben, Tower Bridge, London Eye, the Shard | bearskin guards, ravens, black-cab crawlers | Bearskin Sentinel | Run |
+| 3 | `japaneast` | Tokyo Skyway Pursuit: Mount Fuji, Tokyo Tower, torii, pagoda | sushi drones | Sumo Shogun (hovering) | Flight |
+| 4 | `australiaeast` | Sydney Harbour Run: Opera House, Harbour Bridge | emus, cockatoos, crocodiles | Boxing Roo | Run |
+| 5 | `brazilsouth` | Rio Sugarloaf Pursuit: Christ the Redeemer, Sugarloaf | macaw drones | Carnaval Rei (hovering) | Flight |
+| 6 | `eastus` | Virginia Data Center: Capitol, Washington Monument, hack terminals, Sec Gates | Minutemen, bald eagles, crabs | High-Risk CyberGuardian | Data center |
 
-Levels are generated at random each time a level starts, so platforms, lasers, enemies, coins and MFA tokens land in new places on every run. Each level is 9,000 to 13,000 px long.
+Levels are generated at random each time a level starts, so platforms, lasers, enemies, coins, power-ups and MFA tokens land in new places on every run. Each level is 7,500 to 13,500 px long. Run levels mix gaps, steps up, drops and floating upper platforms at different heights, and every region has its own coins (EUR, GBP, JPY, AUD, BRL, USD) and scenery props.
+
+Every level ends in an arena with that region's boss. Ground bosses must be blocked with the MFA Shield until they are stunned. Hovering bosses (Tokyo, Rio) cannot be blocked: dodge their volleys, then blast them while they are exposed. The exit opens when the boss is down.
+
+### Power-ups
+
+| Orb | Effect |
+|-----|--------|
+| Copilot | A sidekick auto-fires Azure Blasts at nearby enemies for 12 s |
+| Defender | Invincible for 8 s |
+| GitHub Actions | Turbo speed for 9 s |
+| Power BI | Coin magnet and double score for 12 s |
+| Teams | Instant +30 health |
+
+Clippy warns you when health is low, and Xbox-style achievements pop up for firsts. Pick a hero on the title screen with **H** or by tapping the hero (male or female); the choice is saved.
 
 Collect 5 MFA tokens for an extra life. Every enemy takes 2 hits and drops an Azure Credit. Best score and unlocked levels are stored in `localStorage`.
 
@@ -64,12 +78,19 @@ The site is static, so no build configuration is needed.
 
 ## Screenshots
 
+![Female hero on the title screen](docs/screenshots/title-female.png)
+![Level select](docs/screenshots/select.png)
 ![World 1](docs/screenshots/world1.png)
 ![World 2](docs/screenshots/world2.png)
 ![World 3](docs/screenshots/world3.png)
 ![World 4](docs/screenshots/world4.png)
 ![World 5](docs/screenshots/world5.png)
 ![World 6](docs/screenshots/world6.png)
-![CyberGuardian boss](docs/screenshots/boss.png)
+![Windmill Titan](docs/screenshots/boss1.png)
+![Bearskin Sentinel](docs/screenshots/boss2.png)
+![Sumo Shogun](docs/screenshots/boss3.png)
+![Boxing Roo](docs/screenshots/boss4.png)
+![Carnaval Rei](docs/screenshots/boss5.png)
+![CyberGuardian](docs/screenshots/boss6.png)
 
 Read the write-up in [docs/article.md](docs/article.md).

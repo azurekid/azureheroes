@@ -32,11 +32,18 @@ Levels are plain data objects (`platforms`, `lasers`, `coins`, `mfaTokens`, `ene
 
 ![Data Center Infiltration](screenshots/world6.png)
 
-## The boss
+## Local bosses, local enemies, power-ups
 
-The High-Risk CyberGuardian cannot be hit head-on. The player must hold the **MFA Shield** to block its bolts and charges. After enough blocks the boss is stunned, and only then does an Azure Blast hurt it. It has three attack phases and a health bar with a blinking **RISK LEVEL: HIGH** label.
+Every region has its own boss in the local style: a Windmill Titan in Amsterdam, a Bearskin Sentinel in London, a hovering Sumo Shogun in Tokyo, a Boxing Roo in Sydney, Carnaval Rei in Rio and the original High-Risk CyberGuardian in Virginia. Enemies, coins and scenery props are re-skinned per region (sushi drones, emus and crocodiles, clog bots and so on).
 
-![The CyberGuardian is stunned](screenshots/boss.png)
+Ground bosses cannot be hit head-on. The player holds the **MFA Shield** to block bolts and charges. After enough blocks the boss is stunned, and only then does an Azure Blast hurt it. Hovering bosses cannot be blocked, so the player dodges and blasts them in an exposed window. All have three attack phases and a health bar with a blinking **RISK LEVEL: HIGH** label.
+
+![The Boxing Roo](screenshots/boss4.png)
+![The Sumo Shogun](screenshots/boss3.png)
+
+Floating orbs add Copilot (an auto-firing sidekick), Defender, GitHub Actions, Power BI and Teams power-ups, plus Clippy tips and achievement toasts. The hero can be male or female.
+
+![Female hero](screenshots/title-female.png)
 
 ## Sound without files
 
