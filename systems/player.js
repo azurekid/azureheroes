@@ -10,7 +10,10 @@
     constructor(scene, x, y, mode) {
       this.scene = scene;
       this.mode = mode;
-      this.sprite = scene.physics.add.sprite(x, y, mode === 'fly' ? 'hero_fly' : 'hero_idle').setDepth(50);
+      this.pre = AH.Save.data.hero === 'f' ? 'hero_f_' : 'hero_';
+      this.speedMul = 1;
+      this.defender = 0;
+      this.sprite = scene.physics.add.sprite(x, y, this.pre + (mode === 'fly' ? 'fly' : 'idle')).setDepth(50);
       const b = this.sprite.body;
       if (mode === 'fly') {
         b.setAllowGravity(false);
@@ -76,7 +79,7 @@
     fly(dx, dy, dt, boosting) {
       const v = this.sprite.body;
       if (this.mode === 'fly') {
-        const sp = FLY_SPEED * (boosting ? 1.5 : 1);
+        const sp = FLY_SPEED * (boosting ? 1.5 : 1) * this.speedMul;
         const len = Math.hypot(dx, dy) || 1;
         const sc = this.scene.scrollSpeed || 0;
         v.setVelocity((dx / len) * sp * (dx || dy ? 1 : 0) + sc, (dy / len) * sp * (dx || dy ? 1 : 0));
@@ -87,7 +90,7 @@
     }
 
     hurt(amount, srcX) {
-      if (this.invuln > 0 || this.health <= 0) return false;
+      if (this.invuln > 0 || this.defender > 0 || this.health <= 0) return false;
       this.health = Math.max(0, this.health - amount);
       this.invuln = 1.1;
       const dir = this.x < srcX ? -1 : 1;
@@ -110,6 +113,7 @@
     update(dt, cmd) {
       const s = this.sprite, b = s.body;
       this.invuln = Math.max(0, this.invuln - dt);
+      this.defender = Math.max(0, this.defender - dt);
       this.blastCd = Math.max(0, this.blastCd - dt);
       this.attackT = Math.max(0, this.attackT - dt);
       this.onGround = b.blocked.down || b.touching.down;
@@ -128,7 +132,7 @@
         if (s.x > maxX) { s.x = maxX; b.setVelocityX(Math.min(b.velocity.x, this.scene.scrollSpeed)); }
         s.y = Phaser.Math.Clamp(s.y, 66, 312);
         s.setAngle(Phaser.Math.Clamp((b.velocity.y / FLY_SPEED) * 18, -20, 20));
-        s.setTexture(this.attackT > 0 ? 'hero_attack' : 'hero_fly');
+        s.setTexture(this.attackT > 0 ? this.pre + 'attack' : this.pre + 'fly');
         if (this.attackT > 0) s.setAngle(0);
         s.setFlipX(false);
         if (cmd.fire) this.azureBlast();
@@ -137,7 +141,7 @@
         this.shielding = !!cmd.shield && this.onGround;
         let dir = (cmd.right ? 1 : 0) - (cmd.left ? 1 : 0);
         if (dir !== 0) this.facing = dir;
-        const speed = this.shielding ? RUN * 0.2 : RUN;
+        const speed = (this.shielding ? RUN * 0.2 : RUN) * this.speedMul;
         const target = dir * speed;
         const vx = b.velocity.x;
         const acc = this.onGround ? 2400 : 1500;
@@ -156,13 +160,13 @@
         }
         if (cmd.fire && !this.shielding) this.azureBlast();
 
-        if (this.attackT > 0) s.setTexture('hero_attack');
-        else if (this.shielding) s.setTexture('hero_shield');
-        else if (!this.onGround) s.setTexture('hero_jump');
+        if (this.attackT > 0) s.setTexture(this.pre + 'attack');
+        else if (this.shielding) s.setTexture(this.pre + 'shield');
+        else if (!this.onGround) s.setTexture(this.pre + 'jump');
         else if (Math.abs(b.velocity.x) > 20) {
           this.runT += dt * 12;
-          s.setTexture('hero_run' + (Math.floor(this.runT) % 4));
-        } else s.setTexture('hero_idle');
+          s.setTexture(this.pre + 'run' + (Math.floor(this.runT) % 4));
+        } else s.setTexture(this.pre + 'idle');
         s.setFlipX(this.facing < 0);
         s.setAngle(0);
       }

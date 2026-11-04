@@ -91,6 +91,7 @@
       }
       const bs = s.boss;
       this.bossLabel.setVisible(!!bs);
+      if (bs && bs.name !== this.bossName) { this.bossName = bs.name; this.bossLabel.setText(bs.name); }
       this.risk.setVisible(!!bs).setAlpha(Math.floor(this.t * 3) % 2 ? 0.55 : 1);
       this.stun.setVisible(!!bs && bs.stunned);
       if (bs) {

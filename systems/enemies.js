@@ -23,8 +23,10 @@
       this.dead = false;
       this.flash = 0;
       this.phase = Math.random() * 6;
-      this.sprite = scene.physics.add.sprite(def.x, def.y, spec.tex).setOrigin(0.5, spec.origin).setDepth(40);
-      this.sprite.play(spec.anim);
+      const skin = def.skin ? 'en_' + def.skin + '_' + def.type : null;
+      const local = skin && scene.anims.exists(skin);
+      this.sprite = scene.physics.add.sprite(def.x, def.y, local ? skin + '_0' : spec.tex).setOrigin(0.5, spec.origin).setDepth(40);
+      this.sprite.play(local ? skin : spec.anim);
       this.sprite.body.setSize(spec.body[0] * AH.Art.D, spec.body[1] * AH.Art.D);
       this.sprite.body.setOffset(spec.body[2] * AH.Art.D, spec.body[3] * AH.Art.D);
       this.sprite.body.setAllowGravity(spec.gravity);
@@ -68,6 +70,7 @@
           const ang = Math.atan2(ty - s.y, tx - s.x);
           const v = fly ? 110 : sp;
           b.setVelocity(Math.cos(ang) * v, Math.sin(ang) * v);
+          s.setFlipX(b.velocity.x < 0);
         } else {
           b.setVelocity(0, Math.cos(this.phase * 2) * 22);
         }

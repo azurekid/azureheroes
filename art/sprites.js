@@ -242,12 +242,21 @@
   function heroHead(g, dx, dy) {
     dx = dx || 0; dy = dy || 0;
     g.save(); g.translate(dx, dy);
+    if (FEM) {
+      poly(g, [[12, 5], [9, 8], [5.4, 13], [4.6, 19], [7.4, 21.6], [9.6, 15.6], [11.4, 10.6]], lg(g, 5, 5, 12, 20, [[0, '#d06a9a'], [1, '#5a1f4f']]));
+      poly(g, [[11.2, 6], [10.6, 12], [12.4, 15], [13.6, 9]], '#6a2358');
+    }
     rrect(g, 14.2, 11.6, 4.4, 3.6, 1, H.skinD);                       // neck
     ell(g, 16.8, 8, 5.2, 5.6, lg(g, 12, 3, 21, 13, [[0, '#ffd2ad'], [1, H.skin]])); // face
     poly(g, [[12.4, 9], [21.2, 9], [20, 13], [17.2, 14.4], [14, 13]], lg(g, 0, 9, 0, 14, [[0, H.skin], [1, H.skinD]])); // jaw
     // hair swoop
     poly(g, [[11.2, 8.4], [11, 4.4], [13.4, 1.6], [17.6, 0.8], [21.6, 2.4], [22.4, 5], [20.6, 4.2], [17.6, 3.2], [14.6, 4.6], [13.4, 8.2]], lg(g, 11, 1, 22, 8, [[0, H.hairL], [0.5, H.hair], [1, '#07072a']]));
     line(g, 14, 3.4, 19.4, 2.2, 0.7, 'rgba(160,170,255,0.7)');
+    if (FEM) {
+      poly(g, [[11, 8.4], [10.6, 4], [13.4, 1.2], [17.8, 0.4], [22, 2.2], [22.8, 5.4], [20.4, 3.6], [17.6, 3], [14.8, 4.4], [13.2, 9.6]], lg(g, 11, 1, 22, 8, [[0, '#e07cb0'], [0.5, '#7a2a64'], [1, '#3a0f38']]));
+      ell(g, 12.2, 3.2, 1.8, 1.6, '#2f6bff');
+      line(g, 14, 3, 19.6, 1.8, 0.7, 'rgba(255,190,230,0.75)');
+    }
     // sunglasses
     rrect(g, 13.2, 6.6, 9.4, 3.4, 1.2, '#06103a');
     poly(g, [[14, 7.2], [18.6, 7.2], [18, 9.4], [14.4, 9.4]], lg(g, 14, 7, 18, 10, [[0, '#9ff0ff'], [1, '#1a8fe0']]));
@@ -256,7 +265,8 @@
     // brow, nose, smirk
     line(g, 19.4, 5.8, 22, 5.6, 0.7, H.hair);
     line(g, 20.2, 10.4, 20.8, 11.4, 0.5, H.skinD);
-    line(g, 17.6, 12.5, 20.6, 12.1, 0.7, '#a24b44');
+    line(g, 17.6, 12.5, 20.6, 12.1, FEM ? 0.9 : 0.7, FEM ? '#ff3f8f' : '#a24b44');
+    if (FEM) line(g, 20.6, 6.4, 22.4, 5.8, 0.5, '#14133f');
     g.restore();
   }
   function heroShoulder(g, x, y, big) {
@@ -289,43 +299,51 @@
       }
     };
   }
-  const BK = [[10, 16], [9, 22], [10.4, 28]];
-  const IDLE_LEGS = [[13, 13.4, 38, 12.4, 47], [19, 19.2, 38, 20, 47]];
-  reg2('hero_idle', 32, 48, hero({ flare: 2, capeLen: 42, legs: IDLE_LEGS, back: BK, front: [[22.6, 16], [23.6, 22], [23.4, 28]], hx: 0 }));
-  const RUN = [
-    [[13, 9.6, 37, 6, 45], [19, 22, 36, 25.4, 44]],
-    [[13, 11.4, 38, 10.6, 46], [19, 21, 38, 22.4, 45]],
-    [[13, 17, 36, 21, 44], [19, 15, 38, 9.6, 45]],
-    [[13, 14.6, 38, 15.6, 45], [19, 18.6, 38, 18, 46]]
-  ];
-  RUN.forEach((l, i) => reg2('hero_run' + i, 32, 48, hero({ flare: 8, capeLen: 40, legs: l, back: [[10, 16], [6, 20], [4, 25]], front: [[22.6, 16], [26, 19], [29.6, 18]], fist: true, hx: 1 })));
-  reg2('hero_jump', 32, 48, hero({ flare: 6, capeLen: 42, legs: [[13, 8, 36, 9, 42], [19, 24, 34, 22, 43]], back: [[10, 16], [7, 12], [8, 7]], front: [[22.6, 16], [25, 11], [26.4, 5]], fist: true }));
-  reg2('hero_attack', 32, 48, hero({ flare: 5, capeLen: 40, legs: [[13, 8, 38, 6.4, 47], [19, 24, 38, 26, 47]], back: [[10, 16], [8, 20], [11, 21]], front: [[22.6, 16.4], [26.4, 18], [30.6, 17.6]], fist: true, hx: 1, punchFx: 17.6 }));
-  reg2('hero_shield', 32, 48, hero({ flare: 0, capeLen: 42, legs: [[13, 12, 38, 9, 47], [19, 21.6, 38, 24, 47]], back: [[10, 16], [8, 22], [11, 26]], front: [[22.6, 16], [26, 15.4], [28.6, 15.8]], fist: true, hx: 0 }));
-  reg2('hero_fly', 32, 48, function (g) {
-    // horizontal superhero flight pose facing right
-    poly(g, [[14, 18], [2, 14], [0.8, 20], [1.6, 26], [14, 26]], lg(g, 0, 14, 14, 26, [[0, H.capeD], [0.5, H.cape], [1, H.capeL]]));
-    line(g, 12, 19, 3, 16.5, 0.8, 'rgba(8,16,70,0.55)'); line(g, 12, 22, 2.4, 22, 0.8, 'rgba(8,16,70,0.55)');
-    line(g, 12, 25, 3, 26, 0.7, 'rgba(120,170,255,0.5)');
-    limb(g, 7, 25, 1.4, 28, 5.4, H.suitD, H.suitD, H.suitM);                                      // back leg
-    poly(g, [[0.4, 26], [3.6, 25], [4.6, 31], [0.6, 31.4]], lg(g, 0, 25, 4, 31, [[0, H.bootL], [1, H.boots]]));
-    limb(g, 8, 24, 3, 26, 5.6, H.suitM, H.suit, H.suitL);                                         // front leg
-    poly(g, [[0, 23.6], [3.4, 23.2], [4.2, 29], [0.4, 29.4]], lg(g, 0, 23, 4, 29, [[0, H.bootL], [1, H.boots]]));
-    poly(g, [[8, 19], [12, 17.4], [23, 18.4], [25, 21], [23, 26.4], [9, 26]], lg(g, 8, 17, 22, 26, [[0, H.suitL], [0.4, H.suit], [1, H.suitD]]));
-    rrect(g, 13.2, 18, 2.6, 8.4, 1, lg(g, 0, 18, 0, 27, [[0, '#e6f6ff'], [1, '#6a8fc8']]));
-    const gl = g.createRadialGradient(19.6, 22, 0.5, 19.6, 22, 5);
-    gl.addColorStop(0, 'rgba(159,240,255,0.95)'); gl.addColorStop(1, 'rgba(79,200,255,0)');
-    g.fillStyle = gl; g.fillRect(14, 16, 12, 12);
-    poly(g, [[22, 20], [19, 24], [20.2, 24], [20.9, 22.6], [22.4, 22.6]], '#ffffff');
-    ell(g, 24, 18.6, 3.2, 3, lg(g, 21, 16, 26, 21, [[0, H.suitL], [1, H.suitM]]));
-    limb(g, 24, 18.6, 28.4, 17.6, 4.6, H.suitM, H.suit, H.suitL);                                 // reaching arm
-    limb(g, 28.4, 17.6, 31.4, 16.6, 4, H.suitM, H.suit, H.suitL);
-    ell(g, 30, 17, 2.6, 2.6, H.cuff); ell(g, 31.3, 16.8, 2.5, 2.5, H.skin);
-    rrect(g, 21.6, 20.6, 3.6, 3, 1, H.skinD);                                                      // neck
-    g.save(); g.translate(9.4, 10.4);
-    heroHead(g, 0, 0);
-    g.restore();
-  });
+  let FEM = false;
+  function regHero(P, fem) {
+    FEM = fem;
+    const BK = [[10, 16], [9, 22], [10.4, 28]];
+    const IDLE_LEGS = [[13, 13.4, 38, 12.4, 47], [19, 19.2, 38, 20, 47]];
+    reg2(P + 'idle', 32, 48, hero({ flare: 2, capeLen: 42, legs: IDLE_LEGS, back: BK, front: [[22.6, 16], [23.6, 22], [23.4, 28]], hx: 0 }));
+    const RUN = [
+      [[13, 9.6, 37, 6, 45], [19, 22, 36, 25.4, 44]],
+      [[13, 11.4, 38, 10.6, 46], [19, 21, 38, 22.4, 45]],
+      [[13, 17, 36, 21, 44], [19, 15, 38, 9.6, 45]],
+      [[13, 14.6, 38, 15.6, 45], [19, 18.6, 38, 18, 46]]
+    ];
+    RUN.forEach((l, i) => reg2(P + 'run' + i, 32, 48, hero({ flare: 8, capeLen: 40, legs: l, back: [[10, 16], [6, 20], [4, 25]], front: [[22.6, 16], [26, 19], [29.6, 18]], fist: true, hx: 1 })));
+    reg2(P + 'jump', 32, 48, hero({ flare: 6, capeLen: 42, legs: [[13, 8, 36, 9, 42], [19, 24, 34, 22, 43]], back: [[10, 16], [7, 12], [8, 7]], front: [[22.6, 16], [25, 11], [26.4, 5]], fist: true }));
+    reg2(P + 'attack', 32, 48, hero({ flare: 5, capeLen: 40, legs: [[13, 8, 38, 6.4, 47], [19, 24, 38, 26, 47]], back: [[10, 16], [8, 20], [11, 21]], front: [[22.6, 16.4], [26.4, 18], [30.6, 17.6]], fist: true, hx: 1, punchFx: 17.6 }));
+    reg2(P + 'shield', 32, 48, hero({ flare: 0, capeLen: 42, legs: [[13, 12, 38, 9, 47], [19, 21.6, 38, 24, 47]], back: [[10, 16], [8, 22], [11, 26]], front: [[22.6, 16], [26, 15.4], [28.6, 15.8]], fist: true, hx: 0 }));
+    reg2(P + 'fly', 32, 48, function (g) {
+      // horizontal superhero flight pose facing right
+      poly(g, [[14, 18], [2, 14], [0.8, 20], [1.6, 26], [14, 26]], lg(g, 0, 14, 14, 26, [[0, H.capeD], [0.5, H.cape], [1, H.capeL]]));
+      line(g, 12, 19, 3, 16.5, 0.8, 'rgba(8,16,70,0.55)'); line(g, 12, 22, 2.4, 22, 0.8, 'rgba(8,16,70,0.55)');
+      line(g, 12, 25, 3, 26, 0.7, 'rgba(120,170,255,0.5)');
+      limb(g, 7, 25, 1.4, 28, 5.4, H.suitD, H.suitD, H.suitM);                                      // back leg
+      poly(g, [[0.4, 26], [3.6, 25], [4.6, 31], [0.6, 31.4]], lg(g, 0, 25, 4, 31, [[0, H.bootL], [1, H.boots]]));
+      limb(g, 8, 24, 3, 26, 5.6, H.suitM, H.suit, H.suitL);                                         // front leg
+      poly(g, [[0, 23.6], [3.4, 23.2], [4.2, 29], [0.4, 29.4]], lg(g, 0, 23, 4, 29, [[0, H.bootL], [1, H.boots]]));
+      poly(g, [[8, 19], [12, 17.4], [23, 18.4], [25, 21], [23, 26.4], [9, 26]], lg(g, 8, 17, 22, 26, [[0, H.suitL], [0.4, H.suit], [1, H.suitD]]));
+      rrect(g, 13.2, 18, 2.6, 8.4, 1, lg(g, 0, 18, 0, 27, [[0, '#e6f6ff'], [1, '#6a8fc8']]));
+      const gl = g.createRadialGradient(19.6, 22, 0.5, 19.6, 22, 5);
+      gl.addColorStop(0, 'rgba(159,240,255,0.95)'); gl.addColorStop(1, 'rgba(79,200,255,0)');
+      g.fillStyle = gl; g.fillRect(14, 16, 12, 12);
+      poly(g, [[22, 20], [19, 24], [20.2, 24], [20.9, 22.6], [22.4, 22.6]], '#ffffff');
+      ell(g, 24, 18.6, 3.2, 3, lg(g, 21, 16, 26, 21, [[0, H.suitL], [1, H.suitM]]));
+      limb(g, 24, 18.6, 28.4, 17.6, 4.6, H.suitM, H.suit, H.suitL);                                 // reaching arm
+      limb(g, 28.4, 17.6, 31.4, 16.6, 4, H.suitM, H.suit, H.suitL);
+      ell(g, 30, 17, 2.6, 2.6, H.cuff); ell(g, 31.3, 16.8, 2.5, 2.5, H.skin);
+      rrect(g, 21.6, 20.6, 3.6, 3, 1, H.skinD);                                                      // neck
+      g.save(); g.translate(9.4, 10.4);
+      heroHead(g, 0, 0);
+      g.restore();
+    });
+
+    FEM = false;
+  }
+  regHero('hero_', false);
+  regHero('hero_f_', true);
   reg2('shield_fx', 20, 52, function (g) {
     const gr = g.createLinearGradient(2, 0, 18, 0);
     gr.addColorStop(0, 'rgba(39,224,255,0.05)'); gr.addColorStop(0.6, 'rgba(39,224,255,0.4)'); gr.addColorStop(1, 'rgba(180,250,255,0.85)');
@@ -1296,6 +1314,429 @@
     }
   };
 
+  /* ------------------------------------------------------------------ REGION ENEMIES, BOSSES, COINS AND PROPS */
+  const EYE = '#ff2a4a';
+  function eyes(g, x1, x2, y, r) {
+    [x1, x2].forEach(function (x) { eyeGlow(g, x, y, r, EYE); ell(g, x, y, r * 1.1, r * 1.1, EYE); ell(g, x - r * 0.3, y - r * 0.4, r * 0.35, r * 0.35, '#ffffff'); });
+  }
+  const GOLD = [[0, '#fff3a0'], [0.5, '#ffd23f'], [1, '#c77800']];
+
+  // walkers (32x37, art faces left)
+  function walkClog(f) {
+    return function (g) {
+      const o = f ? 2 : 0;
+      limb(g, 12, 28, 11 + o, 35, 4.4, '#0f1c66', '#2455e0', '#6fb4ff'); limb(g, 20, 28, 21 - o, 35, 4.4, '#0f1c66', '#2455e0', '#6fb4ff');
+      rrect(g, 7 + o, 34, 8, 3, 1.4, '#14133f'); rrect(g, 17 - o, 34, 8, 3, 1.4, '#14133f');
+      poly(g, [[5, 17], [8, 10], [24, 10], [27, 17], [26, 29], [6, 29]], lg(g, 5, 10, 27, 29, [[0, '#ffe08a'], [0.5, '#e0a040'], [1, '#8a5018']]));
+      rrect(g, 5.4, 17, 21.2, 3, 1, '#2f6bff');
+      [[9, 15], [23, 15], [10, 26], [22, 26]].forEach((p) => ell(g, p[0], p[1], 0.8, 0.8, '#fff3c0'));
+      line(g, 16, 10, 16, 4, 1.2, '#2fa84a'); poly(g, [[16, 8], [21, 5], [18, 9.6]], '#2fa84a'); poly(g, [[16, 7], [11, 4.6], [14, 8.6]], '#2fa84a');
+      poly(g, [[11.6, 4], [12.6, -0.2], [16, 2.2], [19.4, -0.2], [20.4, 4], [16, 6.6]], '#ff2a6a'); ell(g, 16, 3.6, 2, 1.6, '#ff8ab0');
+      eyes(g, 12.4, 19.6, 23.4, 1.5);
+      line(g, 10.6, 21.4, 14, 22.4, 0.8, '#3a1a08'); line(g, 21.4, 21.4, 18, 22.4, 0.8, '#3a1a08');
+    };
+  }
+  function walkGuard(f) {
+    return function (g) {
+      const o = f ? 2 : 0;
+      limb(g, 12.6, 26, 11.6 + o, 34.6, 5, '#0a0a1c', '#1a1a38', '#3a3a6a'); limb(g, 19.4, 26, 20.4 - o, 34.6, 5, '#0a0a1c', '#1a1a38', '#3a3a6a');
+      rrect(g, 7.6 + o, 34, 8.4, 3, 1.4, '#050510'); rrect(g, 16 - o, 34, 8.4, 3, 1.4, '#050510');
+      limb(g, 7, 15, 4, 24, 4.4, '#6a0a14', '#c81a2a', '#ff6a7a'); ell(g, 3.6, 25.4, 2.6, 2.6, '#f0f0ff');
+      limb(g, 25, 15, 28, 24, 4.4, '#6a0a14', '#c81a2a', '#ff6a7a'); ell(g, 28.4, 25.4, 2.6, 2.6, '#f0f0ff');
+      rrect(g, 7, 13, 18, 15, 3, lg(g, 7, 13, 25, 28, [[0, '#ff5a6a'], [0.4, '#c81a2a'], [1, '#6a0a14']]));
+      line(g, 9, 14, 23, 26, 1.5, '#f0f0ff'); line(g, 23, 14, 9, 26, 1.5, '#f0f0ff');
+      [[16, 17], [16, 21], [16, 25]].forEach((p) => ell(g, p[0], p[1], 0.9, 0.9, '#ffd23f'));
+      rrect(g, 7, 25, 18, 2.2, 0.8, '#0a0a1c');
+      ell(g, 16, 12, 5, 4.6, lg(g, 11, 8, 21, 16, [[0, '#ffd2ad'], [1, '#c98a66']]));
+      rrect(g, 11.6, 10.6, 8.8, 2.8, 1.2, '#14062a'); eyes(g, 14, 18, 12, 1);
+      poly(g, [[9, 9], [9.6, 2], [13, 0.2], [19, 0.2], [22.4, 2], [23, 9], [20, 7.4], [12, 7.4]], lg(g, 9, 0, 23, 9, [[0, '#4a4a6a'], [0.4, '#1a1a2a'], [1, '#050510']]));
+      line(g, 12, 2.6, 13, 6, 0.6, 'rgba(180,180,220,0.6)'); line(g, 17, 1.4, 17.4, 6, 0.6, 'rgba(180,180,220,0.6)'); line(g, 21, 2.6, 20.4, 6, 0.6, 'rgba(180,180,220,0.6)');
+      line(g, 12, 15.6, 20, 15.6, 0.7, '#ffd23f');
+    };
+  }
+  function walkEmu(f) {
+    return function (g) {
+      const o = f ? 2 : 0;
+      limb(g, 15, 25, 12 + o, 35, 2.6, '#5a3a1a', '#8a6a3a', null); limb(g, 19, 25, 20 - o, 35, 2.6, '#5a3a1a', '#8a6a3a', null);
+      poly(g, [[8 + o, 35], [14 + o, 35], [14 + o, 36.8], [7 + o, 36.8]], '#3a2410'); poly(g, [[16 - o, 35], [22 - o, 35], [22 - o, 36.8], [15 - o, 36.8]], '#3a2410');
+      limb(g, 10, 18, 7, 8, 3.2, '#5a4a3a', '#8a7a62', '#b8a888');
+      ell(g, 17, 20, 10.4, 7.4, lg(g, 8, 12, 26, 28, [[0, '#c8b088'], [0.5, '#8a6a3a'], [1, '#4a3016']]));
+      ell(g, 27, 17.4, 4, 5, '#6a4a22');
+      for (let i = 0; i < 5; i++) line(g, 11 + i * 3.4, 15, 10 + i * 3.4, 24, 0.6, 'rgba(255,230,180,0.35)');
+      ell(g, 6.4, 5.6, 3.8, 3, '#8a7a62'); poly(g, [[3.4, 4.6], [0.4, 5.6], [3.4, 6.8]], '#ffb030');
+      eyeGlow(g, 7, 4.6, 1, EYE); ell(g, 7, 4.6, 1.1, 1.1, EYE);
+    };
+  }
+  function walkMinute(f) {
+    return function (g) {
+      const o = f ? 2 : 0;
+      limb(g, 12.6, 26, 11.6 + o, 34.6, 5, '#b8b8d0', '#f0f0ff', '#ffffff'); limb(g, 19.4, 26, 20.4 - o, 34.6, 5, '#b8b8d0', '#f0f0ff', '#ffffff');
+      rrect(g, 7.6 + o, 33.6, 8.4, 3.4, 1.4, '#14133f'); rrect(g, 16 - o, 33.6, 8.4, 3.4, 1.4, '#14133f');
+      limb(g, 7, 15, 4, 24, 4.4, '#101e70', '#2f4fd0', '#6fb4ff'); ell(g, 3.6, 25.4, 2.6, 2.6, '#d4d6ec');
+      limb(g, 25, 15, 28, 24, 4.4, '#101e70', '#2f4fd0', '#6fb4ff'); ell(g, 28.4, 25.4, 2.6, 2.6, '#d4d6ec');
+      rrect(g, 7, 13, 18, 15, 3, lg(g, 7, 13, 25, 28, [[0, '#6f8cff'], [0.4, '#2f4fd0'], [1, '#14206a']]));
+      line(g, 9, 14, 23, 26, 1.4, '#ffffff'); line(g, 23, 14, 9, 26, 1.4, '#ffffff');
+      ell(g, 16, 20, 1, 1, '#ffd23f'); ell(g, 16, 24, 1, 1, '#ffd23f');
+      rrect(g, 10.4, 6.6, 11.2, 7, 3, lg(g, 10, 6, 22, 14, [[0, '#d4d6ec'], [1, '#7a7ea0']]));
+      rrect(g, 11.6, 9, 8.8, 3, 1.2, '#14062a'); eyes(g, 14, 18, 10.6, 1);
+      poly(g, [[5, 8], [16, 0.4], [27, 8], [22.4, 8.4], [16, 4.4], [9.6, 8.4]], '#14133f');
+      line(g, 6, 7.6, 16, 1.2, 0.7, '#ffffff'); line(g, 26, 7.6, 16, 1.2, 0.7, '#ffffff');
+      ell(g, 16, 3.4, 1.2, 1.2, '#ff2a4a');
+    };
+  }
+
+  // flyers (32x24, art faces right)
+  function flyWindmill(f) {
+    return function (g) {
+      poly(g, [[12, 14], [20, 14], [23, 23.4], [9, 23.4]], lg(g, 9, 14, 23, 24, [[0, '#fff0d0'], [1, '#c8a878']]));
+      rrect(g, 14.4, 19, 3.2, 4.4, 1.2, '#8a4a20');
+      const a = f ? Math.PI / 4 : 0;
+      for (let i = 0; i < 4; i++) {
+        const an = a + i * Math.PI / 2, c = Math.cos(an), s = Math.sin(an);
+        line(g, 16, 11, 16 + c * 10.4, 11 + s * 10.4, 1.4, '#8a5a30');
+        line(g, 16 + c * 4, 11 + s * 4, 16 + c * 10.4, 11 + s * 10.4, 3.6, 'rgba(250,240,215,0.85)');
+      }
+      poly(g, [[10, 14], [16, 7], [22, 14]], lg(g, 10, 7, 22, 14, [[0, '#ff6a50'], [1, '#a82a1a']]));
+      ell(g, 16, 11, 1.8, 1.8, '#4a2a10');
+      eyes(g, 13, 19, 17.4, 1);
+    };
+  }
+  function flySushi(f) {
+    return function (g) {
+      line(g, 16, 8, 16, 4.4, 1.4, '#7a7ea0');
+      if (f) poly(g, [[2, 3], [30, 2.6], [30, 3.8], [2, 4.2]], 'rgba(232,232,248,0.8)');
+      else { poly(g, [[8, 2.4], [24, 4], [24, 4.8], [8, 3.4]], '#d4d6ec'); poly(g, [[6, 4.6], [26, 2.4], [26, 3.2], [6, 5.4]], 'rgba(212,214,236,0.45)'); }
+      rrect(g, 6, 13, 20, 8.4, 3.6, lg(g, 6, 13, 26, 21, [[0, '#ffffff'], [1, '#bcbcd8']]));
+      rrect(g, 5, 7.6, 22, 7.4, 3.4, lg(g, 5, 7, 27, 15, [[0, '#ffb080'], [1, '#ff5a3a']]));
+      [[10, 8.6, 9, 14], [15, 8.2, 14, 14.4], [21, 8.6, 20, 14]].forEach((l) => line(g, l[0], l[1], l[2], l[3], 0.8, 'rgba(255,235,220,0.8)'));
+      rrect(g, 14, 7.4, 4, 14, 1, '#14301f');
+      ell(g, 25.6, 19, 2, 1.5, '#6ad84a');
+      eyes(g, 10.6, 21.4, 17.2, 1.1);
+      g.globalAlpha = 0.6; ell(g, 16, 22.6, 3, 1.2, '#27e0ff'); g.globalAlpha = 1;
+    };
+  }
+  function birdFrame(o) {
+    return function (f) {
+      return function (g) {
+        const up = f ? -6.4 : 5;
+        poly(g, [[14, 11], [9, 11 + up * 0.2], [6, 12 + up], [13, 14]], o.wingD);
+        poly(g, [[9, 13], [0.8, 10.6], [0.8, 16], [10, 16]], o.tail);
+        ell(g, 16, 13.4, 8.4, 5.2, lg(g, 8, 8, 24, 19, [[0, o.body], [1, o.bodyD || o.body]]));
+        poly(g, [[15, 11], [11, 9.6], [6.6, 10 + up], [8.4, 13 + up * 0.4], [19, 13.6]], lg(g, 6, 9, 19, 14, [[0, o.wing], [1, o.wingD]]));
+        if (o.crest) poly(g, [[21, 7.4], [19.4, 1.6], [23.4, 5.4], [24.4, 0.6], [26, 6.4]], o.crest);
+        ell(g, 24, 10.4, 4.2, 3.8, o.head);
+        if (o.patch) ell(g, 25.6, 11, 2.4, 2, o.patch);
+        poly(g, [[27, 9.6], [31.6, 11], [27.4, 13]], o.beak);
+        eyeGlow(g, 25.4, 9.4, 1, EYE); ell(g, 25.4, 9.4, 1.1, 1.1, EYE);
+      };
+    };
+  }
+  const birdRaven = birdFrame({ body: '#2a2a5a', bodyD: '#10102a', wing: '#3a3a7a', wingD: '#10102a', head: '#1a1a3a', beak: '#ffb030', tail: '#10102a' });
+  const birdCockatoo = birdFrame({ body: '#ffffff', bodyD: '#c8c8e0', wing: '#f0f0ff', wingD: '#a8a8c8', head: '#ffffff', crest: '#ffd23f', beak: '#5a5a70', tail: '#d8d8ee' });
+  const birdMacaw = birdFrame({ body: '#ff4a3a', bodyD: '#a81818', wing: '#2a8aff', wingD: '#ffd23f', head: '#ff3a3a', patch: '#f4f4ff', beak: '#e8e8f0', tail: '#2a6aff' });
+  const birdEagle = birdFrame({ body: '#7a5028', bodyD: '#3a2410', wing: '#8a5c30', wingD: '#3a2410', head: '#ffffff', beak: '#ffd23f', tail: '#ffffff' });
+
+  // crawlers (32x20, art faces right)
+  function crawlCheese(f) {
+    return function (g) {
+      for (let i = 0; i < 4; i++) limb(g, 8 + i * 5, 15, 8 + i * 5 + ((f + i) % 2 ? 1.4 : -1.4), 19, 1.8, '#7a4a10', '#a86a20', null);
+      poly(g, [[3, 16.4], [29, 16.4], [29, 5]], lg(g, 3, 5, 29, 17, [[0, '#fff0a0'], [0.5, '#ffd23f'], [1, '#c98a14']]));
+      poly(g, [[3, 16.4], [29, 5], [29, 8], [7, 16.4]], 'rgba(255,255,200,0.55)');
+      [[12, 14.4, 1.7], [19, 13, 1.4], [24.6, 14, 1.2], [16, 15.6, 0.9]].forEach((h) => ell(g, h[0], h[1], h[2], h[2] * 0.8, '#b8780e'));
+      eyes(g, 24.2, 27.4, 11.4, 0.9);
+    };
+  }
+  function crawlCab(f) {
+    return function (g) {
+      rrect(g, 2, 8, 28, 8, 2.4, lg(g, 2, 8, 2, 16, [[0, '#5a5a82'], [1, '#10102a']]));
+      rrect(g, 8, 3.4, 15, 6, 2.4, lg(g, 8, 3, 8, 9, [[0, '#5a5a82'], [1, '#10102a']]));
+      rrect(g, 9.6, 4.8, 5.6, 3.6, 1, '#0d0424'); rrect(g, 16.4, 4.8, 5.4, 3.6, 1, '#0d0424'); eyes(g, 12.4, 19, 6.6, 0.9);
+      rrect(g, 13, 1.2, 6, 2.4, 0.8, '#ffd23f'); line(g, 3, 12, 29, 12, 0.9, '#ffd23f');
+      ell(g, 29, 10.6, 1.6, 1.6, '#fff3a0'); ell(g, 3, 10.6, 1.2, 1.2, '#ff2a4a');
+      [9, 23].forEach((x) => { ell(g, x, 16, 3.4, 3.4, '#0a0418'); ell(g, x, 16, 1.5, 1.5, '#c4e6ff'); const a = f ? 0.8 : 0; line(g, x - Math.cos(a) * 3, 16 - Math.sin(a) * 3, x + Math.cos(a) * 3, 16 + Math.sin(a) * 3, 0.7, '#7a7ea0'); });
+    };
+  }
+  function crawlCroc(f) {
+    return function (g) {
+      poly(g, [[0.4, 14], [9, 10], [9, 16], [0.4, 16.8]], '#1a6a2a');
+      limb(g, 12, 15, 12 + (f ? 2.4 : -2.4), 19, 2.8, '#14501e', '#2a8a3a', null); limb(g, 21, 15, 21 + (f ? -2.4 : 2.4), 19, 2.8, '#14501e', '#2a8a3a', null);
+      ell(g, 15, 12, 10.4, 4.6, lg(g, 5, 7, 5, 17, [[0, '#6ad84a'], [0.5, '#2a8a3a'], [1, '#14501e']]));
+      for (let i = 0; i < 5; i++) poly(g, [[8 + i * 3.4, 8.6], [9.6 + i * 3.4, 6], [11.2 + i * 3.4, 8.8]], '#14501e');
+      poly(g, [[22, 9.2], [31.6, 10.6], [31.6, 14.6], [22, 15.4]], lg(g, 22, 9, 22, 15, [[0, '#4ab83a'], [1, '#1a6a2a']]));
+      for (let i = 0; i < 4; i++) poly(g, [[24 + i * 2, 14.8], [25 + i * 2, 12.8], [26 + i * 2, 14.8]], '#ffffff');
+      ell(g, 24.6, 9.2, 2, 1.8, '#2a8a3a'); eyeGlow(g, 24.8, 9, 1, EYE); ell(g, 24.8, 9, 1.1, 1.1, EYE);
+    };
+  }
+  function crawlCrab(f) {
+    return function (g) {
+      for (let i = 0; i < 3; i++) {
+        const w = (f + i) % 2 ? 1.4 : 0;
+        limb(g, 10 + i * 4, 14, 7 + i * 3.4, 19 - w, 1.6, '#14339e', '#2a6aff', null);
+        limb(g, 20 + i * 2, 14, 24 + i * 2.6, 19 - w, 1.6, '#14339e', '#2a6aff', null);
+      }
+      const c = f ? 1.4 : 0;
+      limb(g, 8, 11, 4, 6 - c, 2.4, '#14339e', '#2a6aff', null); ell(g, 3.4, 5 - c, 3, 2.6, lg(g, 1, 2, 6, 8, [[0, '#ffa050'], [1, '#d84a1a']]));
+      limb(g, 24, 11, 28, 6 - c * 0.5, 2.4, '#14339e', '#2a6aff', null); ell(g, 28.6, 5 - c * 0.5, 3, 2.6, lg(g, 26, 2, 31, 8, [[0, '#ffa050'], [1, '#d84a1a']]));
+      ell(g, 16, 12.4, 11.4, 5.4, lg(g, 5, 7, 25, 18, [[0, '#8ab4ff'], [0.5, '#2a6aff'], [1, '#14339e']]));
+      line(g, 12, 9, 12, 5.6, 1, '#14339e'); line(g, 20, 9, 20, 5.6, 1, '#14339e'); eyes(g, 12, 20, 5, 1);
+    };
+  }
+
+  const SKINS = {
+    westeurope: { robot: walkClog, drone: flyWindmill, spider: crawlCheese },
+    uksouth: { robot: walkGuard, drone: birdRaven, spider: crawlCab },
+    japaneast: { drone: flySushi },
+    australiaeast: { robot: walkEmu, drone: birdCockatoo, spider: crawlCroc },
+    brazilsouth: { drone: birdMacaw },
+    eastus: { robot: walkMinute, drone: birdEagle, spider: crawlCrab }
+  };
+  const SKIN_SIZE = { robot: [32, 37], drone: [32, 24], spider: [32, 20] };
+  const skinKeys = [];
+  Object.keys(SKINS).forEach(function (r) {
+    Object.keys(SKINS[r]).forEach(function (t) {
+      skinKeys.push('en_' + r + '_' + t);
+      for (let f = 0; f < 2; f++) reg2('en_' + r + '_' + t + '_' + f, SKIN_SIZE[t][0], SKIN_SIZE[t][1], SKINS[r][t](f), { shade: 0.5 });
+    });
+  });
+
+  /* ---- local bosses (64x80, three states each) */
+  function bossReg(kind, draw) {
+    [['_0', 'idle'], ['_attack', 'attack'], ['_stun', 'stun']].forEach(function (m) {
+      reg2('boss_' + kind + m[0], 64, 80, function (g) {
+        const S = { atk: m[1] === 'attack', stun: m[1] === 'stun', up: m[1] === 'attack' ? 10 : 0, eye: m[1] === 'stun' ? '#6a6a80' : EYE };
+        draw(g, S);
+        if (S.stun) {
+          g.globalCompositeOperation = 'source-atop'; g.fillStyle = 'rgba(70,70,100,0.35)'; g.fillRect(0, 0, 64, 80); g.globalCompositeOperation = 'source-over';
+          [[7, 10], [53, 6], [45, 2], [20, 1]].forEach((p) => poly(g, [[p[0], p[1] - 3.4], [p[0] + 1, p[1] - 1], [p[0] + 3.4, p[1]], [p[0] + 1, p[1] + 1], [p[0], p[1] + 3.4], [p[0] - 1, p[1] + 1], [p[0] - 3.4, p[1]], [p[0] - 1, p[1] - 1]], '#ffd23f'));
+        }
+      }, { shade: 0.5 });
+    });
+  }
+  function bEyes(g, S, x1, x2, y, r) {
+    [x1, x2].forEach(function (x) {
+      if (!S.stun) eyeGlow(g, x, y, r * 1.6, EYE);
+      ell(g, x, y, r, r * 0.85, S.eye);
+      if (!S.stun) ell(g, x - r * 0.3, y - r * 0.3, r * 0.3, r * 0.3, '#fff');
+    });
+  }
+  function hoverPlate(g, c1, c2, glowCol) {
+    ell(g, 32, 77, 24, 3.4, glowCol);
+    ell(g, 32, 73.6, 20, 3.6, lg(g, 12, 70, 52, 77, [[0, c1], [1, c2]]));
+    [[18, 77.6], [32, 78], [46, 77.6]].forEach((p) => ell(g, p[0], p[1], 3, 1.6, 'rgba(255,255,255,0.8)'));
+  }
+  const SK = { l: '#f4c8a0', m: '#d89a70', d: '#9a5a3a' };
+
+  // Tokyo: floating sumo wrestler
+  bossReg('sumo', function (g, S) {
+    const up = S.up;
+    limb(g, 23, 58, 22, 69, 12, SK.d, SK.m, SK.l); limb(g, 41, 58, 42, 69, 12, SK.d, SK.m, SK.l);
+    ell(g, 21, 71, 8, 3.2, SK.m); ell(g, 43, 71, 8, 3.2, SK.m);
+    hoverPlate(g, '#c4e6ff', '#4a6aa8', 'rgba(39,224,255,0.55)');
+    ell(g, 32, 50, 25, 20, lg(g, 8, 30, 56, 70, [[0, SK.l], [0.5, SK.m], [1, SK.d]]));
+    ell(g, 32, 56, 1.8, 1.4, SK.d); ell(g, 22, 40, 7, 5, 'rgba(255,255,255,0.18)');
+    poly(g, [[9, 56], [55, 56], [52, 64], [32, 69], [12, 64]], lg(g, 9, 56, 55, 69, [[0, '#c04bff'], [1, '#4a1a8a']]));
+    rrect(g, 9, 55, 46, 3.4, 1.4, '#ffd23f'); poly(g, [[28, 58], [36, 58], [34, 68], [30, 68]], '#ffd23f');
+    limb(g, 13, 34, 7, 46 - up, 12, SK.d, SK.m, SK.l); ell(g, 6, 52 - up, 6.4, 6, SK.l);
+    limb(g, 51, 34, 57, 46 - up, 12, SK.d, SK.m, SK.l); ell(g, 58, 52 - up, 6.4, 6, SK.l);
+    ell(g, 32, 33, 18, 8, lg(g, 14, 26, 50, 40, [[0, SK.l], [1, SK.m]]));
+    ell(g, 32, 17, 12, 11, lg(g, 20, 6, 44, 28, [[0, SK.l], [0.6, SK.m], [1, SK.d]]));
+    ell(g, 32, 7.6, 6.4, 3.8, '#14133f'); poly(g, [[28.6, 8], [32, 1], [35.4, 8]], '#14133f');
+    poly(g, [[20.4, 13], [24, 7.6], [40, 7.6], [43.6, 13], [32, 10.4]], '#14133f');
+    ell(g, 24, 22, 3, 2, 'rgba(255,120,120,0.45)'); ell(g, 40, 22, 3, 2, 'rgba(255,120,120,0.45)');
+    line(g, 24, 13.6, 29.6, 15.6, 1.4, '#14133f'); line(g, 40, 13.6, 34.4, 15.6, 1.4, '#14133f');
+    bEyes(g, S, 27, 37, 17, 2); line(g, 28, 25, 36, 25, 1, '#6a2a2a');
+    if (S.atk) { [6, 58].forEach((x) => { const gr = g.createRadialGradient(x, 50, 0, x, 50, 9); gr.addColorStop(0, 'rgba(255,255,255,0.9)'); gr.addColorStop(1, 'rgba(255,42,74,0)'); g.fillStyle = gr; g.fillRect(x - 10, 40, 20, 20); }); }
+  });
+
+  // Sydney: boxing kangaroo
+  bossReg('roo', function (g, S) {
+    const up = S.up, B = { l: '#e8a860', m: '#b8702a', d: '#6a3a10' };
+    poly(g, [[42, 58], [62, 76], [57, 79.6], [38, 70]], lg(g, 40, 58, 62, 79, [[0, B.m], [1, B.d]]));
+    ell(g, 24, 62, 10, 13, lg(g, 14, 50, 34, 74, [[0, B.l], [1, B.d]])); ell(g, 40, 62, 10, 13, lg(g, 30, 50, 50, 74, [[0, B.l], [1, B.d]]));
+    poly(g, [[8, 76], [32, 76], [34, 79.6], [4, 79.6]], '#3a2410'); poly(g, [[32, 76], [56, 76], [60, 79.6], [30, 79.6]], '#3a2410');
+    ell(g, 32, 44, 16, 20, lg(g, 16, 24, 48, 66, [[0, B.l], [0.5, B.m], [1, B.d]]));
+    ell(g, 32, 48, 9, 14, '#f8e0b8'); line(g, 26, 50, 38, 50, 1, '#c8986a');
+    rrect(g, 16, 55, 32, 4.4, 2, lg(g, 0, 55, 0, 60, GOLD)); poly(g, [[32, 55.4], [33.4, 57], [32, 58.8], [30.6, 57]], '#ff2a4a');
+    limb(g, 15, 38, 9, 48 - up, 8, B.d, B.m, B.l); ell(g, 8, 54 - up, 7.4, 6.6, lg(g, 2, 48, 14, 60, [[0, '#ff7a8a'], [1, '#a8101e']])); ell(g, 6, 51 - up, 2, 1.4, 'rgba(255,255,255,0.7)');
+    limb(g, 49, 38, 55, 48 - up, 8, B.d, B.m, B.l); ell(g, 56, 54 - up, 7.4, 6.6, lg(g, 50, 48, 62, 60, [[0, '#ff7a8a'], [1, '#a8101e']])); ell(g, 54, 51 - up, 2, 1.4, 'rgba(255,255,255,0.7)');
+    poly(g, [[24, 13], [21, 0.6], [28.6, 9]], B.m); poly(g, [[40, 13], [43, 0.6], [35.4, 9]], B.m);
+    poly(g, [[24, 11], [22.4, 3.6], [27, 9]], '#ff9ab0'); poly(g, [[40, 11], [41.6, 3.6], [37, 9]], '#ff9ab0');
+    ell(g, 32, 19, 9.6, 10, lg(g, 22, 9, 42, 29, [[0, B.l], [1, B.m]]));
+    ell(g, 32, 25.6, 6, 4.4, '#f8e0b8'); ell(g, 32, 23.6, 2, 1.4, '#2a1408');
+    rrect(g, 22, 12, 20, 3, 1.4, '#ff2a4a');
+    bEyes(g, S, 27.4, 36.6, 17.6, 1.9); line(g, 28.4, 27.6, 35.6, 27.6, 0.8, '#6a3a1a');
+  });
+
+  // London: bearskin royal guard
+  bossReg('guard', function (g, S) {
+    const up = S.up;
+    limb(g, 24, 58, 23, 70, 11, '#0a0a1c', '#1a1a38', '#3a3a6a'); limb(g, 40, 58, 41, 70, 11, '#0a0a1c', '#1a1a38', '#3a3a6a');
+    poly(g, [[14, 70], [31, 70], [33, 79.6], [10, 79.6]], lg(g, 0, 70, 0, 80, [[0, '#3a3a5a'], [1, '#050510']])); poly(g, [[33, 70], [50, 70], [54, 79.6], [31, 79.6]], lg(g, 0, 70, 0, 80, [[0, '#3a3a5a'], [1, '#050510']]));
+    line(g, 57, 22 - up, 57, 78, 2, '#c8c8d8'); poly(g, [[55, 22 - up], [57, 12 - up], [59, 22 - up]], '#ffffff');
+    limb(g, 10, 30, 8, 42 - up, 9, '#6a0a14', '#c81a2a', '#ff6a7a'); limb(g, 8, 42 - up, 8, 50 - up, 8, '#6a0a14', '#c81a2a', '#ff6a7a'); ell(g, 8, 55 - up, 6, 5.4, '#f0f0ff');
+    limb(g, 54, 30, 56, 42 - up, 9, '#6a0a14', '#c81a2a', '#ff6a7a'); limb(g, 56, 42 - up, 57, 50 - up, 8, '#6a0a14', '#c81a2a', '#ff6a7a'); ell(g, 57, 55 - up, 6, 5.4, '#f0f0ff');
+    poly(g, [[13, 26], [51, 26], [48, 62], [16, 62]], lg(g, 12, 26, 52, 62, [[0, '#ff6a7a'], [0.4, '#c81a2a'], [1, '#6a0a14']]));
+    line(g, 15, 28, 47, 58, 3, '#f0f0ff'); line(g, 49, 28, 17, 58, 3, '#f0f0ff');
+    [30, 38, 46, 54].forEach((y) => { ell(g, 32, y, 1.6, 1.6, '#ffd23f'); });
+    rrect(g, 15, 56, 34, 4.4, 1.4, '#0a0a1c'); rrect(g, 29, 55.6, 6, 5.2, 1, lg(g, 0, 55, 0, 61, GOLD));
+    ell(g, 10, 27, 8, 4.6, lg(g, 2, 22, 18, 32, GOLD)); ell(g, 54, 27, 8, 4.6, lg(g, 46, 22, 62, 32, GOLD));
+    ell(g, 32, 24, 10, 9.6, lg(g, 22, 15, 42, 34, [[0, '#ffd2ad'], [1, '#c98a66']]));
+    rrect(g, 23, 20, 18, 6, 2.4, '#0d0424'); bEyes(g, S, 27.6, 36.4, 23, 2);
+    line(g, 23, 30, 41, 30, 1.4, '#ffd23f');
+    poly(g, [[18, 20], [18.6, 5], [24, 0.8], [40, 0.8], [45.4, 5], [46, 20], [41, 16.4], [23, 16.4]], lg(g, 18, 0, 46, 20, [[0, '#5a5a7a'], [0.4, '#1a1a2a'], [1, '#050510']]));
+    [[24, 4, 22.6, 14], [30, 2.6, 29, 15], [36, 2.6, 36.6, 15], [42, 4, 42.4, 14]].forEach((l) => line(g, l[0], l[1], l[2], l[3], 0.9, 'rgba(190,190,230,0.55)'));
+    ell(g, 44, 7, 2, 5.4, '#ff2a4a');
+  });
+
+  // Amsterdam: windmill titan
+  bossReg('molen', function (g, S) {
+    const up = S.up, rot = S.atk ? 0.5 : S.stun ? 0.2 : 0.785;
+    for (let i = 0; i < 4; i++) {
+      const an = rot + i * Math.PI / 2, c = Math.cos(an), s = Math.sin(an);
+      line(g, 32, 33, 32 + c * 29, 33 + s * 29, 2.4, '#8a5a30');
+      line(g, 32 + c * 10, 33 + s * 10, 32 + c * 29, 33 + s * 29, 7, 'rgba(250,240,215,0.9)');
+      line(g, 32 + c * 10, 33 + s * 10, 32 + c * 29, 33 + s * 29, 1, 'rgba(120,80,40,0.8)');
+    }
+    limb(g, 23, 60, 22, 70, 12, '#6a3a10', '#c8842a', '#ffe08a'); limb(g, 41, 60, 42, 70, 12, '#6a3a10', '#c8842a', '#ffe08a');
+    [[11, 79.6, 34], [32, 79.6, 55]].forEach((c) => poly(g, [[c[0] + 3, 70], [c[0] + 23, 70], [c[2] + 0, 78], [c[0] - 2, 79.6]], lg(g, 0, 70, 0, 80, [[0, '#ffe08a'], [0.5, '#e0a040'], [1, '#8a5018']])));
+    rrect(g, 12, 74, 22, 2.6, 1, '#2f6bff'); rrect(g, 33, 74, 22, 2.6, 1, '#2f6bff');
+    limb(g, 12, 38, 7, 48 - up, 9, '#6a3a10', '#a86a20', '#e0a040'); ell(g, 6, 54 - up, 6.4, 5.6, lg(g, 0, 48, 12, 60, [[0, '#6fa0ff'], [1, '#14339e']]));
+    limb(g, 52, 38, 57, 48 - up, 9, '#6a3a10', '#a86a20', '#e0a040'); ell(g, 58, 54 - up, 6.4, 5.6, lg(g, 52, 48, 64, 60, [[0, '#6fa0ff'], [1, '#14339e']]));
+    poly(g, [[17, 24], [47, 24], [54, 62], [10, 62]], lg(g, 10, 24, 54, 62, [[0, '#ffb090'], [0.5, '#d86a50'], [1, '#8a2a20']]));
+    for (let r = 0; r < 6; r++) { const y = 30 + r * 5.4; line(g, 13, y, 51, y, 0.6, 'rgba(70,10,10,0.5)'); for (let x = (r % 2) * 4 + 14; x < 50; x += 8) line(g, x, y, x, y + 5.4, 0.6, 'rgba(70,10,10,0.4)'); }
+    rrect(g, 12, 56, 40, 4, 1, '#f0f0ff'); rrect(g, 27, 49, 10, 13, 4, '#6a3a10');
+    const core = S.stun ? '#555570' : '#ff5a7a', cg = g.createRadialGradient(32, 42, 0, 32, 42, 9);
+    cg.addColorStop(0, S.stun ? 'rgba(160,160,180,0.9)' : 'rgba(255,255,255,0.95)'); cg.addColorStop(0.4, core); cg.addColorStop(1, 'rgba(255,42,74,0)');
+    g.fillStyle = cg; g.fillRect(22, 32, 20, 20);
+    ell(g, 32, 33, 3.2, 3.2, '#4a2a10');
+    poly(g, [[10, 24], [32, 2], [54, 24]], lg(g, 10, 2, 54, 24, [[0, '#ff6a50'], [1, '#8a1a10']]));
+    for (let i = 0; i < 4; i++) line(g, 18 + i * 9, 20 - i * 2.4, 22 + i * 7.4, 22, 0.7, 'rgba(70,10,10,0.5)');
+    rrect(g, 21, 19, 22, 6.4, 2.4, '#0d0424'); bEyes(g, S, 27, 37, 22.2, 2.2);
+  });
+
+  // Rio: carnival king on a hovering float
+  bossReg('samba', function (g, S) {
+    const up = S.up, FC = ['#ff2a9a', '#ffd23f', '#27e0ff', '#4dff7a', '#ff7a2a'];
+    for (let i = -4; i <= 4; i++) {
+      const an = -Math.PI / 2 + i * 0.3, r = 15;
+      ell(g, 32 + Math.cos(an) * r, 20 + Math.sin(an) * r * 0.8, 11, 3.6, FC[(i + 4) % 5], an);
+      ell(g, 32 + Math.cos(an) * (r + 5), 20 + Math.sin(an) * (r + 5) * 0.8, 3.2, 1.6, '#ffffff', an);
+    }
+    hoverPlate(g, '#ff7ad9', '#7a1a8a', 'rgba(255,122,217,0.55)');
+    limb(g, 26, 58, 25, 70, 8, '#8a4a1a', '#c88040', '#ffc890'); limb(g, 38, 58, 39, 70, 8, '#8a4a1a', '#c88040', '#ffc890');
+    poly(g, [[17, 54], [47, 54], [58, 71], [6, 71]], lg(g, 6, 54, 58, 71, [[0, '#ff7ad9'], [0.5, '#c02cc9'], [1, '#4a0f5a']]));
+    for (let i = 0; i < 6; i++) line(g, 20 + i * 5, 56, 12 + i * 8, 70, 0.8, 'rgba(255,230,120,0.7)');
+    poly(g, [[19, 32], [45, 32], [42, 58], [22, 58]], lg(g, 19, 32, 45, 58, [[0, '#7dffa8'], [0.5, '#1ab85a'], [1, '#0a5a30']]));
+    for (let i = 0; i < 5; i++) line(g, 22, 38 + i * 4.4, 42, 38 + i * 4.4, 0.6, 'rgba(255,255,255,0.4)');
+    ell(g, 26, 40, 5.6, 4.6, lg(g, 20, 35, 32, 45, GOLD)); ell(g, 38, 40, 5.6, 4.6, lg(g, 32, 35, 44, 45, GOLD));
+    rrect(g, 21, 52, 22, 4, 1.4, lg(g, 0, 52, 0, 56, GOLD));
+    limb(g, 19, 36, 10, 46 - up, 7, '#8a4a1a', '#c88040', '#ffc890'); limb(g, 45, 36, 54, 46 - up, 7, '#8a4a1a', '#c88040', '#ffc890');
+    [8, 56].forEach((x) => { line(g, x, 53 - up, x, 40 - up, 1.4, '#6a3a10'); ell(g, x, 38 - up, 4.4, 5.6, lg(g, x - 4, 32 - up, x + 4, 44 - up, [[0, '#ff7a8a'], [1, '#a8101e']])); ell(g, x, 38 - up, 2, 1, '#ffd23f'); ell(g, x, 54 - up, 3, 3, '#c88040'); });
+    ell(g, 32, 23, 8.4, 9, lg(g, 24, 14, 40, 32, [[0, '#d89050'], [1, '#8a4a1a']]));
+    rrect(g, 23.4, 18.6, 17.2, 6.4, 3, lg(g, 0, 18, 0, 25, GOLD)); bEyes(g, S, 28, 36, 21.8, 1.8);
+    poly(g, [[28, 30.4], [36, 30.4], [32, 33.6]], '#ff2a4a');
+    ell(g, 32, 12.4, 3, 2.4, '#ff2a9a'); ell(g, 32, 12.4, 1.2, 1, '#ffffff');
+  });
+
+  /* ---- boss projectiles (22x12) */
+  const BOLT = { noOutline: true, shade: 0 };
+  reg2('bolt_molen', 22, 12, function (g) {
+    line(g, 9, 6, 21, 6, 1.4, '#2fa84a'); poly(g, [[14, 6], [18, 2.4], [17, 6.6]], '#2fa84a');
+    poly(g, [[2.4, 2], [4, 4.4], [6, 1.4], [8, 4.4], [9.6, 2], [9.2, 8.6], [6, 11], [2.8, 8.6]], '#ff2a6a'); ell(g, 6, 6.6, 2.4, 2.8, '#ff8ab0');
+  }, Object.assign({ glow: '#ff2a6a' }, BOLT));
+  reg2('bolt_guard', 22, 12, function (g) {
+    ell(g, 11, 9.6, 9, 1.6, '#c4e6ff'); poly(g, [[3.6, 3.4], [18.4, 3.4], [16, 9.4], [6, 9.4]], lg(g, 0, 3, 0, 10, [[0, '#ffffff'], [1, '#a8b8e0']]));
+    rrect(g, 4.4, 4.6, 13.2, 1.6, 0.6, '#2f6bff'); g.lineWidth = 1.4; g.strokeStyle = '#ffffff'; g.beginPath(); g.arc(19, 6, 2.2, -1.5, 1.5); g.stroke();
+    line(g, 8, 0.8, 7, 2.6, 0.8, 'rgba(255,255,255,0.7)'); line(g, 13, 0.4, 12, 2.6, 0.8, 'rgba(255,255,255,0.7)');
+  }, Object.assign({ glow: '#7fb0ff' }, BOLT));
+  reg2('bolt_sumo', 22, 12, function (g) {
+    rrect(g, 3, 6, 17, 5, 2.2, '#ffffff');
+    rrect(g, 2, 2, 19, 5.6, 2.6, lg(g, 0, 2, 0, 8, [[0, '#ffb080'], [1, '#ff5a3a']]));
+    [[7, 2.6, 6, 7], [12, 2.6, 11, 7], [17, 2.6, 16, 7]].forEach((l) => line(g, l[0], l[1], l[2], l[3], 0.7, 'rgba(255,235,220,0.9)'));
+    rrect(g, 10, 1.6, 3, 10, 0.8, '#14301f');
+  }, Object.assign({ glow: '#ff9a5a' }, BOLT));
+  reg2('bolt_roo', 22, 12, function (g) {
+    g.lineCap = 'round'; g.lineJoin = 'round'; g.strokeStyle = '#8a4a10'; g.lineWidth = 3.8; g.beginPath(); g.moveTo(3, 2.4); g.lineTo(10, 9.4); g.lineTo(19.6, 3); g.stroke();
+    g.strokeStyle = '#ffc860'; g.lineWidth = 1.6; g.beginPath(); g.moveTo(3, 2.4); g.lineTo(10, 9); g.lineTo(19.6, 3); g.stroke();
+    g.strokeStyle = '#ff2a4a'; g.lineWidth = 0.8; g.beginPath(); g.moveTo(8, 7.6); g.lineTo(12, 7.6); g.stroke();
+  }, Object.assign({ glow: '#ffb05a' }, BOLT));
+  reg2('bolt_samba', 22, 12, function (g) {
+    ell(g, 11, 6, 10, 3.2, lg(g, 1, 3, 21, 9, [[0, '#ff2a9a'], [0.5, '#ffd23f'], [1, '#27e0ff']]));
+    line(g, 2, 6, 21, 6, 0.8, 'rgba(255,255,255,0.8)'); ell(g, 6, 5, 3, 1, 'rgba(255,255,255,0.5)');
+  }, Object.assign({ glow: '#ff7ad9' }, BOLT));
+
+  /* ---- regional Azure Credit coins (currency symbol on the face) */
+  const COINS = { westeurope: '\u20AC', uksouth: '\u00A3', japaneast: '\u00A5', australiaeast: 'A$', brazilsouth: 'R$', eastus: '$' };
+  Object.keys(COINS).forEach(function (r) {
+    [12, 8, 4, 8].forEach(function (cw, i) {
+      reg2('coin_' + r + i, 14, 14, function (g) {
+        const w = cw / 2;
+        ell(g, 7, 7, w, 6.2, lg(g, 7 - w, 1, 7 + w, 13, [[0, '#fff3a0'], [0.4, '#ffd23f'], [1, '#c77800']]));
+        if (w > 3) {
+          ell(g, 7, 7, w - 1.3, 4.9, lg(g, 0, 2, 0, 12, [[0, '#ffe680'], [1, '#e89400']]));
+          g.save(); g.translate(7, 7.4); g.scale(cw / 12, 1);
+          g.fillStyle = '#8a4a00'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.font = 'bold ' + (COINS[r].length > 1 ? 5.6 : 8) + 'px monospace';
+          g.fillText(COINS[r], 0, 0);
+          g.restore();
+          ell(g, 5.2, 3.8, 1.2, 0.7, 'rgba(255,255,255,0.9)', -0.5);
+        } else rrect(g, 6.2, 1.4, 1.6, 11.2, 0.6, '#ffe680');
+      }, { shade: 0.4 });
+    });
+    ['coin_' + r + '0', 'coin_' + r + '1', 'coin_' + r + '2', 'coin_' + r + '3'].forEach(function (k) { defs[k] = glow(defs[k], '#ffb000', 4); });
+  });
+
+  /* ---- local props: scenery that never collides */
+  const PROPS = {
+    tulips: [24, 26, function (g) {
+      poly(g, [[6, 17], [18, 17], [16, 25.6], [8, 25.6]], lg(g, 0, 17, 0, 26, [[0, '#e0804a'], [1, '#8a3a1a']]));
+      [[7, 5, '#ff2a6a'], [12, 2, '#ffd23f'], [17, 5, '#ff7a2a']].forEach((t) => { line(g, t[0], 17, t[0], t[1] + 3, 1.2, '#2fa84a'); poly(g, [[t[0] - 3, t[1] - 1], [t[0] - 1.6, t[1] + 4], [t[0], t[1] + 1], [t[0] + 1.6, t[1] + 4], [t[0] + 3, t[1] - 1], [t[0], t[1] + 5.6]], t[2]); });
+    }],
+    bike: [32, 20, function (g) {
+      [[7, 14], [25, 14]].forEach((w) => { g.lineWidth = 1.4; g.strokeStyle = '#14062a'; g.beginPath(); g.arc(w[0], w[1], 5.4, 0, 7); g.stroke(); g.lineWidth = 0.5; g.strokeStyle = '#c4e6ff'; g.beginPath(); g.arc(w[0], w[1], 3, 0, 7); g.stroke(); });
+      line(g, 7, 14, 14, 6, 1.4, '#ff7a2a'); line(g, 14, 6, 22, 6, 1.4, '#ff7a2a'); line(g, 14, 6, 17, 14, 1.4, '#ff7a2a'); line(g, 17, 14, 7, 14, 1.4, '#ff7a2a'); line(g, 22, 6, 25, 14, 1.4, '#ff7a2a'); line(g, 17, 14, 22, 6, 1.4, '#ff7a2a');
+      line(g, 21, 6, 22.6, 2.6, 1.2, '#14062a'); line(g, 20, 2.6, 25, 2.6, 1.2, '#14062a'); rrect(g, 11.4, 3, 6, 1.8, 0.8, '#14062a');
+      rrect(g, 20.6, 8, 6.6, 4.6, 1, '#8a5a2a');
+    }],
+    phone: [14, 28, function (g) {
+      rrect(g, 1, 3, 12, 25, 1.4, lg(g, 1, 3, 13, 28, [[0, '#ff5a5a'], [1, '#a81818']])); rrect(g, 0, 0.8, 14, 3.6, 1.2, '#c81a1a');
+      for (let r = 0; r < 3; r++) for (let c = 0; c < 2; c++) rrect(g, 2.6 + c * 4.8, 6 + r * 5.6, 3.8, 4.6, 0.5, 'rgba(255,240,170,0.85)');
+      rrect(g, 3, 23.4, 8, 3, 0.6, '#7a1010');
+    }],
+    postbox: [12, 18, function (g) {
+      rrect(g, 1, 3, 10, 15, 2, lg(g, 1, 3, 11, 18, [[0, '#ff6a6a'], [1, '#a81818']])); ell(g, 6, 3, 5.4, 2.4, '#c81a1a');
+      rrect(g, 2.4, 7, 7.2, 1.8, 0.6, '#14062a'); rrect(g, 1, 14, 10, 1.4, 0.4, '#7a1010');
+    }],
+    lantern: [16, 24, function (g) {
+      line(g, 8, 0, 8, 3, 0.8, '#14062a'); rrect(g, 3.6, 2.4, 8.8, 2.4, 0.8, '#14062a');
+      ell(g, 8, 12.4, 6.6, 8, lg(g, 2, 4, 14, 20, [[0, '#ff7a6a'], [0.5, '#e82a2a'], [1, '#8a1010']]));
+      [8, 11.6, 15.4].forEach((y) => line(g, 2.8, y + 1, 13.2, y + 1, 0.6, '#5a0a0a'));
+      ell(g, 8, 12, 3, 4, 'rgba(255,230,140,0.55)'); rrect(g, 3.6, 19.6, 8.8, 2.4, 0.8, '#14062a'); line(g, 8, 22, 8, 24, 0.8, '#ffd23f');
+    }],
+    carp: [32, 16, function (g) {
+      poly(g, [[2, 2], [9, 8], [2, 14]], '#2a6aff'); ell(g, 18, 8, 12, 6, lg(g, 6, 2, 6, 14, [[0, '#ffb060'], [1, '#e84a1a']]));
+      for (let r = 0; r < 3; r++) for (let c = 0; c < 4; c++) ell(g, 11 + c * 4 + (r % 2) * 2, 5 + r * 2.6, 1.8, 1.4, 'rgba(255,240,200,0.45)');
+      ell(g, 26, 6, 2.2, 2.2, '#ffffff'); ell(g, 26.6, 6, 1.1, 1.1, '#14062a'); poly(g, [[16, 2.4], [22, 3], [18, 0.2]], '#2a6aff');
+    }],
+    surf: [22, 30, function (g) {
+      [[6, 4, '#ff2a9a', -0.18], [11, 3, '#27e0ff', 0], [16, 4, '#ffd23f', 0.18]].forEach((b) => { ell(g, b[0], 15, 3.8, 13, b[2], b[3]); line(g, b[0] - b[3] * 12, 4, b[0] + b[3] * 12, 26, 0.7, 'rgba(255,255,255,0.8)'); });
+    }],
+    sign: [20, 30, function (g) {
+      rrect(g, 9, 14, 2.4, 16, 0.6, '#8a8aa8'); poly(g, [[10, 0.6], [19.4, 8], [10, 15.6], [0.6, 8]], '#ffd23f'); poly(g, [[10, 2.6], [17.4, 8], [10, 13.6], [2.6, 8]], '#14062a');
+      ell(g, 9, 8.4, 3.2, 2.2, '#ffd23f'); ell(g, 12, 5.4, 1.4, 1.8, '#ffd23f'); poly(g, [[6, 9], [3.4, 11.4], [6.4, 11]], '#ffd23f');
+    }],
+    balloon: [14, 24, function (g) {
+      line(g, 7, 15, 7, 24, 0.7, '#e8e8f8');
+      ell(g, 7, 8, 6, 7.4, lg(g, 2, 1, 12, 15, [[0, '#ffb0e0'], [0.5, '#ff2a9a'], [1, '#8a0a5a']])); poly(g, [[5, 15], [9, 15], [7, 17.2]], '#ff2a9a'); ell(g, 4.6, 5, 1.6, 2.6, 'rgba(255,255,255,0.55)');
+    }],
+    kite: [18, 26, function (g) {
+      poly(g, [[9, 0.6], [17.4, 8], [9, 17], [0.6, 8]], lg(g, 0, 0, 18, 17, [[0, '#ffd23f'], [0.5, '#ff7a2a'], [1, '#4dff7a']]));
+      line(g, 9, 0.6, 9, 17, 0.6, 'rgba(255,255,255,0.8)'); line(g, 0.6, 8, 17.4, 8, 0.6, 'rgba(255,255,255,0.8)');
+      g.lineWidth = 0.8; g.strokeStyle = '#e8e8f8'; g.beginPath(); g.moveTo(9, 17); g.quadraticCurveTo(5, 21, 9, 25); g.stroke();
+      [[7.6, 20], [10.4, 23]].forEach((b) => poly(g, [[b[0] - 1.8, b[1] - 1], [b[0] + 1.8, b[1] - 1], [b[0], b[1] + 1.4]], '#ff2a9a'));
+    }]
+  };
+  Object.keys(PROPS).forEach(function (k) { reg2('prop_' + k, PROPS[k][0], PROPS[k][1], PROPS[k][2], { shade: 0.4 }); });
+
   /* ------------------------------------------------------------------ TITLE ART */
   reg('title_burst', 8, 8, function (g) { R(g, '#ffffff', 0, 0, 8, 8); }, true);
 
@@ -1334,6 +1775,7 @@
   AH.Art = {
     keys: Object.keys(defs),
     D: D,
+    skinKeys: skinKeys,
     generate: function (scene) {
       patchScaling();
       Object.keys(defs).forEach(function (k) {
@@ -1347,7 +1789,10 @@
       mk('robot_walk', ['robot_0', 'robot_1'], 5);
       mk('drone_fly', ['drone_0', 'drone_1'], 16);
       mk('spider_crawl', ['spider_0', 'spider_1'], 8);
+      skinKeys.forEach((k) => mk(k, [k + '_0', k + '_1'], k.slice(-5) === 'drone' ? 16 : k.slice(-6) === 'spider' ? 8 : 5));
+      Object.keys(COINS).forEach((r) => mk('coin_' + r, [0, 1, 2, 3].map((i) => 'coin_' + r + i), 8));
       mk('hero_run', ['hero_run0', 'hero_run1', 'hero_run2', 'hero_run3'], 12);
+      mk('hero_f_run', ['hero_f_run0', 'hero_f_run1', 'hero_f_run2', 'hero_f_run3'], 12);
     }
   };
 })();

@@ -38,9 +38,18 @@
       g.fillStyle(0x0a0720, 1).fillTriangle(430, 360, 520, 300, 640, 360);
       g.fillStyle(0xff7ad9, 1).fillRect(0, 332, 640, 2);
 
-      this.hero = this.add.image(545, 238, 'hero_idle').setScale(4.5 / AH.Art.D).setDepth(5);
+      const heroTex = () => (AH.Save.data.hero === 'f' ? 'hero_f_idle' : 'hero_idle');
+      this.hero = this.add.image(545, 238, heroTex()).setScale(4.5 / AH.Art.D).setDepth(5);
       this.add.tween({ targets: this.hero, y: 232, yoyo: true, repeat: -1, duration: 1400, ease: 'Sine.easeInOut' });
 
+      this.heroLabel = T(this, 470, 342, 'H: HERO  < HIM >', { scale: 1, color: '#7fe8ff', ox: 0.5 }).setDepth(20);
+      const setHero = (h) => {
+        AH.Save.data.hero = h; AH.Save.save();
+        this.hero.setTexture(heroTex());
+        this.heroLabel.setText('H: HERO  ' + (h === 'f' ? '< HER >' : '< HIM >'));
+      };
+      setHero(AH.Save.data.hero === 'f' ? 'f' : 'm');
+      this.hero.setInteractive({ useHandCursor: true }).on('pointerdown', () => { AH.Audio.init(); AH.Audio.play('select'); setHero(AH.Save.data.hero === 'f' ? 'm' : 'f'); });
       const W = 10;
       T(this, 24 + W, 20, 'MICROSOFT', { scale: 4, color: '#ffffff', shadow: '#2a8cff' });
       T(this, 24, 54, 'AZURE', { scale: 10, color: '#7fe8ff', shadow: '#3a1fb0' });
@@ -69,6 +78,7 @@
       };
       this.input.keyboard.on('keydown', (e) => {
         if (e.code === 'KeyM') { AH.Audio.toggle(); this.events.emit('audio-changed'); return; }
+        if (e.code === 'KeyH') { AH.Audio.play('select'); setHero(AH.Save.data.hero === 'f' ? 'm' : 'f'); return; }
         go();
       });
       this.input.on('pointerdown', (p, over) => { AH.Audio.init(); if (!over.length) go(); });
@@ -285,8 +295,10 @@
     }
 
     spawnCoin(x, y, drop) {
-      const spr = this.add.sprite(x, y, 'coin0').setDepth(35);
-      spr.play('coin_spin');
+      const ck = 'coin_' + this.L.region;
+      const local = this.anims.exists(ck);
+      const spr = this.add.sprite(x, y, local ? ck + '0' : 'coin0').setDepth(35);
+      spr.play(local ? ck : 'coin_spin');
       spr.anims.setProgress(Math.random());
       const c = { spr, taken: false, kind: 'coin' };
       this.coins.push(c);
@@ -309,6 +321,10 @@
       this.rings = (L.rings || []).map((r) => ({
         def: r, taken: false, spr: this.add.image(r.x, r.y, 'ring').setDepth(30)
       }));
+      (L.props || []).forEach((p) => {
+        const img = this.add.image(p.x, p.y, 'prop_' + p.kind).setOrigin(0.5, p.float ? 0.5 : 1).setDepth(p.float ? 8 : 12);
+        if (p.float) this.tweens.add({ targets: img, y: p.y + 7, yoyo: true, repeat: -1, duration: 1400 + (p.x % 600), ease: 'Sine.easeInOut' });
+      });
       this.flags = (L.checkpoints || []).map((c) => ({
         def: c, hit: false, spr: this.add.image(c.x, c.y, 'flag_off').setOrigin(0.5, 1).setDepth(15)
       }));
@@ -539,7 +555,7 @@
         onComplete: () => cam.setBounds(B.left, 0, 640, 360)
       });
       this.boss = new AH.Boss(this, B);
-      this.toast('HIGH-RISK CYBERGUARDIAN');
+      this.toast(B.name);
     }
 
     onBossDefeated() {

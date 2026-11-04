@@ -1,4 +1,5 @@
-/* High-Risk CyberGuardian: block with the MFA Shield to stun it, then hit it with Azure Blasts. 3 attack phases. */
+/* Local region bosses (and the High-Risk CyberGuardian): block with the MFA Shield to stun, then hit with Azure Blasts. 3 attack phases.
+   Air bosses (flight levels) cannot be blocked; they tire after every third attack and are exposed for a few seconds. */
 (function () {
   'use strict';
   const AH = (window.AH = window.AH || {});
@@ -12,7 +13,13 @@
       this.max = 100;
       this.hp = 100;
       this.homeX = arena.right - 100;
-      this.sprite = scene.add.sprite(arena.right + 80, arena.floor, 'boss_0').setOrigin(0.5, 1).setDepth(45);
+      const k = arena.kind === 'guardian' ? 'boss' : 'boss_' + arena.kind;
+      this.tx = { idle: k + '_0', attack: k + '_attack', stun: k + '_stun' };
+      this.proj = arena.proj ? 'bolt_' + arena.proj : 'bolt';
+      this.name = arena.name;
+      this.air = !!arena.air;
+      this.volleys = 0;
+      this.sprite = scene.add.sprite(arena.right + 80, arena.floor, this.tx.idle).setOrigin(0.5, 1).setDepth(45);
       this.sprite.x = this.homeX;
       this.state = 'intro';
       this.timer = 1.6;
@@ -30,22 +37,24 @@
     get x() { return this.sprite.x; }
     get y() { return this.sprite.y; }
     get phase() { return this.hp > this.max * 0.66 ? 1 : this.hp > this.max * 0.33 ? 2 : 3; }
-    snapshot() { return { hp: this.hp, max: this.max, stunned: this.stunned, phase: this.phase }; }
+    snapshot() { return { hp: this.hp, max: this.max, stunned: this.stunned, phase: this.phase, name: this.name }; }
 
     fireBolt(h, speed) {
-      const s = this.scene.add.image(this.sprite.x - 34, this.arena.floor - h, 'bolt').setDepth(46);
+      const y = this.air ? Phaser.Math.Clamp(this.sprite.y - 40 + (34 - h) * 1.4, 70, 312) : this.arena.floor - h;
+      const s = this.scene.add.image(this.sprite.x - 34, y, this.proj).setDepth(46);
       this.bolts.push({ s, vx: -speed });
     }
 
     stun() {
       this.state = 'stunned';
       this.stunned = true;
-      this.timer = STUN_TIME;
+      this.volleys = 0;
+      this.timer = this.air ? 4.5 : STUN_TIME;
       this.blocks = 0;
-      this.sprite.setTexture('boss_stun');
+      this.sprite.setTexture(this.tx.stun);
       AH.Audio.play('stun');
       this.scene.burst(this.sprite.x, this.sprite.y - 60, 'spark_y', 14, 160);
-      this.scene.toast('BOSS STUNNED - BLAST IT!');
+      this.scene.toast(this.air ? 'EXPOSED - BLAST IT!' : 'BOSS STUNNED - BLAST IT!');
     }
 
     // returns true when the blast damaged the boss
@@ -73,13 +82,14 @@
       this.timer = 1.6;
       this.bolts.forEach((b) => b.s.destroy());
       this.bolts = [];
-      this.sprite.setTexture('boss_stun');
-      this.scene.toast('CYBERGUARDIAN DEFEATED!');
+      this.sprite.setTexture(this.tx.stun);
+      this.scene.toast(this.name + ' DEFEATED!');
     }
 
     pickAttack() {
       const p = this.phase;
       const r = Math.random();
+      if (this.air) return p === 1 ? 'shoot' : r < 0.5 ? 'shoot' : 'barrage';
       if (p === 1) return 'shoot';
       if (p === 2) return r < 0.5 ? 'shoot' : 'charge';
       return r < 0.45 ? 'barrage' : 'charge';
@@ -96,12 +106,13 @@
       }
       switch (this.state) {
         case 'intro':
-          s.setTexture('boss_attack');
-          if (this.timer <= 0) { this.state = 'idle'; s.setTexture('boss_0'); }
+          s.setTexture(this.tx.attack);
+          if (this.timer <= 0) { this.state = 'idle'; s.setTexture(this.tx.idle); }
           break;
         case 'idle':
-          s.setTexture('boss_0');
-          s.y = a.floor + Math.sin(this.scene.time.now / 250) * 2;
+          s.setTexture(this.tx.idle);
+          if (this.air) s.y += Phaser.Math.Clamp(Phaser.Math.Clamp(player.y + 40, 150, 300) - s.y, -90 * dt, 90 * dt);
+          else s.y = a.floor + Math.sin(this.scene.time.now / 250) * 2;
           s.x += Math.sign(this.homeX - s.x) * Math.min(Math.abs(this.homeX - s.x), 160 * dt);
           this.cd -= dt;
           if (this.cd <= 0) {
@@ -109,24 +120,28 @@
             this.state = 'windup';
             this.timer = this.attack === 'charge' ? 1.0 : 0.55;
             if (this.attack === 'charge') this.scene.toast('INCOMING! RAISE YOUR MFA SHIELD!');
+            if (this.air && this.volleys >= 2) this.scene.toast('DODGE THE VOLLEY!');
           }
           break;
         case 'windup':
-          s.setTexture('boss_attack');
+          s.setTexture(this.tx.attack);
           s.setTint(this.attack === 'charge' && Math.floor(this.timer * 12) % 2 ? 0xff9090 : 0xffffff);
           if (this.timer <= 0) {
             s.clearTint();
             const ph = this.phase;
+            this.volleys += 1;
             if (this.attack === 'shoot') {
               this.fireBolt(ph === 2 ? 34 : 14, 170 + ph * 25);
               this.state = 'idle';
               this.cd = ph === 1 ? 1.7 : 1.4;
+              if (this.air && this.volleys >= 3) this.stun();
             } else if (this.attack === 'barrage') {
               this.fireBolt(14, 230);
               this.fireBolt(34, 230);
               this.pending.push({ t: 0.35, h: 72 });
               this.state = 'idle';
               this.cd = 1.6;
+              if (this.air && this.volleys >= 3) this.stun();
             } else {
               this.dir = player.x < s.x ? -1 : 1;
               this.state = 'charge';
@@ -135,7 +150,7 @@
           }
           break;
         case 'charge':
-          s.setTexture('boss_attack');
+          s.setTexture(this.tx.attack);
           s.x += this.dir * 330 * dt;
           if (s.x < a.left + 50 || s.x > a.right - 50) {
             s.x = Phaser.Math.Clamp(s.x, a.left + 50, a.right - 50);
@@ -145,11 +160,11 @@
           this.checkCharge(player);
           break;
         case 'recover':
-          s.setTexture('boss_0');
+          s.setTexture(this.tx.idle);
           if (this.timer <= 0) { this.state = 'idle'; this.cd = 0.8; }
           break;
         case 'stunned':
-          s.setTexture('boss_stun');
+          s.setTexture(this.tx.stun);
           s.setAngle(Math.sin(this.scene.time.now / 60) * 2);
           if (this.timer <= 0) {
             this.stunned = false;

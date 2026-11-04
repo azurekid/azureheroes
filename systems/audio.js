@@ -5,11 +5,11 @@
 
   const KEY = 'azureheroes2027';
   AH.Save = {
-    data: { best: 0, unlocked: 1, bests: {}, muted: false },
+    data: { best: 0, unlocked: 1, bests: {}, muted: false, hero: 'm' },
     load() {
       try {
         const raw = JSON.parse(localStorage.getItem(KEY) || '{}');
-        this.data = Object.assign({ best: 0, unlocked: 1, bests: {}, muted: false }, raw);
+        this.data = Object.assign({ best: 0, unlocked: 1, bests: {}, muted: false, hero: 'm' }, raw);
       } catch (e) { /* storage unavailable (private mode) - keep defaults in memory */ }
       return this.data;
     },
@@ -99,6 +99,7 @@
       switch (name) {
         case 'jump': this.tone(260, 0.16, 'square', 0.16, 560); break;
         case 'doubleJump': this.tone(420, 0.18, 'square', 0.16, 900); break;
+        case 'power': this.tone(523, 0.08, 'square', 0.14); this.tone(659, 0.08, 'square', 0.14, null, 0.08); this.tone(784, 0.08, 'square', 0.14, null, 0.16); this.tone(1047, 0.22, 'square', 0.14, null, 0.24); break;
         case 'coin': this.tone(988, 0.07, 'square', 0.14); this.tone(1319, 0.16, 'square', 0.14, null, 0.07); break;
         case 'mfa': this.tone(660, 0.08, 'triangle', 0.2); this.tone(880, 0.08, 'triangle', 0.2, null, 0.08); this.tone(1320, 0.18, 'triangle', 0.2, null, 0.16); break;
         case 'ring': this.tone(700, 0.1, 'triangle', 0.2, 1400); break;
