@@ -15,11 +15,16 @@ python3 -m http.server 8080
 
 ## Levels
 
-| Level | Name | Goal |
-|-------|------|------|
-| 2 | Rooftop Run | Run and jump across rooftops, dodge red lasers, double jump over gaps. |
-| 3 | Sky Canyon Pursuit | Auto-scrolling flight. Dodge drones and rocks, fly through gold Azure Credit rings. |
-| 4 | Data Center Infiltration | Hack terminals to 100%, open Sec Gates, jump cables, avoid spider bots, then beat the High-Risk CyberGuardian. |
+| Level | Azure region | World | Mode |
+|-------|--------------|-------|------|
+| 1 | `westeurope` | Amsterdam Canal Run: windmill, canal houses, Westerkerk | Run |
+| 2 | `uksouth` | London Thames Run: Big Ben, Tower Bridge, London Eye, the Shard | Run |
+| 3 | `japaneast` | Tokyo Skyway Pursuit: Mount Fuji, Tokyo Tower, torii, pagoda | Flight |
+| 4 | `australiaeast` | Sydney Harbour Run: Opera House, Harbour Bridge | Run |
+| 5 | `brazilsouth` | Rio Sugarloaf Pursuit: Christ the Redeemer, Sugarloaf | Flight |
+| 6 | `eastus` | Virginia Data Center: Capitol, Washington Monument, hack terminals, Sec Gates and the High-Risk CyberGuardian boss | Data center |
+
+Levels are generated at random each time a level starts, so platforms, lasers, enemies, coins and MFA tokens land in new places on every run. Each level is 9,000 to 13,000 px long.
 
 Collect 5 MFA tokens for an extra life. Every enemy takes 2 hits and drops an Azure Credit. Best score and unlocked levels are stored in `localStorage`.
 
@@ -44,7 +49,7 @@ The layout follows the project skills in `.github/skills/`.
 index.html          entry point, Phaser config, script order
 art/sprites.js      every sprite, tile, background and the pixel font
 ui/hud.js           read-only HUD
-levels/level2-4.js  level data (see the game-contract skill)
+levels/worlds.js    Azure region worlds and random level generators (see the game-contract skill)
 systems/            audio and save, input, player, enemies, boss, scenes
 tests/playtest.md   QA report
 docs/               article and screenshots
@@ -59,9 +64,12 @@ The site is static, so no build configuration is needed.
 
 ## Screenshots
 
-![Rooftop Run](docs/screenshots/level2.png)
-![Sky Canyon Pursuit](docs/screenshots/level3.png)
-![Data Center Infiltration](docs/screenshots/level4.png)
+![World 1](docs/screenshots/world1.png)
+![World 2](docs/screenshots/world2.png)
+![World 3](docs/screenshots/world3.png)
+![World 4](docs/screenshots/world4.png)
+![World 5](docs/screenshots/world5.png)
+![World 6](docs/screenshots/world6.png)
 ![CyberGuardian boss](docs/screenshots/boss.png)
 
 Read the write-up in [docs/article.md](docs/article.md).

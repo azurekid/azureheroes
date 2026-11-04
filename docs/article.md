@@ -17,19 +17,20 @@ There are no sprite sheets. `art/sprites.js` draws each sprite on an offscreen c
 
 Backgrounds are layered parallax skylines with neon signs, a sun with a halo, clouds and stars. Text uses a custom 5x7 bitmap font, so the HUD looks the same everywhere.
 
-![Rooftop Run](screenshots/level2.png)
+![Rooftop Run](screenshots/world2.png)
 
 ## Three levels, three ways to play
 
-- **Rooftop Run** is a classic platformer. Gaps that need a double jump and timed red laser traps keep it varied.
+- **Azure region worlds**: six levels, each themed on a region with recognisable landmarks (Amsterdam, London, Tokyo, Sydney, Rio, Virginia) and a randomly generated layout on every run.
+- **Rooftop runs** are classic platformers. Gaps that need a double jump and timed red laser traps keep it varied.
 - **Sky Canyon Pursuit** switches to an auto-scrolling flight mode. Drones chase the hero, rocks block the canyon and gold rings add score.
 - **Data Center Infiltration** adds hack terminals that fill a Hack Progress bar, Sec Gates that stay closed until the hack is done, cables to jump over and spider bots.
 
-![Sky Canyon Pursuit](screenshots/level3.png)
+![Sky Canyon Pursuit](screenshots/world3.png)
 
 Levels are plain data objects (`platforms`, `lasers`, `coins`, `mfaTokens`, `enemies`, `exit`), so adding one means adding one file.
 
-![Data Center Infiltration](screenshots/level4.png)
+![Data Center Infiltration](screenshots/world6.png)
 
 ## The boss
 

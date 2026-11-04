@@ -3,7 +3,7 @@
   'use strict';
   const AH = (window.AH = window.AH || {});
   const T = (scene, x, y, s, o) => new AH.PixelText(scene, x, y, s, o);
-  const LEVEL_IDS = [2, 3, 4];
+  const LEVEL_IDS = AH.Levels.ids;
   AH.Run = { score: 0, lives: 3, startScore: 0, startLives: 3 };
 
   function newRun(score, lives) {
@@ -80,45 +80,52 @@
   }
 
   /* ---------------------------------------------------------------- LEVEL SELECT */
-  const CARDS = {
-    2: { title: ['ROOFTOP', 'RUN'], desc: ['RUN AND JUMP ACROSS', 'ROOFTOPS. AVOID RED', 'LASERS. DOUBLE JUMP!'], icon: 'hero_run1', col: 0xff7ad9 },
-    3: { title: ['SKY CANYON', 'PURSUIT'], desc: ['AUTO-SCROLL FLIGHT.', 'DODGE DRONES, FLY', 'THROUGH GOLD RINGS.'], icon: 'hero_fly', col: 0x27e0ff },
-    4: { title: ['DATA CENTER', 'INFILTRATION'], desc: ['HACK TERMINALS, OPEN', 'SEC GATES, BEAT THE', 'CYBERGUARDIAN BOSS.'], icon: 'boss_0', col: 0xffd23f }
-  };
+  const KIND = { run: 'RUN AND JUMP', fly: 'FLIGHT PURSUIT', rack: 'HACK + BOSS FIGHT' };
+  const COLS = 3;
 
   class SelectScene extends Phaser.Scene {
     constructor() { super('Select'); }
     create() {
       drawBackdrop(this);
       AH.Audio.music(null);
-      this.sel = Math.min(AH.Save.data.unlocked, 3) - 1;
-      this.add.graphics().setDepth(-10).fillStyle(0x0a0720, 0.55).fillRect(0, 0, 640, 360);
-      T(this, 320, 14, 'SELECT LEVEL', { scale: 4, color: '#7fe8ff', shadow: '#3a1fb0', ox: 0.5 });
-      T(this, 320, 52, 'BEST SCORE ' + AH.UI.pad(AH.Save.data.best, 6), { scale: 2, color: '#ffe14a', ox: 0.5 });
+      const n = LEVEL_IDS.length;
+      this.sel = Math.min(AH.Save.data.unlocked, n) - 1;
+      this.add.graphics().setDepth(-10).fillStyle(0x0a0720, 0.62).fillRect(0, 0, 640, 360);
+      T(this, 320, 8, 'SELECT AZURE REGION', { scale: 3, color: '#7fe8ff', shadow: '#3a1fb0', ox: 0.5 });
+      T(this, 320, 34, 'BEST SCORE ' + AH.UI.pad(AH.Save.data.best, 6), { scale: 1, color: '#ffe14a', ox: 0.5 });
       this.gfx = this.add.graphics().setDepth(5);
       this.cards = [];
+      const CW = 200, CH = 140, TH = 68;
       LEVEL_IDS.forEach((id, i) => {
-        const c = CARDS[id], x = 18 + i * 208, y = 82, locked = i >= AH.Save.data.unlocked;
-        const lvl = AH.Levels[id];
-        T(this, x + 98, y + 12, 'LEVEL ' + id, { scale: 3, color: locked ? '#6a6a8a' : '#ffffff', ox: 0.5 }).setDepth(6);
-        c.title.forEach((line, k) => T(this, x + 98, y + 44 + k * 18, line, { scale: 2, color: locked ? '#6a6a8a' : '#ffe14a', ox: 0.5 }).setDepth(6));
-        const icon = this.add.image(x + 98, y + 132, locked ? 'hero_idle' : c.icon).setDepth(6);
-        if (id === 4 && !locked) icon.setScale(0.9 / AH.Art.D);
-        if (locked) icon.setTintFill(0x2a2a4a);
-        c.desc.forEach((line, k) => T(this, x + 98, y + 178 + k * 10, line, { scale: 1, color: locked ? '#55557a' : '#c9a0ff', ox: 0.5 }).setDepth(6));
+        const m = AH.Levels.meta(id), locked = i >= AH.Save.data.unlocked;
+        const x = 10 + (i % COLS) * 208, y = 46 + Math.floor(i / COLS) * 148;
+        const k = 184 / 640, region = m.region;
+        // landmark preview: sky + far skyline, cropped to the thumbnail window
+        const sy0 = 360 - TH / k;
+        const sky = this.add.image(x + 8, y + 6 - sy0 * k, 'bg_sky_' + region).setOrigin(0).setDepth(6);
+        sky.setScale(k / AH.Art.D).setCrop(0, sy0 * AH.Art.D, 640 * AH.Art.D, (TH / k) * AH.Art.D);
+        const far = this.add.image(x + 8, y + 6 + TH - 220 * k, 'bg_far_' + region).setOrigin(0).setDepth(7);
+        far.setScale(k / AH.Art.D);
+        if (locked) { sky.setTintFill(0x1a1a3a); far.setTintFill(0x2a2a4a); }
+        T(this, x + 12, y + 10, 'LEVEL ' + id, { scale: 1, color: locked ? '#6a6a8a' : '#ffffff' }).setDepth(9);
+        T(this, x + 100, y + TH + 12, m.city, { scale: 2, color: locked ? '#6a6a8a' : '#ffe14a', ox: 0.5 }).setDepth(9);
+        T(this, x + 100, y + TH + 30, m.regionName + ' - ' + KIND[m.theme === 'rack' ? 'rack' : m.mode], { scale: 1, color: locked ? '#55557a' : '#c9a0ff', ox: 0.5 }).setDepth(9);
         const bs = AH.Save.data.bests[id] || 0;
-        T(this, x + 98, y + 214, locked ? 'LOCKED' : (bs ? 'BEST ' + AH.UI.pad(bs, 6) : 'NOT PLAYED'), { scale: 2, color: locked ? '#ff2a4a' : '#7fe8ff', ox: 0.5 }).setDepth(6);
-        const zone = this.add.zone(x, y, 196, 232).setOrigin(0).setInteractive({ useHandCursor: !locked });
+        T(this, x + 100, y + TH + 46, locked ? 'LOCKED' : (bs ? 'BEST ' + AH.UI.pad(bs, 6) : 'NOT PLAYED'), { scale: 1, color: locked ? '#ff2a4a' : '#7fe8ff', ox: 0.5 }).setDepth(9);
+        const zone = this.add.zone(x, y, CW, CH).setOrigin(0).setInteractive({ useHandCursor: !locked });
         zone.on('pointerdown', () => { AH.Audio.init(); if (!locked) { this.sel = i; this.start(); } else AH.Audio.play('hit'); });
         zone.on('pointerover', () => { this.sel = i; });
-        this.cards.push({ x, y, id, locked, c });
+        this.cards.push({ x, y, w: CW, h: CH, id, locked, col: [0xff7ad9, 0x27e0ff, 0xffd23f][i % 3] });
       });
-      T(this, 14, 336, 'ARROWS: CHOOSE   ENTER: START   ESC: TITLE', { scale: 1, color: '#9a8cff' });
-      AH.UI.soundButton(this, 630, 336);
+      T(this, 14, 342, 'ARROWS: CHOOSE   ENTER: START   ESC: TITLE', { scale: 1, color: '#9a8cff' });
+      AH.UI.soundButton(this, 630, 340);
       const kb = this.input.keyboard;
       kb.on('keydown', (e) => {
-        if (e.code === 'ArrowLeft' || e.code === 'KeyA') { this.sel = (this.sel + 2) % 3; AH.Audio.play('select'); }
-        else if (e.code === 'ArrowRight' || e.code === 'KeyD') { this.sel = (this.sel + 1) % 3; AH.Audio.play('select'); }
+        const mv = (d) => { this.sel = (this.sel + d + n) % n; AH.Audio.play('select'); };
+        if (e.code === 'ArrowLeft' || e.code === 'KeyA') mv(-1);
+        else if (e.code === 'ArrowRight' || e.code === 'KeyD') mv(1);
+        else if (e.code === 'ArrowUp' || e.code === 'KeyW') mv(-COLS);
+        else if (e.code === 'ArrowDown' || e.code === 'KeyS') mv(COLS);
         else if (e.code === 'Enter' || e.code === 'Space') this.start();
         else if (e.code === 'Escape') this.scene.start('Title');
         else if (e.code === 'KeyM') { AH.Audio.toggle(); this.events.emit('audio-changed'); }
@@ -138,26 +145,15 @@
       g.clear();
       this.cards.forEach((k, i) => {
         const on = i === this.sel;
-        g.fillStyle(0x0b0830, 0.92).fillRect(k.x, k.y, 196, 232);
+        g.fillStyle(0x0b0830, 0.92).fillRect(k.x, k.y, k.w, k.h);
         const pulse = on ? 0.6 + 0.4 * Math.sin(this.t / 150) : 0.4;
-        g.lineStyle(on ? 4 : 2, k.locked ? 0x44446a : on ? 0xffe14a : k.c.col, on ? 1 : pulse).strokeRect(k.x + 1, k.y + 1, 194, 230);
-        if (on) g.lineStyle(1, 0xffffff, pulse).strokeRect(k.x + 6, k.y + 6, 184, 220);
+        g.lineStyle(on ? 4 : 2, k.locked ? 0x44446a : on ? 0xffe14a : k.col, on ? 1 : pulse).strokeRect(k.x + 1, k.y + 1, k.w - 2, k.h - 2);
+        if (on) g.lineStyle(1, 0xffffff, pulse).strokeRect(k.x + 5, k.y + 5, k.w - 10, k.h - 10);
       });
     }
   }
 
   /* ---------------------------------------------------------------- LEVEL */
-  const THEME_BG = {
-    roof: ['bg_sky', 'bg_city_far', 'bg_city_near'],
-    rock: ['bg_sky', 'bg_mesa_far', 'bg_mesa_near'],
-    rack: ['bg_dc', 'bg_dc_far', 'bg_dc_near']
-  };
-  const HINT = {
-    2: 'RUN RIGHT. SPACE TO JUMP, PRESS AGAIN TO DOUBLE JUMP. F = AZURE BLAST',
-    3: 'FLY WITH ARROWS / WASD. DODGE DRONES, FLY THROUGH GOLD RINGS. SHIFT = BOOST',
-    4: 'STAND ON HACK TERMINALS TO OPEN SEC GATES. HOLD E TO RAISE THE MFA SHIELD'
-  };
-
   function rectOf(b) { return { x: b.x, y: b.y, w: b.width, h: b.height }; }
   function ov(a, b) { return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y; }
 
@@ -169,7 +165,7 @@
     }
 
     create() {
-      const L = (this.L = AH.Levels[this.levelId]);
+      const L = (this.L = AH.Levels.make(this.levelId));
       this.mode = L.mode;
       this.scrollSpeed = L.mode === 'fly' ? L.scroll : 0;
       this.state = 'intro';
@@ -188,9 +184,9 @@
       this.physics.world.setBounds(0, -400, L.width, 1200);
       this.physics.world.setBoundsCollision(true, true, false, false);
 
-      const bg = THEME_BG[L.theme];
+      const bg = ['bg_sky_' + L.region, 'bg_far_' + L.region, L.theme === 'rack' ? 'bg_dc_near' : 'bg_near_' + L.region];
       this.add.image(0, 0, bg[0]).setOrigin(0).setScrollFactor(0).setDepth(-30);
-      this.far = this.add.tileSprite(0, 360 - this.textures.get(bg[1]).getSourceImage().height / AH.Art.D, 640, this.textures.get(bg[1]).getSourceImage().height / AH.Art.D, bg[1]).setOrigin(0).setScrollFactor(0).setDepth(-20);
+      this.far = this.add.tileSprite(0, 360 - (L.mode === 'run' ? 54 : 0) - this.textures.get(bg[1]).getSourceImage().height / AH.Art.D, 640, this.textures.get(bg[1]).getSourceImage().height / AH.Art.D, bg[1]).setOrigin(0).setScrollFactor(0).setDepth(-20);
       this.near = this.add.tileSprite(0, 360 - this.textures.get(bg[2]).getSourceImage().height / AH.Art.D, 640, this.textures.get(bg[2]).getSourceImage().height / AH.Art.D, bg[2]).setOrigin(0).setScrollFactor(0).setDepth(-19);
 
       this.solids = this.physics.add.staticGroup();
@@ -246,15 +242,15 @@
       const L = this.L, th = L.theme;
       if (this.mode === 'fly') {
         const hang = p.y === 0;
-        const body = this.add.tileSprite(p.x, p.y, p.w, p.h, th).setOrigin(0).setDepth(9);
-        const edge = this.add.tileSprite(p.x, hang ? p.y + p.h - 8 : p.y, p.w, 8, th + '_top').setOrigin(0).setDepth(10);
+        const body = this.add.tileSprite(p.x, p.y, p.w, p.h, th).setOrigin(0).setDepth(9).setTint(L.tint);
+        const edge = this.add.tileSprite(p.x, hang ? p.y + p.h - 8 : p.y, p.w, 8, th + '_top').setOrigin(0).setDepth(10).setTint(L.tint);
         if (hang) edge.setFlipY(true);
         this.rects.push({ x: p.x + 3, y: p.y + (hang ? 0 : 3), w: p.w - 6, h: p.h - 3, hazard: true, active: true });
         void body;
         return;
       }
-      this.add.tileSprite(p.x, p.y, p.w, 8, th + '_top').setOrigin(0).setDepth(10);
-      this.add.tileSprite(p.x, p.y + 8, p.w, Math.min(p.h - 8, 220), th).setOrigin(0).setDepth(9);
+      this.add.tileSprite(p.x, p.y, p.w, 8, th + '_top').setOrigin(0).setDepth(10).setTint(L.tint);
+      this.add.tileSprite(p.x, p.y + 8, p.w, Math.min(p.h - 8, 220), th).setOrigin(0).setDepth(9).setTint(L.tint);
       const z = this.add.zone(p.x + p.w / 2, p.y + p.h / 2, p.w, p.h);
       this.solids.add(z);
       this.rects.push({ x: p.x, y: p.y, w: p.w, h: p.h, active: true });
@@ -330,10 +326,11 @@
       const mk = (y, s, scale, col) => T(this, 320, y, s, { scale, color: col, ox: 0.5, oy: 0.5 }).setScrollFactor(0).setDepth(1300);
       this.introItems = [
         mk(140, 'LEVEL ' + this.levelId, 6, '#ffffff'),
-        mk(190, this.L.name.toUpperCase(), 3, '#ffe14a'),
-        mk(240, 'GET READY!', 2, '#7fe8ff')
+        mk(184, this.L.name.toUpperCase(), 3, '#ffe14a'),
+        mk(214, 'AZURE REGION: ' + this.L.regionName, 2, '#ff7ad9'),
+        mk(240, this.L.landmarks, 1, '#7fe8ff')
       ];
-      const hint = T(this, 320, 276, HINT[this.levelId], { scale: 1, color: '#c9a0ff', ox: 0.5 }).setScrollFactor(0).setDepth(1300);
+      const hint = T(this, 320, 276, this.L.hint, { scale: 1, color: '#c9a0ff', ox: 0.5 }).setScrollFactor(0).setDepth(1300);
       this.introItems.push(hint);
     }
 
@@ -503,7 +500,7 @@
       const bonus = Math.floor(this.timeLeft) * 10;
       AH.Run.score += bonus;
       const idx = LEVEL_IDS.indexOf(this.levelId);
-      AH.Save.unlock(Math.min(3, idx + 2));
+      AH.Save.unlock(Math.min(LEVEL_IDS.length, idx + 2));
       AH.Save.recordScore(this.levelId, AH.Run.score);
       this.player.sprite.setVelocity(0, 0);
       this.physics.world.pause();
@@ -583,7 +580,7 @@
         if (this.introT <= 0) {
           this.introItems.forEach((i) => i.destroy());
           this.state = 'play';
-          if (this.mode === 'run') this.toast(this.levelId === 4 ? 'FIND THE HACK TERMINALS' : 'REACH THE EXIT PORTAL');
+          if (this.mode === 'run') this.toast(this.L.theme === 'rack' ? 'FIND THE HACK TERMINALS' : 'REACH THE EXIT PORTAL');
         }
         this.hud.update(this.snapshot(), dt);
         return;
@@ -595,8 +592,8 @@
         this.scrollSpeed = cam.scrollX >= maxS ? 0 : L.scroll;
         if (this.state === 'play') cam.scrollX = Math.min(maxS, cam.scrollX + this.scrollSpeed * dt);
       }
-      this.far.tilePositionX = cam.scrollX * 0.15;
-      this.near.tilePositionX = cam.scrollX * 0.35;
+      this.far.tilePositionX = cam.scrollX * 0.15 * AH.Art.D;
+      this.near.tilePositionX = cam.scrollX * 0.35 * AH.Art.D;
 
       if (this.state === 'dying') { this.hud.update(this.snapshot(), dt); return; }
 

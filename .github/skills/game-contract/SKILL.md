@@ -44,3 +44,6 @@ Runtime state shape read by the HUD (`scene.snapshot()`):
 
 Input contract: Arrows/WASD move, Space jump (press again in the air = double jump),
 F Azure Blast, Shift Flight Boost, E / S / Down = MFA Shield, P pause, R restart, M mute.
+
+## Level generation addendum
+- `AH.Levels.make(id)` returns a freshly randomised level in the Level format, with extra fields `region`, `regionName`, `city`, `landmarks`, `hint`, `tint`, `mode`.

@@ -30,3 +30,6 @@ Method: headless Chrome (puppeteer) drove the game with a bot that sets the same
 ## Verdict
 
 Levels 2, 3 and 4 are PASS in automated runs. The game is not signed off on mobile touch, game over and audio until those are checked by hand.
+
+## Azure region worlds
+Bot runs on all 6 generated worlds: levels 5 and 6 complete, levels 1 completes with lives lost; deaths in 2-4 come from bot timing at gaps. Manual playtest still recommended.
