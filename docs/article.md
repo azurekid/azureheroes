@@ -87,15 +87,25 @@ the damage window. Ground bosses can be opened by blocking or by dodging a charg
 into the arena wall; all bosses also overheat after repeated attacks. Hovering bosses
 must be dodged rather than blocked.
 
-Hero Lab offers body, skin, hair, outfit, headwear and accessory choices. Clearing a
-region unlocks a themed outfit, hairstyle and accessory; classic outfits, including
-the capeless Cloud Hacker, are available from the start.
+Hero Lab offers body, skin, hair, outfit, headwear and accessory choices.
+Individual wardrobe caches in regional secrets, sub-levels or side routes unlock
+local clothing; clearing a region alone does not. Afro, braids, curls, coils and
+waves are base choices, as is religious headwear such as the hijab. The New York
+cap, cork hat and cowboy hat require collection even on legacy saves; cowboy can
+be found in any of the three US worlds. Classic outfits, including the capeless
+Cloud Hacker, remain available from the start.
 
 ![Hero Lab with the Cloud Hacker outfit](screenshots/hero-lab.png)
 
 ## A world map and optional accounts
 
-The world map tracks unlocked regions, completed routes and the Continue point.
+The world map tracks individually opened regions, completed routes and the Continue
+point. Registration lets players choose a represented Azure region as their starting
+world, without location tracking. Each clear selects a random uncleared world and
+saves that exact Continue destination; existing saves retain their progress.
+Locally dressed guides explain the deployment key, relay, two gems and three
+enemy-carried tokens at the start; gameplay waits for acknowledgment. The pause
+menu can reopen the briefing without resetting progress.
 Guest progress is stored locally. When hosted with `server.js`, players can also
 register, sync their progress and compete on a leaderboard. The zero-dependency
 Node.js server uses salted scrypt passwords, hashed expiring tokens, rate limits and
@@ -122,4 +132,5 @@ setup rather than evidence of an unassisted playthrough. The
 
 Open `index.html` or use a static host for guest mode. Run `npm start` for the
 local account server and `npm test` for the automated suite. See the
-[README](../README.md) for controls, hosting and deployment details.
+[README](../README.md) for controls and hosting, and the
+[Azure Web App deployment guide](deployment-azure-web-app.md) for production setup.

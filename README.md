@@ -438,7 +438,7 @@ Accounts only appear when the page is served by `server.js`. On a static host th
 | GET | `/api/leaderboard?limit=20` | Top scores |
 | POST | `/api/register` | `{ name, password, location, startLevel, progress }` returns a token; optional `startLevel` must be a represented world ID (1-11) |
 | POST | `/api/login` | `{ name, password }` returns a token and the profile |
-| GET | `/api/me` | Current profile (Bearer token) |
+| GET | `/api/me` | Current profile (requires a Bearer token) |
 | POST | `/api/logout` | Revokes the token |
 | PUT | `/api/progress` | Merges saved progress, including `route: {start, available: [id], cleared: [id]}` and wardrobe; access/clears never go backwards and registration start is immutable |
 | POST | `/api/score` | `{ score, level, city }` returns best and rank |
@@ -449,21 +449,27 @@ Passwords are hashed with salted scrypt, tokens are random, stored as SHA-256 ha
 
 ### Azure App Service (accounts + leaderboard)
 
-1. Create a Linux Web App with the **Node 20 LTS** runtime, for example:
+Follow the [Azure Web App deployment guide](docs/deployment-azure-web-app.md)
+for resource setup, persistent storage, GitHub credentials/approvals, manual ZIP
+deployment, smoke tests, backups, rollback and troubleshooting.
 
-   ```bash
-   az webapp up --name <app-name> --resource-group <rg> --runtime "NODE:20-lts" --sku B1
-   ```
+Use a **Linux Node 22 LTS Web App**, one instance and one Node process, with
+`DATA_DIR=/home/data` for the **legacy JSON-backed server only**. The existing
+[deployment workflow](.github/workflows/azure-app-service.yml) runs tests before
+publishing the complete game. It requires `AZURE_WEBAPP_NAME`, a protected
+`production` environment and `AZURE_WEBAPP_PUBLISH_PROFILE`.
 
-2. Set the app setting `DATA_DIR=/home/data` so the store lives on persistent storage (`az webapp config appsettings set --name <app-name> --resource-group <rg> --settings DATA_DIR=/home/data`).
-3. The startup command is `npm start` (App Service runs it by default because `package.json` has a `start` script). App Service provides `PORT`.
-4. On pushes to `main` or a manual run, `.github/workflows/azure-app-service.yml`
-   runs the tests. The deploy job runs after they pass when repository variable
-   `AZURE_WEBAPP_NAME` is set; it also needs the secret `AZURE_WEBAPP_PUBLISH_PROFILE`.
-   The job uses the `production` environment, whose branch and approval protections
-   must be configured in GitHub as described in [SECURITY.md](SECURITY.md).
+The in-memory JSON store is not safe for scale-out or overlapping writers.
+Persistent storage is not a backup. Before adding instances, workers or deployment
+slots sharing data, migrate to a concurrency-safe database.
 
-The JSON store is designed for a single instance. To scale out to more instances, move the store to Azure Table Storage or Cosmos DB.
+**New infrastructure:** [infra/main.bicep](infra/main.bicep) creates a new Web App,
+managed identity and private Azure Table Storage for accounts, sessions, progress
+and leaderboard entries. No storage keys or Key Vault are needed. **The server
+adapter and data migration are not implemented:** the app is stopped by default.
+The templates disable SCM basic authentication, so the existing publish-profile
+workflow must be replaced with a reviewed OIDC deployment before use with this
+app. See the [integration gates](docs/deployment-azure-web-app.md#server-integration-and-migration-required-before-enabling-accounts).
 
 ### Static hosting (guest mode)
 

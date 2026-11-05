@@ -51,6 +51,21 @@ repository settings before treating the workflow as enforced:
 6. Maintain CODEOWNERS as the maintainer team grows. Review changes to protection,
    ownership, tests and agent guidance as carefully as runtime authentication changes.
 
+## Production account data and contributor access
+
+- Current player passwords are salted scrypt hashes, not plaintext or decryptable
+  secrets. Hashes, salts and session-token hashes are still sensitive; do not
+  distribute account stores to contributors or use real accounts in test fixtures.
+- Repository access must not imply Azure data, SSH/console, role-assignment or
+  production deployment access. Protect releases: deployed malicious code could
+  misuse the app's legitimate identity even when storage is private.
+- The [Table Storage infrastructure](infra/main.bicep) grants only the Web App's
+  managed identity per-table data access. It provisions no developer data roles,
+  storage keys or player-secret vault. Key Vault is not a user-account database.
+- [Server integration and migration](docs/deployment-azure-web-app.md#server-integration-and-migration-required-before-enabling-accounts)
+  are still required. Do not enable the new app with the existing JSON adapter
+  or silently fall back to local/empty data when Azure access fails.
+
 ## Limits
 
 Skills and tests are defense in depth, not a proof that code is safe or a sandbox for

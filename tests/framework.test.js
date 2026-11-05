@@ -31,7 +31,8 @@ test('community skills have discoverable metadata and resolvable local reference
 });
 
 test('documentation local links and screenshot files remain valid and referenced', () => {
-  const docs = ['README.md', 'CONTRIBUTING.md', 'AGENTS.md', 'SECURITY.md', 'docs/article.md', 'tests/playtest.md'];
+  const docs = ['README.md', 'CONTRIBUTING.md', 'AGENTS.md', 'SECURITY.md', 'docs/article.md',
+    'docs/deployment-azure-web-app.md', 'tests/playtest.md'];
   const screenshotsDir = path.join(root, 'docs/screenshots');
   const screenshots = new Set();
   for (const file of docs) {
@@ -123,6 +124,19 @@ test('browser script entry points are explicit and the only external script has 
   assert.equal(local.at(-1), 'systems/scenes.js', 'scene startup follows content and engines');
   assert.match(scripts[0], /integrity="sha384-Fi7F0CYQBHYa\+s2vvYJeiqvOQf3tuZ28vafRGXvMt7ijxNTVf3\+eXPkNRIUi9JD2"/);
   assert.match(scripts[0], /crossorigin="anonymous"/);
+});
+
+test('Azure deployment packages every browser module without account data or contributor files', () => {
+  const workflow = read('.github/workflows/azure-app-service.yml');
+  const entries = /run: zip -r app\.zip (.+)/.exec(workflow)[1].split(' ');
+  assert.deepEqual(entries, ['index.html', 'server.js', 'package.json',
+    'art', 'audio', 'worlds', 'ui', 'levels', 'systems', 'docs/screenshots']);
+  for (const file of ['index.html', 'server.js', 'package.json', ...localScripts()]) {
+    assert.ok(entries.some(entry => file === entry || file.startsWith(entry + '/')), file + ' is packaged');
+  }
+  for (const entry of entries) assert.ok(fs.existsSync(path.join(root, entry)), entry + ' exists');
+  assert.match(workflow, /node-version: 22/);
+  assert.match(workflow, /environment: production/);
 });
 
 test('city catalogue is complete and preserves progression and local ownership', () => {
