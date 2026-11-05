@@ -10,6 +10,9 @@ description: 'Coordinate Azure Heroes community development. Use for game featur
    [game contract](../game-contract/SKILL.md) and [security workflow](../game-security/SKILL.md).
 2. Inspect the worktree and existing implementation. Identify the requested outcome,
    affected surfaces and acceptance checks. Ask only for unresolved behavioral decisions.
+   Short requests are normal: for a new city, derive the identity brief in
+   [region-world-generator](../region-world-generator/SKILL.md) yourself instead of asking
+   for landmarks, enemies or vehicles. State assumptions in the plan.
    Do not inspect credentials, unrelated files or a contributor's personal configuration.
 3. Choose the smallest complete change. Describe any contract or compatibility change
    before implementation. Do not create a replacement engine or generic plugin framework.

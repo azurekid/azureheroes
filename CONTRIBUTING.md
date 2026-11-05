@@ -30,6 +30,52 @@ it from the skills menu. Otherwise follow its checklist manually.
 6. Submit a focused PR with the checklist below. A maintainer must review the diff,
    including workflows, skills, tests, network access and any executable additions.
 
+## Prompting the skills
+
+You do not need to know the code to get a good result. Describe the experience you want,
+name the skill (or let `game-orchestrator` route it) and say how you will judge success.
+The skills fill in structure, art style, security rules and tests.
+
+**Good prompts:**
+- state the outcome, not the implementation ("Tokyo should feel busy", not "edit line 531");
+- mention anything that must not change ("keep the Paris rooftops");
+- say what evidence you want back (tests, screenshots of specific worlds);
+- add details only where you care. A city name is enough for a new world: the
+  [region-world-generator](.github/skills/region-world-generator/SKILL.md) derives
+  landmarks, street life, traffic, local creatures, boss and music itself.
+
+**Example: a new world.**
+
+```text
+Use game-orchestrator to add a New York level.
+```
+
+The assistant should reply with an identity brief before coding, for example:
+Azure region `eastus2` (New York has no region of its own); Statue of Liberty, Empire
+State and Brooklyn Bridge in the skyline; Times Square billboards, brownstones and a
+subway entrance in the street strip; a hot dog cart stand; yellow cabs and an MTA bus;
+rats as crawlers and pigeons as flyers (still cloud threats); a new street-fighter boss.
+Correct the brief if you want something else, then let it build, test and screenshot.
+Add preferences in the same prompt when you have them:
+
+```text
+Use game-orchestrator to add a New York level. Run mode, night skyline,
+include Coney Island, and make the boss a boxer from Brooklyn.
+```
+
+**Other examples:**
+
+| Goal | Prompt |
+|------|--------|
+| New cloud room | `Use level-builder to add a Key Vault sub-level with its own layout and threats.` |
+| New enemy | `Use gameplay-systems and sprite-artist to add a leaked-secret enemy that teaches Key Vault.` |
+| Visual polish | `Use sprite-artist: Sydney's beach looks flat, add surf and lifeguard huts. Screenshot level 5.` |
+| Bug | `Use qa-playtester: I fall through the second boat in Amsterdam. Reproduce, fix and add a test.` |
+| Review | `Use game-security to review my branch before I open a PR.` |
+
+If a result misses the mark, give concrete feedback ("the canal houses lost their gables")
+rather than starting over; the skills keep what already works.
+
 ## Pull request checklist
 
 - [ ] Scope, affected levels/systems, and relevant skills are identified.

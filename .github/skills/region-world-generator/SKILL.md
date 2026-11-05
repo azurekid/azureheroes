@@ -1,9 +1,37 @@
 ---
 name: region-world-generator
-description: Add or change an Azure region world, landmarks, transit, scenic routes, local enemies, bosses or random level generation for Azure Heroes 2027. Use when adding a region or changing regional transport and scenery.
+description: Add or change an Azure region world, landmarks, transit, scenic routes, local enemies, bosses or random level generation for Azure Heroes 2027. Use when adding a city or region (even from a one-line request such as 'add a New York level') or changing regional transport and scenery.
 ---
 
 Design goal: every world must feel like its own place at a glance, the way each Subway Surfers city does. Change the setting, not just the colours.
+
+## From a one-line request ("add a New York level")
+Contributors may only name a city. Do not ask them to list landmarks; build an identity brief
+from well-known facts, show it in your plan or PR, then implement it. Fill every row:
+
+| Brief row | Where it lands | New York example |
+|---|---|---|
+| Azure region | world row `region`; nearest real, unused id (never invent one; one world per id) | `eastus2` (East US 2), hint names the mapping |
+| Skyline (3-4 icons) | painted `bg_far_<region>` + `panoramaLandmarks` | Statue of Liberty, Empire State, Chrysler, Brooklyn Bridge |
+| Street-strip pieces (6+) | `sc_<prefix>_*`, signature ones in `sceneryRoutes` | Times Square billboards, brownstones with fire escapes, yellow-cab street, subway entrance, Central Park, skyscraper row |
+| Food/market stand | `stand` + `regOb` art | hot dog / pretzel cart |
+| Props and obstacles | `prop_*`, `opt.obstacles` | fire hydrant, newspaper box, steam vent |
+| Traffic and transit | `ambient.road/rail/water/sky` (calm budget) | yellow cabs, MTA bus, elevated subway, Staten Island ferry, helicopter |
+| Local creatures as enemy skins | `en_<region>_robot/drone/spider` | rat (crawler), pigeon (flyer), rogue street robot (walker) |
+| Boss | new `fighterReg` kind + `bolt_<kind>` art and a `boss` row; `systems/boss.js` needs no change | a new boxer, not the existing `enforcer` |
+| Currency, music, ground | `coin_<region>`, a dance-style track in `REGION_SONG` (other styles stay shared), `ground`/`water` | $ coin, funky house groove, sidewalk + Hudson piers |
+| Microsoft touch | billboards via `billKeys` | Azure ad on a Times Square screen |
+
+Rules for the brief:
+- Prefer icons a visitor would recognise at a glance; mix landmarks, everyday architecture,
+  street life and transport. Pick the ground/flight/data-center mode that fits the city.
+- Creatures and pests are only skins: movement type, two-hit/one-credit rules and the cloud
+  threat nameplate stay (a rat on the crawler type is still a cloud threat). Keep them cartoon-friendly.
+- Reuse existing ambient kinds and art when they fit (`taxi`, `schoolbus`, `plane`); add new
+  code-drawn ones only for missing icons. Never duplicate a landmark another world already owns
+  unless the city is the real location (and then move it, do not copy it).
+- Ask the contributor only when the region choice is genuinely ambiguous, the city overlaps
+  an existing world, or a detail could be culturally sensitive. Otherwise state assumptions and proceed.
 
 ## Region identity checklist (all required for a new world)
 1. **Azure region**: real region id, e.g. `westeurope`, plus a city. One row in the `WORLDS` table in `levels/worlds.js` (`id, region, regionName, city, name, mode, theme, tint, landmarks, hint, opt, boss`).
