@@ -76,11 +76,11 @@
 
     HERO_OUTFITS.forEach((x, i) => { HERO_SUIT[i + 5].name = x[0]; HERO_SUIT[i + 5].outfit = x[1]; });
 
-    const suitOpen = (i, unlocked) => !!HERO_SUIT[i] && (HERO_SUIT[i].unlock < 0 || (unlocked || 1) >= HERO_SUIT[i].unlock + 2);
+    const suitOpen = (i, progress) => wardrobeOpen('suit', i, progress);
 
     const HERO_HATS = [
     ['none', 'NONE', 'NO HAT'],
-    ['cowboy', 'COWBOY HAT', 'TEXAS, USA'],
+    ['cowboy', 'COWBOY HAT', 'TEXAS, USA', 8],
     AH.Worlds['mexico-city'].rewards.classicHat,
     AH.Worlds['london'].rewards.classicHat,
     AH.Worlds['paris'].rewards.classicHat,
@@ -91,7 +91,8 @@
     AH.Worlds['rio'].rewards.classicHat,
     AH.Worlds['redmond'].rewards.classicHat,
     AH.Worlds['virginia'].rewards.classicHat,
-    ['hijab', 'HIJAB', 'WORLDWIDE']
+    ['hijab', 'HIJAB', 'WORLDWIDE'],
+    ['nycap', 'NEW YORK CAP', 'NEW YORK', 10]
     ];
 
     const HERO_GEAR = [
@@ -114,14 +115,46 @@
     AH.Worlds['new-york'].rewards.gear
     ];
 
-    const hairUnlock = (key) => { const x = HERO_REGIONAL_HAIR.find((x) => x[0] === key); return x ? x[3] : -1; };
+    const OPEN_HAIR = ['afro', 'braids', 'curls', 'coils', 'waves', 'boroughwaves'];
+    const hairUnlock = (key) => {
+        const x = HERO_REGIONAL_HAIR.find((x) => x[0] === key);
+        return x && !OPEN_HAIR.includes(key) ? x[3] : -1;
+      };
 
-    const wardrobeOpen = (category, value, unlocked) => {
-        if (category === 'suit') return suitOpen(value, unlocked);
-        if (category === 'hair') return HERO_HAIR_STYLES.includes(value) && (hairUnlock(value) < 0 || (unlocked || 1) >= hairUnlock(value) + 2);
-        const list = category === 'gear' ? HERO_GEAR : category === 'hat' ? HERO_HATS : [];
-        const item = list.find((x) => x[0] === value);
-        return !!item && (item[3] === undefined || (unlocked || 1) >= item[3] + 2);
+    const regionalItems = (region) => {
+        const rewards = AH.Worlds[AH.WorldOrder[region]].rewards;
+        const items = [
+          ['suit', HERO_SUIT.findIndex((x) => x.unlock === region), rewards.outfit ? rewards.outfit[0] : rewards.suit.name],
+          ['hair', rewards.hair[0], rewards.hair[1]],
+          ['gear', rewards.gear[0], rewards.gear[1]]
+        ];
+        if (rewards.classicHat) items.push(['hat', rewards.classicHat[0], rewards.classicHat[1]]);
+        if (rewards.classicGear) items.push(['gear', rewards.classicGear[0], rewards.classicGear[1]]);
+        if (rewards.hat) items.push(['hat', rewards.hat[0], rewards.hat[1]]);
+        for (const hat of rewards.collectibleHats || []) items.push(['hat', hat[0], hat[1]]);
+        return items.map(([category, value, name]) => ({ id: category + ':' + value, category, value, name, region }));
+      };
+    const regional = AH.WorldOrder.flatMap((slug, i) => regionalItems(i));
+    const wardrobeOpen = (category, value, progress) => {
+        let valid;
+        if (category === 'suit') valid = Number.isInteger(value) && !!HERO_SUIT[value];
+        else if (category === 'hair') valid = HERO_HAIR_STYLES.includes(value);
+        else {
+          const list = category === 'gear' ? HERO_GEAR : category === 'hat' ? HERO_HATS : [];
+          valid = list.some((x) => x[0] === value);
+        }
+        if (!valid) return false;
+        if (category === 'hair' && OPEN_HAIR.includes(value)) return true;
+        const reward = regional.find((x) => x.category === category && x.value === value);
+        if (!reward) return true;
+        const collection = progress && typeof progress === 'object' && progress.wardrobe;
+        const classic = (category === 'hat' || category === 'gear') &&
+          (category === 'hat' ? HERO_HATS : HERO_GEAR).find((x) => x[0] === value)[3] === undefined;
+        if (collection) return (collection.items || []).includes(reward.id) ||
+          classic && !!collection.legacyClassic ||
+          !classic && category !== 'hat' && (collection.legacyUnlocked || 1) >= reward.region + 2;
+        const unlocked = typeof progress === 'object' ? progress.unlocked : progress;
+        return classic || category !== 'hat' && (unlocked || 1) >= reward.region + 2;
       };
 
     const wardrobeFor = (i) => ({
@@ -130,10 +163,10 @@
         gear: (HERO_GEAR.find((x) => x[3] === i) || [null])[0]
       });
 
-    const lookOpen = (look, unlocked) => ['suit', 'hair', 'hat', 'gear'].every((k) => wardrobeOpen(k, look[k], unlocked));
+    const lookOpen = (look, progress) => ['suit', 'hair', 'hat', 'gear'].every((k) => wardrobeOpen(k, look[k], progress));
 
     const HERO_DEF = { m: { body: 'm', skin: 1, hair: 'swoop', hairCol: 0, suit: 0, hat: 'none', gear: 'none' }, f: { body: 'f', skin: 1, hair: 'long', hairCol: 4, suit: 1, hat: 'none', gear: 'none' } };
 
-    Object.assign(C, { HERO_SKIN, HERO_HAIR, HERO_HAIR_STYLES, HERO_REGIONAL_HAIR, HERO_SUIT, GOLD_SUIT, SUIT_BASE, HERO_OUTFITS, suitOpen, HERO_HATS, HERO_GEAR, hairUnlock, wardrobeOpen, wardrobeFor, lookOpen, HERO_DEF });
+    Object.assign(C, { HERO_SKIN, HERO_HAIR, HERO_HAIR_STYLES, HERO_REGIONAL_HAIR, HERO_SUIT, GOLD_SUIT, SUIT_BASE, HERO_OUTFITS, suitOpen, HERO_HATS, HERO_GEAR, hairUnlock, wardrobeOpen, wardrobeFor, regionalItems, lookOpen, HERO_DEF });
   };
 })();

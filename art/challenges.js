@@ -4,7 +4,7 @@
   const AH = (window.AH = window.AH || {});
 
   AH.ArtModules.stages['art.challenges.77'] = function (C) {
-    const { FLAT, ell, glow, lg, limb, line, lit, poly, reg2, registerCloudEnemies, rng, rrect, shade, txt } = C;
+    const { FLAT, depthFace, depthGround, ell, glow, lg, limb, line, lit, poly, reg2, registerCloudEnemies, rng, rrect, shade, txt } = C;
 
     Object.assign(C, { cargoBox, dockCrane, workshopArm, cloudDeck, cloudCabinet, cloudFacility });
     reg2('pipe', 44, 46, function (g) {
@@ -24,6 +24,8 @@
     reg2('pbrick_top', 32, 8, function (g) {
         g.fillStyle = '#2a6ae0'; g.fillRect(0, 0, 32, 8); g.fillStyle = '#8ad8ff'; g.fillRect(0, 0, 32, 1.4);
         g.fillStyle = '#0a2a7a'; g.fillRect(0, 7, 32, 1); g.fillRect(15.4, 1.4, 1, 6);
+        poly(g, [[0, 0], [27, 0], [32, 4], [5, 4]], '#507ba2');
+        for (const x of [8, 24]) line(g, x, 0.5, x + 5, 4, 0.7, '#234a75');
       }, FLAT);
 
     reg2('pbrick', 32, 32, function (g) {
@@ -71,6 +73,15 @@
           g.fillStyle = i % 2 ? 'rgba(226,188,135,0.3)' : 'rgba(20,25,30,0.28)';
           g.fillRect(x + 4 + r() * (w - 8), y + 5 + r() * (h - 10), 1 + r() * 3, 0.7);
         }
+        const d = Math.min(12, h / 5, w / 8);
+        depthFace(g, x, y, w, y + h, d, c[2], c[0]);
+        for (let rx = x + 8; rx < x + w - d; rx += 12) {
+          line(g, rx, y + 0.8, rx + d * 0.7, y + d - 0.8, 0.7, c[1]);
+        }
+        line(g, x + d, y + d, x + w, y + d, 0.8, '#d7c6a0');
+        line(g, x + w - d, y + d, x + w - d, y + h - 1, 0.8, c[0]);
+        line(g, x + w - d / 2, y + d + 2, x + w - d / 2, y + h - 3, 1, '#7b8d8a');
+        line(g, x + 1, y + h - 1, x + w - 1, y + h - 1, 1.5, '#162530');
         if (w >= 64 && h >= 32) {
           txt(g, label, x + 9, y + 12, 1, '#e2e4d8');
           txt(g, 'AZ 2704', x + 9, y + h - 12, 0.5, '#c6c6b3');
@@ -134,6 +145,10 @@
           }
         }
         [4, w - 5].forEach((x) => { ell(g, x, h - 4, 1.3, 1.3, '#d8d1b5'); });
+        const d = Math.min(4, h / 4);
+        depthFace(g, 0, 0, w, h, d, '#152936', edge);
+        for (let x = 10; x < w - d; x += 16) line(g, x, 0.5, x + d, d, 0.6, '#526775');
+        line(g, d, d, w - d, d, 0.8, '#d1d2c8');
       }
 
     function cloudCabinet(g, x, y, w, h, theme) {
@@ -147,6 +162,12 @@
             lit(g, cx + 3, cy + 2, 2, 1, accent);
           }
         }
+        const d = Math.min(9, w / 7, h / 6);
+        depthFace(g, x, y, w, y + h, d, '#172d3d', '#7b929c');
+        for (let cy = y + d + 8; cy < y + h - 4; cy += 9) {
+          line(g, x + w - d + 2, cy, x + w - 2, cy + d / 3, 0.8, '#3e5969');
+        }
+        line(g, x + 1, y + h - 1, x + w - 1, y + h - 1, 2, '#0f2534');
         if (w >= 50 && h >= 35) {
           const cx = x + w / 2, cy = y + h / 2;
           ell(g, cx, cy, 12, 12, '#244254');
@@ -168,11 +189,21 @@
             line(g, x + 6, 65, x + 14, 255, 2, '#4a6575');
             for (let y = 84; y < 250; y += 24) line(g, x + 18, y, x + 62, y, 0.7, '#3f5b6b');
           }
+          poly(g, [[0, 0], [640, 0], [488, 56], [152, 56]], '#172b3b');
+          poly(g, [[0, 0], [152, 56], [152, 280], [0, 340]], '#1a3040');
+          poly(g, [[640, 0], [488, 56], [488, 280], [640, 340]], '#233949');
+          for (const x of [0, 160, 320, 480, 640]) line(g, x, 0, 320 + (x - 320) * 0.52, 56, 1.2, '#486271');
+          for (const y of [86, 148, 212]) {
+            line(g, 0, y, 152, 56 + y * 0.6, 1, '#3b5767');
+            line(g, 640, y, 488, 56 + y * 0.6, 1, '#4b6571');
+          }
           poly(g, [[0, 280], [640, 280], [640, 360], [0, 360]], '#1a3040');
           for (let x = -320; x < 960; x += 80) line(g, 320 + (x - 320) * 0.35, 280, x, 360, 1, '#38515d');
           for (const y of [290, 312, 345]) line(g, 0, y, 640, y, 1, '#38515d');
           return;
         }
+        depthGround(g, 0, 300, 640, 24, '#152b39', '#36505f');
+        for (const x of [0, 160, 320, 480, 640]) line(g, 320 + (x - 320) * 0.6, 276, x, 299, 0.7, '#526c75');
         for (const x of [18, 616]) {
           g.fillStyle = '#243e50'; g.fillRect(x, 46, 8, 254);
           line(g, x + 2, 46, x + 2, 300, 1, '#718591');
@@ -182,6 +213,7 @@
         line(g, 0, 71, 640, 71, 1, accent);
         if (identity) {
           const cx = 355 + variant * 30;
+          ell(g, cx + 10, 184, 73, 78, '#0d2535');
           ell(g, cx, 181, 73, 78, '#172c3b');
           ell(g, cx, 181, 66, 71, '#4f6979');
           ell(g, cx, 181, 58, 63, lg(g, cx - 60, 120, cx + 60, 245, [[0, '#516f80'], [1, '#203b4f']]));
@@ -205,6 +237,8 @@
             line(g, x - 2, 80, x - 2, 261, 2, accent);
             cloudCabinet(g, x - 28, 192, 56, 70, theme);
           }
+          ell(g, cx + 10, 194, 65, 65, '#10283b');
+          depthGround(g, cx - 74, 274, 160, 15, '#1d3448', '#51677a');
           ell(g, cx, 190, 65, 65, '#1c3045');
           g.strokeStyle = '#788a99'; g.lineWidth = 5;
           g.beginPath(); g.ellipse(cx, 190, 59, 59, 0, 0, Math.PI * 2); g.stroke();

@@ -9,12 +9,14 @@
   AH.ArtModules.regions['westeurope'] = content;
 
   AH.ArtModules.stages['worlds.amsterdam.scenery.10'] = function (C) {
-    const { ell, lit, poly, rim, silFill } = C;
+    const { depthFace, depthGround, ell, lit, poly, rim, silFill } = C;
 
     Object.assign(C, { windmill, canalHouses, westerkerk });
     function windmill(g, cx, base, s, P) {
         const body = silFill(g, base - 78 * s, base, P.top, P.bot);
         poly(g, [[cx - 15 * s, base], [cx - 9 * s, base - 62 * s], [cx + 9 * s, base - 62 * s], [cx + 15 * s, base]], body);
+        poly(g, [[cx + 4 * s, base - 62 * s], [cx + 9 * s, base - 62 * s], [cx + 15 * s, base], [cx + 7 * s, base]], '#302641');
+        depthGround(g, cx - 15 * s, base, 30 * s, 3 * s, '#30293d', '#a28a87');
         poly(g, [[cx - 12 * s, base - 62 * s], [cx, base - 78 * s], [cx + 12 * s, base - 62 * s]], P.top);
         g.fillStyle = P.accent; g.fillRect(cx - 11 * s, base - 62 * s, 22 * s, 1.2);
         rim(g, cx - 14 * s, base - 62 * s, 62 * s, 'rgba(255,255,255,0.3)');
@@ -39,6 +41,7 @@
           const w = 19 + Math.floor(r() * 9), h = hmin + Math.floor(r() * (hmax - hmin)), top = base - h;
           const col = hues[Math.floor(r() * hues.length)], gt = Math.floor(r() * 4);
           g.fillStyle = silFill(g, top, base, col, P.bot); g.fillRect(x, top, w, h);
+          depthFace(g, x, top, w, base, 3, '#201936', '#79637e');
           g.fillStyle = 'rgba(0,0,12,0.28)'; g.fillRect(x + w * 0.74, top, w * 0.26, h);
           if (gt === 0) { // stepped gable
             for (let k = 0; k < 4; k++) { const sw = w - k * (w * 0.22); g.fillStyle = col; g.fillRect(x + (w - sw) / 2, top - (k + 1) * 3, sw, 3.2); g.fillStyle = P.accent; g.fillRect(x + (w - sw) / 2, top - (k + 1) * 3, sw, 0.6); }
@@ -60,6 +63,7 @@
               else { g.fillStyle = 'rgba(8,4,40,0.6)'; g.fillRect(wx, wy, 3.6, 6); }
             }
           }
+          depthGround(g, x, base, w, 2, '#241a38', '#8c7387');
           x += w + 0.8;
         }
       }
@@ -69,6 +73,10 @@
         g.fillStyle = f; g.fillRect(cx - 11 * s, base - 80 * s, 22 * s, 80 * s);
         g.fillRect(cx - 8 * s, base - 108 * s, 16 * s, 28 * s);
         g.fillRect(cx - 6 * s, base - 124 * s, 12 * s, 16 * s);
+        depthFace(g, cx - 11 * s, base - 80 * s, 22 * s, base, 4 * s, '#35294d', '#baa2b4');
+        depthFace(g, cx - 8 * s, base - 108 * s, 16 * s, base - 80 * s, 3 * s, '#453454', '#c4adbc');
+        depthFace(g, cx - 6 * s, base - 124 * s, 12 * s, base - 108 * s, 2 * s, '#453454', '#c4adbc');
+        depthGround(g, cx - 12 * s, base, 24 * s, 3 * s, '#2b223e', '#927b8c');
         [80, 108, 124].forEach(function (yv, i) { g.fillStyle = P.accent; g.fillRect(cx - (11 - i * 2.5) * s, base - yv * s, (22 - i * 5) * s, 1); });
         lit(g, cx - 3 * s, base - 70 * s, 6 * s, 10 * s, P.win[0]);
         ell(g, cx, base - 98 * s, 4.6 * s, 4.6 * s, '#ffe9a0'); ell(g, cx, base - 98 * s, 3.4 * s, 3.4 * s, '#2a1470'); g.fillStyle = '#ffe9a0'; g.fillRect(cx - 0.4, base - 101 * s, 0.8, 3.4 * s); g.fillRect(cx, base - 98 * s, 2.4 * s, 0.8);
@@ -217,7 +225,7 @@
   };
 
   AH.ArtModules.stages['worlds.amsterdam.scenery.121'] = function (C) {
-    const { SC, ell, lg, line, lit, poly } = C;
+    const { SC, depthFace, depthGround, ell, lg, line, lit, poly } = C;
 
     Object.assign(SC.westeurope, {
         sc_we_kinderdijk: [250, 190, function (g, w, h, P) {
@@ -227,6 +235,8 @@
           for (let i = 0; i < 3; i++) {
             const x = 43 + i * 82, top = h - (112 + (i === 1 ? 18 : 0));
             poly(g, [[x - 19, h - 20], [x - 12, top + 23], [x + 12, top + 23], [x + 20, h - 20]], lg(g, x - 16, top, x + 17, h, [[0, '#d7b87e'], [0.55, '#835264'], [1, '#34264d']]));
+            poly(g, [[x + 6, top + 23], [x + 12, top + 23], [x + 20, h - 20], [x + 10, h - 20]], '#49334b');
+            depthGround(g, x - 20, h - 17, 40, 4, '#24343f', '#9c9680');
             poly(g, [[x - 13, top + 25], [x + 13, top + 25], [x + 10, top + 53], [x - 10, top + 53]], '#503650');
             for (let row = 0; row < 2; row++) for (let col = -1; col <= 1; col++) lit(g, x + col * 7 - 1.5, top + 31 + row * 10, 3, 5, P.win[(i + row + col + 3) % 3]);
             ell(g, x, top + 21, 21, 5, '#d8b676');
@@ -240,6 +250,8 @@
             ell(g, x, top + 21, 5, 5, P.accent);
           }
           line(g, 0, h - 17, w, h - 17, 1, '#8ad4c4');
+          poly(g, [[0, h - 7], [w, h - 7], [w - 28, h - 12], [20, h - 12]], '#657a6e');
+          depthGround(g, 0, h, w, 7, '#24353e', '#7c8878');
         }],
         sc_we_erasmus: [250, 165, function (g, w, h, P) {
           const deck = h - 30;
@@ -250,6 +262,8 @@
           line(g, 20, deck - 8, 235, deck - 8, 9, '#1b2451');
           line(g, 20, deck - 11, 235, deck - 11, 3, '#d7eaff');
           line(g, 128, deck - 12, 239, deck - 11, 2, '#c6d9ee');
+          poly(g, [[20, deck - 15], [225, deck - 15], [235, deck - 11], [20, deck - 11]], '#8a9eb2');
+          poly(g, [[124, deck], [132, deck], [137, h - 4], [119, h - 4]], '#283953');
           for (let x = 32; x <= 226; x += 16) {
             const t = (x - 128) / 111;
             const y = deck - 13 - Math.max(0, t) * 2;
@@ -272,6 +286,7 @@
             line(g, x + 1, y + 2, x + 23, y + 22, 1.5, P.accent);
             lit(g, x + 7, y + 22 + shift, 4, 7, P.win[i % 3]); lit(g, x + 31, y + 23, 4, 7, P.win[(i + 1) % 3]);
           });
+          depthGround(g, 0, h, w, 10, '#29263e', '#86788d');
         }],
         sc_we_euromast: [120, 225, function (g, w, h, P) {
           const cx = 59;
@@ -285,11 +300,13 @@
           ell(g, cx, 77, 12, 4, '#e2c6a0');
           line(g, cx, 41, cx, 4, 2, P.accent); ell(g, cx, 4, 2, 2, '#fff0bd');
           line(g, 16, h - 11, 104, h - 11, 2, P.accent);
+          depthGround(g, 17, h, 88, 12, '#2b2940', '#8d8497');
         }],
         sc_we_domtower: [130, 245, function (g, w, h, P) {
           const x = 64;
           const fill = lg(g, x - 28, h - 205, x + 30, h, [[0, '#b9a2c9'], [0.48, '#74588d'], [1, '#342b5c']]);
           g.fillStyle = fill; g.fillRect(x - 25, h - 174, 50, 174);
+          depthFace(g, x - 25, h - 174, 50, h, 8, '#493852', '#bd9eaa');
           for (let y = h - 172; y < h - 16; y += 30) { line(g, x - 24, y, x + 24, y, 2, P.accent); }
           g.fillStyle = '#30254d'; g.fillRect(x - 31, h - 205, 62, 33);
           for (let j = 0; j < 4; j++) {
@@ -302,15 +319,18 @@
           for (let i = -1; i <= 1; i++) { ell(g, x + i * 14, h - 188, 4, 5, '#201c49'); lit(g, x + i * 14 - 1, h - 190, 2, 3, P.win[(i + 4) % 3]); }
           g.fillStyle = '#392a58'; g.fillRect(x - 31, h - 7, 62, 7);
           line(g, x - 30, h - 8, x + 30, h - 8, 2, P.accent);
+          depthGround(g, x - 31, h, 62, 7, '#30273e', '#9b8494');
         }],
         sc_we_peacepalace: [230, 160, function (g, w, h, P) {
           const base = h - 14;
           g.fillStyle = lg(g, 0, base - 87, 0, h, [[0, '#d2b6aa'], [0.55, '#765375'], [1, '#302747']]);
           g.fillRect(18, base - 75, 194, 75);
           g.fillRect(7, base - 54, 216, 54);
+          depthFace(g, 7, base - 54, 216, base, 10, '#513b52', '#b69b9c');
           poly(g, [[11, base - 75], [57, base - 108], [104, base - 75]], '#8a687b');
           poly(g, [[126, base - 75], [174, base - 108], [220, base - 75]], '#8a687b');
           g.fillStyle = '#52415f'; g.fillRect(97, base - 97, 36, 97);
+          depthFace(g, 97, base - 97, 36, base, 6, '#332940', '#9e8796');
           poly(g, [[94, base - 97], [115, base - 125], [136, base - 97]], '#ddbd88');
           g.fillStyle = '#4d4268'; g.fillRect(108, base - 119, 14, 22);
           for (let x = 26; x < 208; x += 13) {
@@ -320,19 +340,22 @@
           g.fillStyle = '#b2939b'; g.fillRect(4, base - 11, 222, 11);
           line(g, 5, base - 12, 225, base - 12, 2, P.accent);
           ell(g, 12, base - 15, 9, 5, '#387454'); ell(g, 216, base - 15, 9, 5, '#387454');
+          depthGround(g, 4, h, 222, 14, '#322c40', '#a18e96');
         }]
       });
   };
 
   AH.ArtModules.stages['worlds.amsterdam.scenery.127'] = function (C) {
-    const { SC, canalBoat, ell, line, lit, poly, rrect, txt } = C;
+    const { SC, canalBoat, depthFace, depthGround, ell, line, lit, poly, rrect, txt } = C;
 
     Object.assign(SC.westeurope, {
         sc_nl_transit: [280, 150, function (g, w, h) {
           g.fillStyle = '#af7558'; g.fillRect(22, 38, 236, 97);
+          depthFace(g, 22, 38, 236, 135, 10, '#704b50', '#a18c83');
           for (let y = 42; y < 130; y += 6) for (let x = 25 + y % 12; x < 255; x += 16) line(g, x, y, x + 12, y, 0.6, '#d7ab84');
           poly(g, [[15, 40], [62, 18], [113, 40]], '#624952'); poly(g, [[166, 40], [216, 18], [265, 40]], '#624952');
           g.fillStyle = '#d7c3a0'; g.fillRect(120, 11, 40, 124);
+          depthFace(g, 120, 11, 40, 135, 6, '#978674', '#ded0b3');
           poly(g, [[114, 13], [140, 0], [166, 13]], '#375968');
           ell(g, 140, 32, 13, 13, '#efe2b7'); ell(g, 140, 32, 10, 10, '#334f5c');
           line(g, 140, 32, 140, 24, 1, '#fff0bd'); line(g, 140, 32, 147, 35, 1, '#fff0bd');
@@ -341,16 +364,20 @@
           }
           rrect(g, 63, 94, 155, 16, 2, '#1d5386'); txt(g, 'STATION SLOTERDIJK', 75, 99, 1, '#f5efcc');
           g.fillStyle = '#555c61'; g.fillRect(0, 136, w, 14); line(g, 0, 137, w, 137, 1.5, '#d8d0b4');
+          depthGround(g, 0, h, w, 13, '#373f4c', '#9c9b8e');
           [18, 262].forEach((x) => { line(g, x, 99, x, 136, 1.5, '#314556'); rrect(g, x - 8, 95, 16, 12, 1, '#1965a4'); txt(g, 'TRAM', x - 6, 99, 0.5, '#ffffff'); });
         }],
         sc_nl_canalcruise: [260, 115, function (g, w, h) {
           g.fillStyle = '#497588'; g.fillRect(0, 54, w, 61);
           for (let x = 0; x < w; x += 43) {
             g.fillStyle = ['#875449', '#b2886e', '#665260'][x / 43 % 3 | 0]; g.fillRect(x + 2, 14, 37, 45);
+            depthFace(g, x + 2, 14, 37, 59, 5, '#51414c', '#9b827a');
             poly(g, [[x, 14], [x + 20, 0], [x + 41, 14]], '#545365');
             for (let y = 22; y < 54; y += 14) { lit(g, x + 9, y, 7, 9, '#dbc496'); lit(g, x + 25, y, 7, 9, '#b7ccd2'); }
           }
           g.fillStyle = '#b7b7a5'; g.fillRect(0, 57, w, 3);
+          poly(g, [[0, 57], [w - 8, 57], [w, 60], [5, 60]], '#c6b5a2');
+          for (let x = 0; x < w; x += 43) line(g, x, 54, x + 5, 60, 0.7, '#5e6270');
           for (let x = 8; x < w; x += 20) line(g, x, 63 + x % 9, x + 15, 63 + x % 9, 0.7, '#a3c8d0');
           g.save(); g.translate(45, 65); canalBoat(g); g.restore();
           txt(g, 'RONDVAART', 100, 49, 0.7, '#f9edd4');
@@ -397,7 +424,7 @@
   };
 
   content.parts['SC_westeurope'] = function (C) {
-    const { canalHouses, lamp, lg, line, lit, poly, rng, silFill, tree, txt, westerkerk, windmill } = C;
+    const { canalHouses, depthFace, depthGround, lamp, lg, line, lit, poly, rng, silFill, tree, txt, westerkerk, windmill } = C;
 
     return {
           sc_we_row1: [170, 140, function (g, w, h, P) { canalHouses(g, 0, w, h, rng(301), P, 80, 125, false); for (let x = 20; x < w; x += 45) tree(g, x, h, 46, '#3a7a4a'); }],
@@ -406,15 +433,20 @@
           sc_we_rijks: [210, 150, function (g, w, h, P) {
             const f = silFill(g, h - 120, h, '#a8483a', '#5a1a3a');
             g.fillStyle = f; g.fillRect(10, h - 80, 190, 80); g.fillRect(60, h - 110, 24, 110); g.fillRect(126, h - 110, 24, 110);
+            depthFace(g, 10, h - 80, 190, h, 9, '#603044', '#9b7880');
+            [60, 126].forEach((x) => depthFace(g, x, h - 110, 24, h, 4, '#642e43', '#ad8383'));
             poly(g, [[56, h - 110], [72, h - 140], [88, h - 110]], '#3a5a6a'); poly(g, [[122, h - 110], [138, h - 140], [154, h - 110]], '#3a5a6a');
             poly(g, [[6, h - 80], [105, h - 100], [204, h - 80]], '#3a4a6a');
             for (let x = 18; x < 196; x += 11) { lit(g, x, h - 70, 5, 10, P.win[(x / 11 | 0) % 3]); lit(g, x, h - 45, 5, 10, P.win[(x / 11 + 1 | 0) % 3]); }
             g.fillStyle = '#1a0a2a'; g.beginPath(); g.ellipse(105, h - 10, 12, 18, 0, Math.PI, 0); g.fill(); g.fillRect(93, h - 10, 24, 10);
+            depthGround(g, 10, h, 190, 4, '#392339', '#ad8c86');
             txt(g, 'I AMSTERDAM', 60, h - 8, 1, '#ff2a4a', '#ffffff');
           }],
           sc_we_mill: [130, 150, function (g, w, h, P) { g.fillStyle = lg(g, 0, h - 20, 0, h, [[0, '#3a7a3a'], [1, '#1a3a2a']]); g.beginPath(); g.ellipse(65, h, 70, 20, 0, Math.PI, 0); g.fill(); windmill(g, 65, h - 16, 1.4, P); }],
           sc_we_kerk: [150, 210, function (g, w, h, P) { westerkerk(g, 75, h, 1.2, P); canalHouses(g, 0, 50, h, rng(305), P, 60, 90, false); canalHouses(g, 100, 150, h, rng(306), P, 60, 90, false); }],
           sc_we_magere: [220, 90, function (g, w, h, P) {
+            poly(g, [[0, h - 45], [214, h - 45], [220, h - 40], [0, h - 40]], '#aaa4bd');
+            [57, 157].forEach((x) => depthGround(g, x - 7, h, 20, 6, '#4e4965', '#b9aec5'));
             g.fillStyle = '#f0e8ff'; g.fillRect(0, h - 40, 220, 4);
             [60, 160].forEach(function (x) { g.fillRect(x - 3, h - 80, 6, 80); g.fillRect(x - 14, h - 80, 28, 3); line(g, x - 12, h - 78, x - 40, h - 40, 1, '#f0e8ff'); line(g, x + 12, h - 78, x + 40, h - 40, 1, '#f0e8ff'); });
             g.strokeStyle = '#f0e8ff'; g.lineWidth = 1.4; [40, 110, 180].forEach(function (x) { g.beginPath(); g.ellipse(x, h, 32, 34, 0, Math.PI, 0); g.stroke(); });
@@ -424,7 +456,7 @@
   };
 
   content.parts['SC_EXTRA_westeurope'] = function (C) {
-    const { bikeSil, ell, glowRect, grachtRow, lamp, lg, line, lit, msLogo, plane, poly, rng, silFill, tree, txt } = C;
+    const { bikeSil, depthFace, depthGround, ell, glowRect, grachtRow, lamp, lg, line, lit, msLogo, plane, poly, rng, silFill, tree, txt } = C;
 
     return {
           sc_we_row1: [170, 174, function (g, w, h, P) { grachtRow(g, 0, w, h, 301, P, 80, 120); for (let x = 22; x < w; x += 52) tree(g, x, h - 5, 48, '#3a7a4a'); bikeSil(g, 40, h - 4, '#14082a'); bikeSil(g, 120, h - 4, '#14082a'); }],
@@ -437,12 +469,15 @@
             g.strokeStyle = 'rgba(40,30,80,0.6)'; g.lineWidth = 0.8; for (let k = 0; k < 14; k++) { g.beginPath(); g.moveTo(10 + k * 20, h - 50); g.lineTo(10 + k * 20, h - 50 - Math.sqrt(Math.max(0, 1 - Math.pow((k * 20 - 140) / 150, 2))) * 40); g.stroke(); }
             const brick = silFill(g, h - 160, h, '#a8483a', '#5a1a3a');
             g.fillStyle = brick; g.fillRect(6, h - 64, 278, 64);
+            depthFace(g, 6, h - 64, 278, h, 11, '#673b49', '#9e7a7c');
             for (let k = 0; k < 4; k++) { const bx = 6 + k * 70 + (k > 1 ? 10 : 0); poly(g, [[bx, h - 64], [bx + 25, h - 82], [bx + 50, h - 64]], brick); g.fillStyle = '#f0e0d0'; g.fillRect(bx, h - 65, 50, 1.2); }
             g.fillStyle = brick; g.fillRect(118, h - 96, 54, 96); poly(g, [[114, h - 96], [145, h - 118], [176, h - 96]], brick);
+            depthFace(g, 118, h - 96, 54, h, 7, '#713945', '#b48583');
             ell(g, 145, h - 106, 6, 6, '#ffd890'); ell(g, 145, h - 106, 4.6, 4.6, '#f4ecff');
             line(g, 145, h - 106, 145, h - 109, 0.7, '#14082a'); line(g, 145, h - 106, 147.4, h - 106, 0.7, '#14082a');
             [[60, 'clock'], [230, 'vane']].forEach(function (t) {
               const tx = t[0]; g.fillStyle = brick; g.fillRect(tx - 11, h - 124, 22, 124);
+              depthFace(g, tx - 11, h - 124, 22, h, 4, '#683747', '#b68b84');
               poly(g, [[tx - 13, h - 124], [tx, h - 150], [tx + 13, h - 124]], '#3a5a6a'); g.fillStyle = '#ffd23f'; g.fillRect(tx - 0.6, h - 162, 1.2, 12);
               if (t[1] === 'clock') { ell(g, tx, h - 112, 7, 7, '#ffd23f'); ell(g, tx, h - 112, 5.6, 5.6, '#f4ecff'); line(g, tx, h - 112, tx, h - 116, 0.8, '#14082a'); line(g, tx, h - 112, tx + 3, h - 112, 0.8, '#14082a'); }
               else { poly(g, [[tx, h - 162], [tx + 7, h - 160], [tx, h - 158]], '#ffd23f'); lit(g, tx - 4, h - 116, 8, 10, P.win[1]); }
@@ -451,6 +486,7 @@
             for (let x = 14; x < 280; x += 9) { if (x > 112 && x < 176) continue; if ((x > 46 && x < 76) || (x > 216 && x < 246)) continue; g.fillStyle = '#f0e0d0'; g.fillRect(x - 0.6, h - 52, 6.2, 13); lit(g, x, h - 51, 5, 11, P.win[(x / 9 | 0) % 3]); g.fillStyle = '#f0e0d0'; g.fillRect(x - 0.6, h - 28, 6.2, 11); lit(g, x, h - 27, 5, 9, P.win[(x / 9 + 1 | 0) % 3]); }
             g.fillStyle = '#f0e0d0'; g.fillRect(6, h - 34, 278, 1.2);
             g.fillStyle = '#1a0a2a'; [126, 140, 154].forEach(function (x) { g.beginPath(); g.ellipse(x + 5, h - 16, 5, 6, 0, Math.PI, 0); g.fill(); g.fillRect(x, h - 16, 10, 16); });
+            depthGround(g, 6, h, 278, 4, '#422c3d', '#bba397');
             txt(g, 'CENTRAAL', 121, h - 92, 1, '#ffe14a', '#3a0a1a');
           }],
           sc_we_schiphol: [300, 175, function (g, w, h, P) {
@@ -460,6 +496,7 @@
             g.fillStyle = '#7fe8ff'; g.fillRect(143, h - 148, 26, 10); g.fillStyle = '#2a2a6a'; for (let k = 0; k < 6; k++) g.fillRect(145 + k * 4.4, h - 148, 0.8, 10);
             g.fillStyle = '#e8e8ff'; g.fillRect(146, h - 158, 20, 6); lit(g, 155, h - 166, 2, 6, '#ff2a4a');
             g.fillStyle = silFill(g, h - 50, h, '#5a5ab0', '#2a2a6a'); g.fillRect(10, h - 46, 280, 42);
+            depthFace(g, 10, h - 46, 280, h - 4, 10, '#303659', '#a5b2ca');
             g.fillStyle = 'rgba(160,220,255,0.5)'; g.fillRect(14, h - 40, 272, 24);
             g.strokeStyle = 'rgba(30,30,80,0.7)'; g.lineWidth = 0.7; for (let x = 14; x < 286; x += 8) { g.beginPath(); g.moveTo(x, h - 40); g.lineTo(x, h - 16); g.stroke(); }
             for (let x = 18; x < 286; x += 16) lit(g, x, h - 36, 6, 6, P.win[(x / 16 | 0) % 3]);
@@ -468,9 +505,12 @@
             g.fillStyle = '#2a2aa8'; g.fillRect(190, h - 14, 70, 10); txt(g, 'GATES D-E', 194, h - 12.4, 1, '#ffffff');
             plane(g, 80, h - 128, 0.8, -0.22);
             plane(g, 250, h - 80, 0.55, 0);
+            depthGround(g, 0, h, w, 4, '#25263d', '#6a6b80');
           }],
           sc_we_mshq: [190, 175, function (g, w, h, P) {
             g.fillStyle = silFill(g, h - 150, h, '#3a4aa0', '#1a1a5a'); g.fillRect(14, h - 140, 104, 140); g.fillRect(100, h - 100, 80, 100);
+            depthFace(g, 14, h - 140, 104, h, 10, '#292a50', '#8198bb');
+            depthFace(g, 100, h - 100, 80, h, 8, '#252943', '#788dab');
             const glass = lg(g, 0, h - 140, 0, h, [[0, 'rgba(140,220,255,0.6)'], [1, 'rgba(60,90,200,0.3)']]);
             g.fillStyle = glass; g.fillRect(18, h - 134, 96, 130); g.fillRect(104, h - 94, 72, 90);
             g.strokeStyle = 'rgba(200,240,255,0.5)'; g.lineWidth = 0.6;
@@ -485,10 +525,12 @@
             g.fillStyle = '#ff9a40'; g.fillRect(150, h - 120, 2, 8); g.fillRect(150, h - 120, 10, 6);
             txt(g, 'SCHIPHOL HQ', 30, h - 14, 1, '#ffe14a', '#1a0a3a');
             g.fillStyle = '#1a1a3a'; g.fillRect(56, h - 12, 22, 12); lit(g, 58, h - 10, 18, 9, '#bff0ff');
+            depthGround(g, 14, h, 166, 3, '#24243a', '#8a8b9b');
           }],
           sc_we_amstel: [240, 140, function (g, w, h, P) {
             const f = silFill(g, h - 110, h, '#f0e8ff', '#8a7ac8');
             g.fillStyle = f; g.fillRect(8, h - 80, 224, 80);
+            depthFace(g, 8, h - 80, 224, h, 9, '#796984', '#c2b5c5');
             g.fillStyle = '#3a3a6a'; g.beginPath(); g.moveTo(4, h - 80); g.lineTo(14, h - 100); g.lineTo(226, h - 100); g.lineTo(236, h - 80); g.closePath(); g.fill();
             for (let x = 22; x < 222; x += 20) { g.fillStyle = f; g.fillRect(x, h - 100, 8, 9); poly(g, [[x - 1, h - 100], [x + 4, h - 105], [x + 9, h - 100]], f); lit(g, x + 2, h - 98, 4, 5, P.win[0]); }
             g.fillStyle = f; g.fillRect(96, h - 108, 48, 108); poly(g, [[92, h - 108], [120, h - 126], [148, h - 108]], f);
@@ -499,10 +541,12 @@
             g.fillStyle = '#1a1a4a'; g.fillRect(108, h - 22, 24, 22); lit(g, 110, h - 20, 20, 18, '#ffd890');
             g.fillStyle = '#2a1a5a'; g.fillRect(70, h - 92, 100, 10); txt(g, 'AMSTEL HOTEL', 85, h - 90, 1, '#ffd23f');
             for (let x = 10; x < 232; x += 6) lit(g, x, h - 81, 1.4, 1.4, '#ffe9a0');
+            depthGround(g, 8, h, 224, 3, '#4a3c55', '#c2b0b5');
           }],
           sc_we_wallen: [210, 175, function (g, w, h, P) {
             const K = { top: P.top, bot: P.bot, accent: '#ff5a7a', win: ['#ff3a5a', '#ff6a8a', '#ffd070'] };
             g.fillStyle = silFill(g, h - 175, h, '#5a3a7a', '#2a1a4a'); g.fillRect(96, h - 120, 34, 120);
+            depthFace(g, 96, h - 120, 34, h, 6, '#33213e', '#9b7891');
             poly(g, [[92, h - 120], [113, h - 140], [134, h - 120]], '#3a5a6a'); g.fillStyle = '#5a3a7a'; g.fillRect(106, h - 160, 14, 22);
             poly(g, [[104, h - 160], [113, h - 175], [122, h - 160]], '#3a5a6a'); ell(g, 113, h - 150, 3.6, 3.6, '#ffd23f');
             grachtRow(g, 0, 96, h, 311, K, 80, 118); grachtRow(g, 130, 210, h, 312, K, 80, 118);
@@ -513,6 +557,9 @@
           }],
           sc_we_ophaal: [150, 120, function (g, w, h, P) {
             const W = '#f4ecff';
+            poly(g, [[0, h - 40], [35, h - 40], [40, h - 36], [0, h - 36]], '#b1a3ba');
+            poly(g, [[110, h - 40], [145, h - 40], [150, h - 36], [110, h - 36]], '#b1a3ba');
+            [14, 132].forEach((x) => depthGround(g, x - 4, h, 12, 4, '#534359', '#b9a4b7'));
             g.fillStyle = W; g.fillRect(14, h - 34, 4, 34); g.fillRect(132, h - 34, 4, 34);
             g.fillRect(0, h - 36, 40, 3); g.fillRect(110, h - 36, 40, 3);
             [[40, -1], [110, 1]].forEach(function (b) {

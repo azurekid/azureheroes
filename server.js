@@ -21,6 +21,7 @@ const TOKEN_TTL = 1000 * 60 * 60 * 24 * 30;
 const MAX_BODY = 16 * 1024;
 const MAX_SCORE = 9999999;
 const MAX_LEVEL = 99;
+const WORLD_COUNT = 11;
 const LEADERBOARD_SIZE = 100;
 
 /* ------------------------------------------------------------------ store */
@@ -73,7 +74,7 @@ function pruneTokens() {
   Object.keys(db.tokens).forEach((k) => { if (db.tokens[k].exp < now) delete db.tokens[k]; });
 }
 
-const publicProfile = (u) => ({ name: u.name, location: u.location, best: u.best, progress: u.progress });
+const publicProfile = (u) => ({ name: u.name, location: u.location, best: u.best, progress: u.progress, startLevel: u.startLevel });
 
 /* ------------------------------------------------------------------ helpers */
 const hits = new Map();
@@ -109,11 +110,42 @@ function readJson(req) {
   });
 }
 const int = (v, lo, hi) => { v = Math.floor(Number(v)); return Number.isFinite(v) ? Math.max(lo, Math.min(hi, v)) : lo; };
+const routeIds = (list) => [...new Set((Array.isArray(list) ? list : []).slice(0, WORLD_COUNT * 2)
+  .filter(id => Number.isInteger(id) && id >= 1 && id <= WORLD_COUNT))];
+function cleanRoute(progress) {
+  const r = progress.route;
+  if (r && typeof r === 'object') {
+    const start = int(r.start, 1, WORLD_COUNT), cleared = routeIds(r.cleared);
+    return { start, cleared, available: routeIds([start, ...routeIds(r.available), ...cleared]) };
+  }
+  return { start: 1, cleared: Array.from({ length: Math.min(WORLD_COUNT, int(progress.unlocked, 1, MAX_LEVEL) - 1) }, (_, i) => i + 1),
+    available: routeIds([...Array.from({ length: Math.min(WORLD_COUNT, int(progress.unlocked, 1, MAX_LEVEL)) }, (_, i) => i + 1),
+      progress.resume?.id]) };
+}
 
 function sanitizeProgress(p, old) {
   p = p && typeof p === 'object' ? p : {};
+  const previous = old;
   old = old || { unlocked: 1, bests: {}, resume: null, updated: 0 };
   const out = { unlocked: Math.max(old.unlocked || 1, int(p.unlocked, 1, MAX_LEVEL)), bests: Object.assign({}, old.bests), resume: old.resume, updated: old.updated || 0 };
+  const cleanWardrobe = (progress, legacy) => {
+    const w = progress.wardrobe;
+    if (!w || typeof w !== 'object') return { items: [], legacyUnlocked: legacy ? int(progress.unlocked, 1, MAX_LEVEL) : 1, legacyClassic: !!legacy };
+    return {
+      items: [...new Set((Array.isArray(w.items) ? w.items : []).slice(0, 128).filter((id) =>
+        typeof id === 'string' && /^(?:suit:(?:[0-9]|1[0-8])|(?:hair|hat|gear):[a-z][a-z0-9]{0,31})$/.test(id)))],
+      legacyUnlocked: int(w.legacyUnlocked, 1, MAX_LEVEL), legacyClassic: w.legacyClassic === true
+    };
+  };
+  const a = cleanWardrobe(old, !!previous), b = cleanWardrobe(p, !previous && !p.wardrobe);
+  out.wardrobe = {
+    items: [...new Set([...a.items, ...b.items])].slice(0, 128),
+    legacyUnlocked: Math.max(a.legacyUnlocked, b.legacyUnlocked), legacyClassic: a.legacyClassic || b.legacyClassic
+  };
+  const localRoute = cleanRoute(old), remoteRoute = cleanRoute(p);
+  out.route = { start: previous ? localRoute.start : remoteRoute.start,
+    cleared: routeIds([...localRoute.cleared, ...remoteRoute.cleared]),
+    available: routeIds([...localRoute.available, ...remoteRoute.available]) };
   if (p.bests && typeof p.bests === 'object') {
     Object.keys(p.bests).slice(0, MAX_LEVEL).forEach((k) => {
       const id = int(k, 1, MAX_LEVEL), s = int(p.bests[k], 0, MAX_SCORE);
@@ -153,8 +185,18 @@ async function api(req, res, url) {
       if (db.users[key]) return send(res, 409, { error: 'NAME ALREADY TAKEN' });
       const location = cleanText(b.location, 20);
       if (location.length < 2) return send(res, 400, { error: 'ENTER YOUR LOCATION' });
+      if (b.startLevel !== undefined && (!Number.isInteger(b.startLevel) || b.startLevel < 1 || b.startLevel > WORLD_COUNT))
+        return send(res, 400, { error: 'CHOOSE A REPRESENTED REGION' });
+      const progress = sanitizeProgress(b.progress);
+      if (b.startLevel !== undefined) {
+        const r = progress.route;
+        r.start = b.startLevel;
+        r.available = routeIds([b.startLevel, ...(r.cleared.length || progress.unlocked > 1 ? r.available : [])]);
+        progress.resume = { id: b.startLevel, score: 0, lives: 3 };
+        progress.updated = Date.now();
+      }
       const h = hashPassword(pw);
-      db.users[key] = { name, location, salt: h.salt, hash: h.hash, created: Date.now(), best: 0, bestAt: 0, progress: sanitizeProgress(b.progress) };
+      db.users[key] = { name, location, startLevel: b.startLevel, salt: h.salt, hash: h.hash, created: Date.now(), best: 0, bestAt: 0, progress };
       const token = issueToken(key);
       save();
       return send(res, 201, { token, profile: publicProfile(db.users[key]) });

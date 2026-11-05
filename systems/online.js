@@ -40,6 +40,8 @@
     adopt(profile) {
       this.profile = profile;
       const d = AH.Save.data, p = profile.progress || {};
+      AH.Save.mergeWardrobe(p);
+      AH.Save.mergeRoute(p, profile.startLevel);
       d.unlocked = Math.max(d.unlocked || 1, p.unlocked || 1);
       Object.keys(p.bests || {}).forEach((k) => { if (p.bests[k] > (d.bests[k] || 0)) d.bests[k] = p.bests[k]; });
       d.best = Math.max(d.best || 0, profile.best || 0);
@@ -54,9 +56,10 @@
       try { localStorage.removeItem(TOKEN_KEY); } catch (e) { /* ignore */ }
     },
 
-    auth(mode, name, password, loc) {
+    auth(mode, name, password, loc, startLevel) {
       const d = AH.Save.data;
-      return req('POST', '/api/' + mode, { name: name, password: password, location: loc, progress: { unlocked: d.unlocked, bests: d.bests, resume: d.resume, updated: d.updated } })
+      return req('POST', '/api/' + mode, { name: name, password: password, location: loc, startLevel,
+        progress: { unlocked: d.unlocked, bests: d.bests, resume: d.resume, updated: d.updated, wardrobe: d.wardrobe, route: AH.Save.route() } })
         .then((j) => {
           this.token = j.token;
           try { localStorage.setItem(TOKEN_KEY, j.token); } catch (e) { /* ignore */ }
@@ -71,16 +74,16 @@
     },
 
     pushProgress() {
-      if (!this.available || !this.token) return;
+      if (!this.available || !this.token || AH.Gold && AH.Gold.run()) return;
       clearTimeout(this.pushTimer);
       this.pushTimer = setTimeout(() => this.pushNow(), 1200);
     },
 
     pushNow() {
-      if (!this.available || !this.token) return;
+      if (!this.available || !this.token || AH.Gold && AH.Gold.run()) return;
       clearTimeout(this.pushTimer);
       const d = AH.Save.data;
-      req('PUT', '/api/progress', { unlocked: d.unlocked, bests: d.bests, resume: d.resume, updated: d.updated }).catch(() => {});
+      req('PUT', '/api/progress', { unlocked: d.unlocked, bests: d.bests, resume: d.resume, updated: d.updated, wardrobe: d.wardrobe, route: AH.Save.route() }).catch(() => {});
     },
 
     submitScore(score, level, city) {
@@ -103,6 +106,13 @@
       const f = el.querySelector('form'), err = el.querySelector('.err'), title = el.querySelector('h2');
       const locRow = el.querySelector('.loc'), swap = el.querySelector('.swap'), submit = el.querySelector('button[type=submit]');
       const E = f.elements;
+      const regionRow = el.querySelector('.region');
+      E.region.replaceChildren(...AH.Levels.worlds.map(world => {
+        const option = document.createElement('option');
+        option.value = world.id;
+        option.textContent = world.regionName + ' - ' + world.city;
+        return option;
+      }));
       const kb = window.AHGame && AHGame.input.keyboard;
       return new Promise((resolve) => {
         const set = (m) => {
@@ -110,21 +120,24 @@
           title.textContent = m === 'register' ? 'NEW HERO' : 'HERO LOGIN';
           locRow.style.display = m === 'register' ? '' : 'none';
           E.loc.required = m === 'register';
+          regionRow.hidden = m !== 'register';
+          E.region.required = m === 'register';
           E.pass.autocomplete = m === 'register' ? 'new-password' : 'current-password';
           submit.textContent = m === 'register' ? 'REGISTER' : 'LOG IN';
           swap.textContent = m === 'register' ? 'I ALREADY HAVE AN ACCOUNT' : 'CREATE A NEW ACCOUNT';
           err.textContent = '';
         };
         const close = (v) => {
+          if (f.contains(document.activeElement)) document.activeElement.blur();
           el.hidden = true;
-          f.onsubmit = null; swap.onclick = null; el.querySelector('.cancel').onclick = null;
+          f.onsubmit = null; f.onkeydown = null; swap.onclick = null; el.querySelector('.cancel').onclick = null;
           if (kb) kb.enabled = true;
           resolve(v);
         };
         set(mode || 'login');
         if (kb) kb.enabled = false;
         el.hidden = false;
-        setTimeout(() => E.hero.focus(), 60);
+        setTimeout(() => { if (!el.hidden) E.hero.focus(); }, 60);
         swap.onclick = () => set(mode === 'register' ? 'login' : 'register');
         el.querySelector('.cancel').onclick = () => close(null);
         f.onkeydown = (e) => { if (e.key === 'Escape') close(null); e.stopPropagation(); };
@@ -132,7 +145,7 @@
           e.preventDefault();
           err.textContent = 'CONNECTING...';
           submit.disabled = true;
-          this.auth(mode, E.hero.value, E.pass.value, E.loc.value).then((p) => {
+          this.auth(mode, E.hero.value, E.pass.value, E.loc.value, mode === 'register' ? Number(E.region.value) : undefined).then((p) => {
             submit.disabled = false;
             E.pass.value = '';
             close(p);

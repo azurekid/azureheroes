@@ -4,7 +4,7 @@
   const AH = (window.AH = window.AH || {});
 
   AH.ArtModules.stages['art.tiles.7'] = function (C) {
-    const { FLAT, ell, lg, reg2, rng, rrect } = C;
+    const { FLAT, ell, lg, line, poly, reg2, rng, rrect } = C;
     const lit = (...args) => C.lit(...args);
 
     Object.assign(C, { glowRect });
@@ -15,6 +15,9 @@
     reg2('roof_top', 32, 8, function (g) {
         g.fillStyle = lg(g, 0, 0, 0, 8, [[0, '#ffffff'], [0.12, '#ff7ad9'], [0.26, '#27e0ff'], [0.4, '#6a4ad8'], [1, '#2a1a70']]); g.fillRect(0, 0, 32, 8);
         for (let x = 0; x < 32; x += 8) { g.fillStyle = 'rgba(160,130,255,0.55)'; g.fillRect(x, 4, 4, 0.8); g.fillStyle = 'rgba(10,5,50,0.35)'; g.fillRect(x + 4, 5.4, 0.8, 2.6); }
+        poly(g, [[0, 0], [27, 0], [32, 4], [5, 4]], 'rgba(185,163,233,0.32)');
+        for (const x of [8, 24]) line(g, x, 0.5, x + 5, 4, 0.7, '#4d3178');
+        line(g, 0, 4.5, 32, 4.5, 0.8, '#251746');
       }, FLAT);
 
     reg2('roof', 32, 32, function (g) {
@@ -43,6 +46,9 @@
     reg2('rack_top', 32, 8, function (g) {
         g.fillStyle = lg(g, 0, 0, 0, 8, [[0, '#c8f8ff'], [0.15, '#27e0ff'], [0.3, '#6a6aa8'], [1, '#2a2a4c']]); g.fillRect(0, 0, 32, 8);
         for (let x = 2; x < 32; x += 8) { g.fillStyle = 'rgba(10,10,40,0.55)'; g.fillRect(x, 4.4, 5, 0.9); g.fillStyle = 'rgba(255,255,255,0.15)'; g.fillRect(x, 5.4, 5, 0.5); }
+        poly(g, [[0, 0], [27, 0], [32, 4], [5, 4]], '#7b97a4');
+        for (const x of [8, 24]) line(g, x, 0.5, x + 5, 4, 0.7, '#334b64');
+        line(g, 0, 4, 32, 4, 0.7, '#b8d2d7');
       }, FLAT);
 
     reg2('rack', 32, 32, function (g) {
@@ -62,6 +68,8 @@
         const r = rng(77);
         for (let i = 0; i < 6; i++) { g.fillStyle = 'rgba(20,8,70,0.4)'; g.fillRect(Math.floor(r() * 28), 3 + Math.floor(r() * 4), 2 + r() * 4, 0.8); }
         for (let i = 0; i < 4; i++) { g.fillStyle = 'rgba(255,255,255,0.3)'; g.fillRect(Math.floor(r() * 28), 1.6 + Math.floor(r() * 2), 1 + r() * 3, 0.7); }
+        poly(g, [[0, 0], [21, 0], [28, 2], [32, 5], [8, 5]], 'rgba(194,152,209,0.32)');
+        line(g, 7, 0.5, 12, 3.5, 0.7, '#67418b'); line(g, 21, 0.5, 25, 4, 0.7, '#67418b');
       }, FLAT);
 
     reg2('rock', 32, 32, function (g) {

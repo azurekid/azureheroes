@@ -19,6 +19,10 @@ description: 'Build Azure Heroes generated layouts, vertical streets, undergroun
 - Preserve `levels/missions.js` tactical objectives/gem quota. Required pickups
   must have reachable safe placements; flight missions must pause scrolling before
   missed requirements. Never gate progress on every hidden/underground gem.
+- Mark three guaranteed main-route enemy token carriers before the boss; keep
+  fixed safe drop anchors and flight scroll/checkpoint recovery. Optional wardrobe
+  stashes use existing rooms/secrets or hidden side routes where rooms do not exist.
+  Add no terrain/RNG changes to place rewards; test repeated decoration idempotence.
 
 ## Generated worlds
 - Levels are produced by `AH.Levels.make(id)` in `levels/worlds.js`; discover current worlds from `AH.Levels.worlds`, not a fixed count.

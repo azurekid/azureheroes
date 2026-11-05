@@ -11,7 +11,16 @@
   AH.ArtModules.stages['worlds.sydney.scenery.13'] = function (C) {
     const { ell, lg, lit, poly, silFill } = C;
 
-    Object.assign(C, { operaHouse, harbourBridge, sydneyTower });
+    Object.assign(C, { operaHouse, harbourBridge, sydneyTower, auReturn, auForeshore });
+    // Sydney depth: harbour-dusk returns with warm sandstone parapets and foreshore promenades.
+    function auReturn(g, x, top, width, base, depth, roof) {
+        C.depthFace(g, x, top, width, base, depth, 'rgba(28,20,78,0.45)', roof === false ? 'rgba(0,0,0,0)' : 'rgba(255,214,140,0.35)');
+      }
+
+    function auForeshore(g, x, base, width, depth) {
+        C.depthGround(g, x, base, width, depth, '#3a3070', 'rgba(232,202,152,0.5)');
+      }
+
     function operaHouse(g, x0, base, s, P) {
         const cream = lg(g, 0, base - 95 * s, 0, base, [[0, '#fff4e8'], [0.5, '#e3c8ff'], [1, '#9a7ae0']]);
         const sail = function (x, w, h, lean, flip) {
@@ -25,6 +34,7 @@
           g.restore();
         };
         g.fillStyle = silFill(g, base - 10 * s, base, '#c8a8ff', '#5a3aa8'); g.fillRect(x0 - 6 * s, base - 9 * s, 160 * s, 9 * s);
+        auReturn(g, x0 - 6 * s, base - 9 * s, 160 * s, base, 3 * s);
         for (let k = 0; k < 14; k++) lit(g, x0 - 2 * s + k * 11 * s, base - 5 * s, 3, 2, P.win[k % P.win.length]);
         sail(x0, 52 * s, 78 * s, 6 * s, false); sail(x0 + 22 * s, 40 * s, 58 * s, 5 * s, false); sail(x0 + 40 * s, 28 * s, 40 * s, 4 * s, false);
         sail(x0 + 66 * s, 62 * s, 96 * s, 8 * s, true); sail(x0 + 92 * s, 44 * s, 72 * s, 6 * s, true); sail(x0 + 112 * s, 34 * s, 50 * s, 4 * s, true);
@@ -42,7 +52,7 @@
         g.fillStyle = f; g.fillRect(x0, deck, x1 - x0, 5);
         g.fillStyle = '#ffb347'; for (let x = x0 + 4; x < x1; x += 8) g.fillRect(x, deck - 1.2, 1.4, 1.2);
         g.fillStyle = P.accent; g.fillRect(x0, deck, x1 - x0, 0.8);
-        [x0 + 8, x1 - 8].forEach(function (px) { g.fillStyle = f; g.fillRect(px - 8, base - 48, 16, 48); g.fillStyle = P.accent; g.fillRect(px - 8, base - 48, 16, 1); lit(g, px - 1.6, base - 42, 3.2, 8, P.win[0]); lit(g, px - 1.6, base - 24, 3.2, 8, P.win[1]); poly(g, [[px - 9, base - 48], [px, base - 56], [px + 9, base - 48]], P.top); });
+        [x0 + 8, x1 - 8].forEach(function (px) { g.fillStyle = f; g.fillRect(px - 8, base - 48, 16, 48); g.fillStyle = P.accent; g.fillRect(px - 8, base - 48, 16, 1); lit(g, px - 1.6, base - 42, 3.2, 8, P.win[0]); lit(g, px - 1.6, base - 24, 3.2, 8, P.win[1]); poly(g, [[px - 9, base - 48], [px, base - 56], [px + 9, base - 48]], P.top); auReturn(g, px - 8, base - 48, 16, base, 4, false); });
       }
 
     function sydneyTower(g, cx, base, s, P) {
@@ -53,6 +63,7 @@
         g.fillStyle = P.top; g.fillRect(cx - 0.5, base - 140 * s, 1, 22 * s);
         lit(g, cx - 1.2, base - 142 * s, 2.4, 2.4, '#ff2a4a');
         for (let k = 0; k < 8; k++) { g.strokeStyle = 'rgba(255,230,150,0.55)'; g.lineWidth = 0.5; g.beginPath(); g.moveTo(cx, base - 98 * s); g.lineTo(cx + (k - 3.5) * 10 * s, base - 118 * s - 4 * s); g.stroke(); }
+        auForeshore(g, cx - 10 * s, base, 20 * s, 3 * s);
       }
   };
 
@@ -63,7 +74,126 @@
   };
 
   AH.ArtModules.stages['worlds.sydney.scenery.124'] = function (C) {
-    const { SC, ell, glowRect, lg, line, lit, poly, rng, shade, txt } = C;
+    const { FLAT, SC, auForeshore, auReturn, ell, glowRect, lg, line, lit, outback4x4, poly, reg2, rng, shade, txt } = C;
+
+    reg2('environment_au_bondi', 640, 360, function (g) {
+      poly(g, [[0, 164], [77, 158], [150, 164], [242, 167], [365, 161], [510, 165], [640, 159], [640, 360], [0, 360]],
+        lg(g, 0, 160, 0, 360, [[0, '#4b98b7'], [0.55, '#63bbca'], [1, '#aad8cf']]));
+      poly(g, [[0, 177], [35, 162], [75, 156], [118, 163], [156, 179], [119, 186], [0, 192]], '#768d80');
+      const r = rng(5317);
+      for (let x = 7; x < 128; x += 8) {
+        const y = 165 + Math.abs(x - 58) * 0.13;
+        g.fillStyle = x % 3 ? '#c5c6b5' : '#cbb49b'; g.fillRect(x, y, 6, 5);
+        poly(g, [[x - 1, y], [x + 3, y - 2], [x + 7, y]], '#8b8b7c');
+        g.fillStyle = '#698a8b'; g.fillRect(x + 2, y + 2, 1, 2);
+      }
+      for (let n = 0; n < 180; n++) {
+        const x = r() * 640, y = 176 + r() * 125;
+        line(g, x, y, x + 2 + r() * 9, y, 0.5, 'rgba(217,244,227,0.22)');
+      }
+      for (let row = 0; row < 7; row++) {
+        const y = 185 + row * row * 2.8;
+        g.strokeStyle = row < 3 ? '#c1e3d9' : '#f1f0d7'; g.lineWidth = 0.7 + row * 0.25;
+        g.beginPath(); g.moveTo(0, y);
+        g.bezierCurveTo(170, y - 10, 290, y + 22, 428, y + 7);
+        g.bezierCurveTo(520, y - 3, 590, y + 4, 640, y + 1); g.stroke();
+      }
+      g.beginPath(); g.moveTo(0, 327); g.bezierCurveTo(220, 319, 245, 245, 462, 224);
+      g.quadraticCurveTo(565, 216, 640, 236); g.lineTo(640, 360); g.lineTo(0, 360); g.closePath();
+      g.fillStyle = lg(g, 0, 224, 0, 360, [[0, '#e8d8a4'], [1, '#c6b888']]); g.fill();
+      g.strokeStyle = '#f6edce'; g.lineWidth = 4;
+      g.beginPath(); g.moveTo(0, 327); g.bezierCurveTo(220, 319, 245, 245, 462, 224); g.quadraticCurveTo(565, 216, 640, 236); g.stroke();
+      g.save(); g.beginPath(); g.moveTo(0, 334); g.bezierCurveTo(220, 326, 245, 252, 462, 231);
+      g.quadraticCurveTo(565, 223, 640, 243); g.lineTo(640, 360); g.lineTo(0, 360); g.closePath(); g.clip();
+      for (let n = 0; n < 280; n++) {
+        const x = r() * 640, y = 232 + r() * 128;
+        g.fillStyle = n % 3 ? 'rgba(120,105,73,0.18)' : 'rgba(255,244,205,0.4)'; g.fillRect(x, y, 0.5 + r(), 0.6);
+      }
+      for (let n = 0; n < 8; n++) {
+        const x = 300 + n * 5, y = 304 + n * 3;
+        ell(g, x, y, 1.5, 0.6, '#ac9b72'); ell(g, x + 3, y - 1, 1.5, 0.6, '#ac9b72');
+      }
+      g.restore();
+      poly(g, [[405, 224], [434, 220], [454, 235], [424, 241]], '#e6e3c9');
+      poly(g, [[409, 224], [434, 222], [449, 234], [424, 237]], '#68adb6');
+      for (let n = 0; n < 5; n++) line(g, 413 + n * 5, 225, 426 + n * 5, 235, 0.4, '#d4e4d3');
+      poly(g, [[490, 233], [526, 232], [640, 315], [640, 351]], '#aaa48a');
+      for (let n = 0; n < 7; n++) line(g, 501 + n * 13, 244 + n * 10, 529 + n * 18, 245 + n * 14, 0.7, '#847e6f');
+      g.fillStyle = '#cbd8cc'; g.fillRect(437, 202, 128, 32);
+      auReturn(g, 437, 202, 128, 234, 7);
+      poly(g, [[432, 201], [443, 191], [560, 191], [571, 201]], '#8baca9');
+      for (let x = 445; x < 557; x += 16) {
+        g.fillStyle = '#6f9fa8'; g.fillRect(x, 210, 10, 16);
+        line(g, x + 1, 211, x + 8, 211, 0.8, '#d7e5d5');
+      }
+      txt(g, 'BONDI SURF', 459, 195, 0.9, '#36586a');
+      for (const [x, y, color] of [[255, 305, '#b45059'], [352, 278, '#6d9ba4'], [448, 296, '#c89a55']]) {
+        ell(g, x + 5, y + 9, 17, 3, 'rgba(107,100,77,0.3)');
+        poly(g, [[x - 16, y], [x, y - 12], [x + 16, y]], color);
+        line(g, x, y, x, y + 17, 1, '#877757');
+      }
+      for (const x of [371, 397]) {
+        line(g, x, 266, x, 242, 1.2, '#ddd1ac');
+        poly(g, [[x, 242], [x + 11, 246], [x, 250]], '#d66c61');
+        poly(g, [[x, 250], [x + 11, 246], [x + 11, 254], [x, 258]], '#e6bf60');
+      }
+      for (const [x, y, height] of [[590, 246, 94], [619, 267, 72]]) {
+        g.strokeStyle = '#7b7864'; g.lineWidth = 4; g.beginPath(); g.moveTo(x, y); g.quadraticCurveTo(x + 9, y - height / 2, x + 3, y - height); g.stroke();
+        for (let k = -2; k <= 2; k++) {
+          g.strokeStyle = '#547c65'; g.lineWidth = 2; g.beginPath(); g.moveTo(x + 3, y - height);
+          g.quadraticCurveTo(x + k * 14, y - height - 19, x + k * 22, y - height + 10); g.stroke();
+        }
+      }
+    }, FLAT);
+
+    function outbackEnvironment(g, w, h, uluru) {
+      poly(g, [[0, 216], [58, 197], [119, 211], [181, 190], [263, 211], [351, 194], [434, 209], [521, 186], [640, 213], [640, h], [0, h]],
+        lg(g, 0, 190, 0, h, [[0, '#b58d76'], [1, '#b47c53']]));
+      if (uluru) {
+        g.save(); g.translate(103, 26); g.scale(1.25, 1.25);
+        SC.australiaeast.sc_au_uluru[2](g, 340, 210); g.restore();
+      } else {
+        poly(g, [[0, 223], [62, 187], [122, 200], [192, 176], [260, 199], [333, 189], [400, 221], [640, 241], [640, 270], [0, 270]], '#ad7862');
+        for (let n = 0; n < 10; n++) line(g, n * 67, 225 + n % 3 * 7, n * 67 + 39, 220 + n % 3 * 7, 0.5, '#be9074');
+      }
+      const r = rng(5319);
+      for (let n = 0; n < 250; n++) {
+        const x = r() * w, y = 273 + r() * 87;
+        line(g, x, y, x + 1 + r() * 6, y, 0.5, n % 2 ? 'rgba(117,84,54,0.2)' : 'rgba(222,181,125,0.3)');
+      }
+      g.beginPath(); g.moveTo(0, 360); g.quadraticCurveTo(190, 289, 378, 241);
+      g.lineTo(410, 241); g.quadraticCurveTo(261, 301, 239, 360); g.closePath(); g.fillStyle = '#d1aa79'; g.fill();
+      for (let n = 0; n < 60; n++) {
+        const x = (n * 113 + 17) % 640, y = 259 + (n * 37) % 95;
+        ell(g, x, y, 3 + n % 5, 1.2, '#8e7950');
+        if (n % 3 === 0) { line(g, x, y, x - 2, y - 5, 0.7, '#bfad72'); line(g, x, y, x + 3, y - 7, 0.7, '#d4bd80'); }
+      }
+      if (!uluru) {
+        g.fillStyle = '#debf92'; g.fillRect(383, 214, 137, 40);
+        poly(g, [[375, 214], [395, 199], [510, 199], [530, 214]], '#806557');
+        auReturn(g, 383, 214, 137, 254, 8);
+        g.fillStyle = '#785143'; g.fillRect(394, 222, 113, 12);
+        txt(g, 'OUTBACK ROADHOUSE', 401, 225, 0.85, '#f4d5a5');
+        for (const x of [397, 480]) { g.fillStyle = '#678c89'; g.fillRect(x, 240, 24, 11); }
+        g.save(); g.translate(422, 258); outback4x4(g); g.restore();
+        line(g, 340, 260, 340, 222, 2, '#7b6950');
+        g.fillStyle = '#d5ad5c'; g.fillRect(316, 219, 55, 16); txt(g, 'ULURU', 326, 224, 1, '#5e5141');
+      }
+      for (const [x, y, size] of [[45, 277, 1], [573, 271, 0.85]]) {
+        line(g, x, y, x + 5, y - 81 * size, 4, '#7b7158');
+        line(g, x + 2, y - 28 * size, x - 14 * size, y - 68 * size, 2, '#8b8268');
+        line(g, x + 4, y - 42 * size, x + 29 * size, y - 72 * size, 2, '#8b8268');
+        ell(g, x + 14, y + 1, 26 * size, 3 * size, 'rgba(85,77,52,0.2)');
+        for (const [dx, dy] of [[-15, -72], [8, -91], [29, -77], [-3, -58]]) {
+          ell(g, x + dx * size, y + dy * size, 25 * size, 8 * size, '#6c795b');
+          ell(g, x + (dx - 6) * size, y + (dy - 3) * size, 16 * size, 3 * size, '#8c9670');
+          for (let n = 0; n < 9; n++) {
+            const lx = x + (dx - 18 + r() * 36) * size, ly = y + (dy - 4 + r() * 8) * size;
+            line(g, lx, ly, lx + 1, ly + 3 * size, 0.6, '#a2a380');
+          }
+        }
+      }
+    }
 
     Object.assign(SC.australiaeast, {
         sc_au_uluru: [340, 210, function (g, w, h) {
@@ -82,6 +212,8 @@
           for (let y = h - 140; y < h - 15; y += 14) line(g, 10, y, w - 10, y + 9, 0.6, 'rgba(242,160,103,0.18)');
           g.restore();
           poly(g, [[0, h - 14], [75, h - 22], [167, h - 9], [268, h - 19], [340, h - 13], [340, h], [0, h]], '#bd7851');
+          for (let k = 0; k < 9; k++) line(g, 10 + k * 40, h, 110 + k * 15, h - 13, 0.7, 'rgba(120,58,40,0.35)');
+          poly(g, [[8, h - 9], [334, h - 11], [328, h - 15], [16, h - 14]], 'rgba(105,48,36,0.35)');
           for (let x = 7; x < w; x += 21) { ell(g, x, h - 7 - x % 5, 5, 1.4, '#88835c'); line(g, x, h - 9, x + 1, h - 13, 0.7, '#c1ad79'); }
           txt(g, 'ULURU', 146, h - 9, 0.9, '#f3d09a', '#7f4e3a');
         }],
@@ -92,14 +224,17 @@
           g.fillStyle = stone; g.fillRect(99, h - 169, 24, 32); g.fillStyle = '#282348'; g.beginPath(); g.arc(111, h - 154, 9, Math.PI, 0); g.fill(); g.fillRect(102, h - 154, 18, 10);
           ell(g, 111, h - 157, 6, 6, '#f4cf77'); ell(g, 111, h - 157, 4, 4, '#5a3b69'); line(g, 111, h - 157, 111, h - 160, 0.8, '#fff1ab'); line(g, 111, h - 157, 114, h - 156, 0.8, '#fff1ab');
           for (let x = 35; x < 187; x += 14) { lit(g, x, h - 69, 7, 11, P.win[(x / 14 | 0) % 3]); lit(g, x + 5, h - 94, 6, 9, P.win[(x / 14 + 1 | 0) % 3]); }
+          auReturn(g, 22, h - 79, 176, h, 9, false); auReturn(g, 35, h - 103, 151, h - 79, 7, false); auReturn(g, 51, h - 129, 116, h - 103, 6, false); auReturn(g, 96, h - 178, 30, h - 129, 5, false);
           for (let x = 48; x < 175; x += 20) { g.fillStyle = '#35305f'; g.fillRect(x, h - 127, 9, 15); poly(g, [[x - 2, h - 127], [x + 4.5, h - 138], [x + 11, h - 127]], '#4a3a68'); }
-          line(g, 22, h - 80, 198, h - 80, 1.5, P.accent); txt(g, 'FLINDERS ST', 72, h - 14, 1, '#ffe8a0', '#292146');
+          line(g, 22, h - 80, 198, h - 80, 1.5, P.accent); auForeshore(g, 14, h, 192, 7); txt(g, 'FLINDERS ST', 72, h - 14, 1, '#ffe8a0', '#292146');
         }],
         sc_au_apostles: [250, 150, function (g, w, h, P) {
           g.fillStyle = lg(g, 0, h - 61, 0, h, [[0, '#3e8eb0'], [1, '#132c66']]); g.fillRect(0, h - 60, w, 60);
           for (let y = h - 51; y < h - 5; y += 12) line(g, 5 + y % 9, y, w - 8, y, 0.8, 'rgba(148,225,255,0.5)');
           const stack = function (x, base, wid, high, shade) {
             g.fillStyle = shade; g.beginPath(); g.moveTo(x - wid / 2, base); g.lineTo(x - wid / 2 + 3, base - high * 0.55); g.quadraticCurveTo(x - wid / 2 + 4, base - high, x, base - high); g.quadraticCurveTo(x + wid / 2 - 3, base - high * 0.91, x + wid / 2 - 2, base - high * 0.48); g.lineTo(x + wid / 2, base); g.closePath(); g.fill();
+            g.save(); g.clip(); g.fillStyle = 'rgba(70,22,52,0.32)'; g.fillRect(x + wid * 0.14, base - high, wid, high); g.restore();
+            ell(g, x + 2, base, wid * 0.62, 2.6, 'rgba(220,245,255,0.5)');
             line(g, x - wid * 0.24, base - high * 0.76, x - wid * 0.18, base - 4, 1, 'rgba(255,190,126,0.7)');
           };
           stack(25, h - 44, 30, 52, '#bd705d'); stack(67, h - 43, 35, 75, '#d17b60'); stack(113, h - 45, 40, 96, '#c67561'); stack(161, h - 43, 34, 78, '#b56361'); stack(205, h - 44, 32, 60, '#cc745c');
@@ -111,11 +246,12 @@
           const top = h - 128, deck = h - 35;
           g.fillStyle = '#33345f'; g.fillRect(20, top + 12, 18, h - top - 40); g.fillRect(232, top + 12, 18, h - top - 40);
           g.fillStyle = '#4d426f'; g.fillRect(16, top + 9, 26, 7); g.fillRect(228, top + 9, 26, 7);
+          auReturn(g, 20, top + 16, 18, h - 28, 5, false); auReturn(g, 232, top + 16, 18, h - 28, 5, false);
           g.strokeStyle = '#34335f'; g.lineWidth = 8; g.beginPath(); g.moveTo(33, deck); g.quadraticCurveTo(135, top - 5, 239, deck); g.stroke();
           g.strokeStyle = P.accent; g.lineWidth = 1.5; g.beginPath(); g.moveTo(34, deck - 2); g.quadraticCurveTo(135, top, 238, deck - 2); g.stroke();
           g.strokeStyle = '#77739a'; g.lineWidth = 1.2;
           for (let i = 0; i <= 12; i++) { const x = 38 + i * 16; const t = (x - 33) / 206; const y = top - 1 + 4 * Math.pow((t - 0.5) * 2, 2); g.beginPath(); g.moveTo(x, y); g.lineTo(x, deck - 1); g.stroke(); }
-          g.fillStyle = '#3a3b67'; g.fillRect(5, deck, 260, 7); line(g, 8, deck, 262, deck, 1.3, '#ffe09a');
+          g.fillStyle = '#3a3b67'; g.fillRect(5, deck, 260, 7); poly(g, [[5, deck], [265, deck], [259, deck - 3], [11, deck - 3]], 'rgba(205,195,235,0.45)'); line(g, 8, deck, 262, deck, 1.3, '#ffe09a');
           for (let x = 12; x < 263; x += 20) lit(g, x, deck + 8, 3, 4, '#ffd58a');
           txt(g, 'STORY BRIDGE', 99, h - 14, 1, '#ffe8a0', '#25244b');
         }],
@@ -124,9 +260,9 @@
           g.fillStyle = lg(g, 28, 0, 68, 0, [[0, '#d8edff'], [0.3, '#a9c6ed'], [0.65, '#5c6eae'], [1, '#29284f']]);
           g.beginPath(); g.moveTo(cx - 9, h); g.lineTo(cx - 17, h - 128); g.quadraticCurveTo(cx - 13, h - 179, cx - 7, h - 198); g.lineTo(cx - 4, h - 204); g.lineTo(cx + 4, h - 204); g.lineTo(cx + 7, h - 198); g.quadraticCurveTo(cx + 13, h - 179, cx + 17, h - 128); g.lineTo(cx + 9, h); g.closePath(); g.fill();
           g.fillStyle = '#39335f'; g.fillRect(cx - 20, h - 206, 40, 12); g.fillRect(cx - 15, h - 216, 30, 8); ell(g, cx, h - 219, 10, 4, '#6d5f8c');
-          line(g, cx - 19, h - 202, cx + 19, h - 202, 1.5, P.accent);
+          auReturn(g, cx - 20, h - 206, 40, h - 194, 3); line(g, cx - 19, h - 202, cx + 19, h - 202, 1.5, P.accent);
           for (let y = h - 190; y < h - 16; y += 13) { line(g, cx - 10 + (h - y) * 0.015, y, cx + 10 - (h - y) * 0.015, y, 0.6, 'rgba(235,244,255,0.55)'); if (y % 2) lit(g, cx - 3, y + 2, 5, 3, P.win[(y / 13 | 0) % 3]); }
-          g.fillStyle = '#36335f'; g.fillRect(cx - 16, h - 6, 32, 6); txt(g, 'Q1', cx - 7, h - 22, 1, '#ffe8a0', '#25244b');
+          C.depthGround(g, cx - 22, h, 44, 7, '#36335f', 'rgba(200,215,240,0.5)'); txt(g, 'Q1', cx - 7, h - 22, 1, '#ffe8a0', '#25244b');
         }],
         sc_au_byronlighthouse: [155, 175, function (g, w, h, P) {
           g.fillStyle = '#252f62'; g.fillRect(0, h - 19, w, 19);
@@ -136,27 +272,36 @@
           g.fillStyle = '#ede0d4'; g.fillRect(67, h - 139, 23, 8); g.fillStyle = '#34315d'; g.fillRect(70, h - 153, 17, 14); g.fillStyle = '#f2dfbd'; g.fillRect(73, h - 151, 11, 8);
           g.fillStyle = '#352f5e'; g.beginPath(); g.moveTo(67, h - 153); g.lineTo(78, h - 165); g.lineTo(90, h - 153); g.closePath(); g.fill();
           g.fillStyle = '#f5dc9a'; g.fillRect(75, h - 149, 7, 5); glowRect(g, '#ffe9a0', 76, h - 149, 5, 4); line(g, 78, h - 149, 31, h - 165, 1, 'rgba(255,233,160,0.55)'); line(g, 82, h - 149, 129, h - 166, 1, 'rgba(255,233,160,0.55)');
-          line(g, 68, h - 21, 91, h - 21, 1.5, P.accent); g.fillStyle = '#4a416c'; g.fillRect(61, h - 19, 38, 8);
+          line(g, 68, h - 21, 91, h - 21, 1.5, P.accent); g.fillStyle = '#4a416c'; g.fillRect(61, h - 19, 38, 8); auReturn(g, 61, h - 19, 38, h - 11, 4);
           for (let x = 9; x < 150; x += 15) ell(g, x, h - 14 - (x % 3), 5, 2, '#7ab3c1');
           txt(g, 'BYRON BAY', 47, h - 10, 1, '#ffe8a0', '#25244b');
         }]
       });
+    reg2('environment_au_outback', 640, 360, (g, w, h) => outbackEnvironment(g, w, h, false), FLAT);
+    reg2('environment_au_uluru', 640, 360, (g, w, h) => outbackEnvironment(g, w, h, true), FLAT);
   };
 
   AH.ArtModules.stages['worlds.sydney.scenery.129'] = function (C) {
-    const { SC, ell, lg, line, lit, outback4x4, palm, poly, rng, rrect, txt } = C;
+    const { SC, auReturn, ell, lg, line, lit, outback4x4, palm, poly, rng, rrect, txt } = C;
 
     Object.assign(SC.australiaeast, {
         sc_au_beach: [360, 170, function (g, w, h) {
-          g.fillStyle = lg(g, 0, 30, 0, h, [[0, '#348baf'], [0.45, '#65becb'], [1, '#bcdfce']]); g.fillRect(0, 48, w, 122);
-          poly(g, [[0, 170], [0, 123], [64, 117], [147, 129], [227, 98], [300, 84], [360, 90], [360, 170]], lg(g, 0, 90, 0, 170, [[0, '#e9c78e'], [1, '#c19e79']]));
+          // A low headland and curved surf edge leave the harbour and sky visible.
+          poly(g, [[0, h], [25, 160], [84, 150], [145, 153], [215, 133], [278, 125], [330, 143], [w, h], [306, 167], [252, h], [171, 168], [93, h]], lg(g, 0, 125, 0, h, [[0, '#b8b793'], [1, '#aa9c78']]));
+          poly(g, [[8, 166], [58, 153], [115, 150], [181, 155], [236, 145], [274, 143], [236, 154], [180, 164], [109, 160], [54, 163]], '#65a4ad');
           for (let wave = 0; wave < 4; wave++) {
             g.strokeStyle = wave % 2 ? '#bde7df' : '#f1f5df'; g.lineWidth = wave % 2 ? 1 : 2;
-            g.beginPath(); g.moveTo(0, 66 + wave * 13); g.bezierCurveTo(120, 52 + wave * 16, 176, 113 + wave * 5, 360, 56 + wave * 7); g.stroke();
+            g.beginPath(); g.moveTo(20 + wave * 7, 163 - wave * 2); g.bezierCurveTo(104, 139 + wave * 3, 137, 171 - wave * 3, 255 - wave * 6, 148 + wave * 2); g.stroke();
           }
+          g.save(); g.translate(54, 51); g.scale(0.7, 0.7);
+          g.save(); g.translate(0, 40);
           g.fillStyle = '#c9d6c6'; g.fillRect(263, 57, 91, 28); g.fillStyle = '#f0efda'; g.fillRect(265, 47, 87, 11);
           for (let x = 270; x < 350; x += 13) lit(g, x, 61, 8, 12, '#7dadae');
           txt(g, 'BONDI SURF', 273, 50, 0.8, '#226879');
+          auReturn(g, 263, 47, 91, 85, 6);
+          g.restore();
+          poly(g, [[282, 170], [334, 170], [318, 126], [304, 126]], 'rgba(176,138,100,0.55)');
+          for (let y = 136; y < 170; y += 7 + (y - 126) / 10) { const t = (y - 126) / 44; line(g, 304 - 22 * t, y, 318 + 16 * t, y, 0.7, 'rgba(110,80,60,0.45)'); }
           palm(g, 336, 121, 106);
           [[42, 137, '#d87b66'], [126, 145, '#598da6'], [219, 129, '#d9ac51']].forEach(([x, y, color]) => {
             line(g, x, y, x, y - 22, 0.9, '#765d55');
@@ -166,25 +311,50 @@
           [181, 249].forEach((x) => { line(g, x, 143, x, 108, 1, '#e9dfc2'); poly(g, [[x, 108], [x + 14, 113], [x, 117]], '#cf4750'); poly(g, [[x, 117], [x + 14, 113], [x + 14, 120], [x, 124]], '#efc24c'); });
           ell(g, 196, 146, 3, 17, '#e9d8ae', 0.24); line(g, 196, 131, 197, 160, 0.8, '#dc755c');
           txt(g, 'SYDNEY BEACH', 16, 156, 0.85, '#5e6057');
+          g.restore();
         }],
         sc_au_outback: [340, 170, function (g, w, h) {
-          poly(g, [[0, 85], [35, 63], [76, 72], [122, 42], [162, 62], [211, 51], [257, 70], [298, 56], [340, 84], [340, 170], [0, 170]], lg(g, 0, 60, 0, 170, [[0, '#bc7159'], [1, '#b35c43']]));
-          g.fillStyle = '#d39365'; g.beginPath(); g.moveTo(86, 170); g.quadraticCurveTo(112, 132, 229, 97); g.quadraticCurveTo(165, 133, 154, 170); g.closePath(); g.fill();
+          // Distant ridges merge into a narrow scrub verge, not an opaque landscape card.
+          const land = () => {
+            g.beginPath(); g.moveTo(0, h); g.lineTo(24, 155); g.lineTo(49, 146); g.lineTo(87, 150);
+            g.lineTo(123, 112); g.lineTo(145, 122); g.lineTo(170, 140); g.lineTo(208, 127);
+            g.lineTo(239, 146); g.lineTo(282, 139); g.lineTo(315, 155); g.lineTo(w, h);
+            g.lineTo(299, 168); g.lineTo(263, h); g.lineTo(220, 167); g.lineTo(178, h);
+            g.lineTo(126, 168); g.lineTo(74, h); g.lineTo(31, 168); g.closePath();
+          };
+          land(); g.fillStyle = lg(g, 0, 112, 0, h, [[0, '#a97c6d'], [1, '#91694f']]); g.fill();
+          poly(g, [[123, 112], [145, 122], [170, 140], [153, 151], [139, 131]], 'rgba(86,59,63,0.3)');
+          g.save(); land(); g.clip();
+          g.fillStyle = '#bf956e'; g.beginPath(); g.moveTo(103, h); g.quadraticCurveTo(141, 152, 229, 147); g.quadraticCurveTo(183, 159, 158, h); g.closePath(); g.fill();
           const r = rng(303);
           for (let i = 0; i < 70; i++) {
-            const x = r() * w, y = 97 + r() * 72; ell(g, x, y, 2 + r() * 5, 1, '#916e4b');
+            const x = r() * w, y = 145 + r() * 24; ell(g, x, y, 2 + r() * 5, 1, '#806f51');
             if (i % 5 === 0) { line(g, x, y, x - 2, y - 4, 0.6, '#a49a68'); line(g, x, y, x + 2, y - 6, 0.6, '#c8b47d'); }
           }
+          g.restore();
+          g.save(); g.translate(51, 51); g.scale(0.7, 0.7);
           [28, 284].forEach((x, i) => {
-            line(g, x, 133, x + 7, 50 + i * 18, 5, '#797264'); line(g, x + 5, 80, x - 17, 57, 2.2, '#87816c'); line(g, x + 6, 75, x + 26, 43, 2, '#87816c');
+            line(g, x, 164, x + 7, 50 + i * 18, 5, '#797264'); line(g, x + 5, 80, x - 17, 57, 2.2, '#87816c'); line(g, x + 6, 75, x + 26, 43, 2, '#87816c');
             [[-15, 55], [8, 38], [30, 44], [11, 65]].forEach(([dx, y]) => ell(g, x + dx, y + i * 18, 22, 8, '#6d8068', -0.1));
           });
+          g.restore();
+          g.save(); g.translate(51, 51); g.scale(0.7, 0.7);
           g.fillStyle = '#e5cda4'; g.fillRect(185, 90, 93, 30); poly(g, [[179, 91], [193, 80], [271, 80], [284, 91]], '#81685c');
           rrect(g, 193, 96, 77, 12, 1, '#66473e'); txt(g, 'OUTBACK ROADHOUSE', 197, 100, 0.65, '#ffe1a3');
+          auReturn(g, 185, 91, 93, 120, 6, false); poly(g, [[181, 120], [282, 120], [276, 124], [176, 124]], 'rgba(110,56,40,0.4)');
           g.save(); g.translate(188, 120); g.scale(0.9, 0.9); outback4x4(g); g.restore();
           line(g, 163, 99, 163, 137, 1.6, '#625a4a'); rrect(g, 139, 94, 48, 16, 1, '#d3a442'); txt(g, 'ULURU', 148, 99, 0.9, '#4e4b3b');
+          g.restore();
         }]
       });
+  };
+
+  content.parts['environments_australiaeast'] = function () {
+    return [
+      { key: 'environment_au_bondi', start: 0, end: 0.27, fade: 0.035, replaces: ['sc_au_beach'] },
+      { key: 'environment_au_outback', start: 0.31, end: 0.54, fade: 0.035, replaces: ['sc_au_outback'] },
+      { key: 'environment_au_uluru', start: 0.56, end: 0.80, fade: 0.035, replaces: ['sc_au_uluru'] }
+    ];
   };
 
   content.parts['panorama'] = function (C) {
@@ -212,33 +382,36 @@
   };
 
   content.parts['SC_australiaeast'] = function (C) {
-    const { ell, harbourBridge, lit, operaHouse, palm, silFill, skyline, sydneyTower, txt } = C;
+    const { auForeshore, auReturn, ell, harbourBridge, lit, operaHouse, palm, silFill, skyline, sydneyTower, txt } = C;
 
     return {
           sc_au_opera: [200, 130, function (g, w, h, P) { operaHouse(g, 18, h, 1.15, P); }],
           sc_au_bridge: [300, 170, function (g, w, h, P) { harbourBridge(g, 0, 300, h, P); }],
           sc_au_tower: [60, 210, function (g, w, h, P) { sydneyTower(g, 30, h, 1.45, P); }],
           sc_au_luna: [130, 120, function (g, w, h, P) {
-            [12, 118].forEach(function (x) { g.fillStyle = silFill(g, h - 100, h, '#ffd23f', '#e8508a'); g.fillRect(x - 7, h - 100, 14, 100); lit(g, x - 2, h - 106, 4, 6, '#ff2a4a'); });
+            [12, 118].forEach(function (x) { g.fillStyle = silFill(g, h - 100, h, '#ffd23f', '#e8508a'); g.fillRect(x - 7, h - 100, 14, 100); lit(g, x - 2, h - 106, 4, 6, '#ff2a4a'); auReturn(g, x - 7, h - 100, 14, h, 4, false); });
             ell(g, 65, h - 62, 42, 46, '#ffd8b0'); ell(g, 65, h - 62, 38, 42, '#ffe9c8');
             ell(g, 50, h - 74, 7, 8, '#ffffff'); ell(g, 80, h - 74, 7, 8, '#ffffff'); ell(g, 50, h - 72, 3.4, 4, '#2a6aff'); ell(g, 80, h - 72, 3.4, 4, '#2a6aff');
             g.fillStyle = '#c8102e'; g.beginPath(); g.ellipse(65, h - 36, 26, 22, 0, 0, Math.PI); g.fill(); g.fillStyle = '#1a0a2a'; g.fillRect(40, h - 36, 50, 36);
             for (let x = 44; x < 88; x += 8) { g.fillStyle = '#ffffff'; g.fillRect(x, h - 36, 6, 6); }
+            auForeshore(g, 0, h, w, 6);
             txt(g, 'LUNA PARK', 38, h - 116, 1, '#ffe14a', '#c8102e');
           }],
           sc_au_palms: [150, 130, function (g, w, h, P) { palm(g, 20, h, 100); palm(g, 70, h, 120); palm(g, 120, h, 90); }],
-          sc_au_city: [160, 170, function (g, w, h, P) { skyline(w, h, 401, '#2a2a80', P.accent, 60, 160, 0.3, P.win)(g); }]
+          sc_au_city: [160, 170, function (g, w, h, P) { skyline(w, h, 401, '#2a2a80', P.accent, 60, 160, 0.3, P.win)(g); auForeshore(g, 0, h, w, 7); }]
         };
   };
 
   content.parts['SC_EXTRA_australiaeast'] = function (C) {
-    const { lit, palm, poly, silFill, txt } = C;
+    const { auReturn, lit, palm, poly, silFill, txt } = C;
 
     return {
           sc_au_bondi: [230, 100, function (g, w, h, P) {
             g.fillStyle = silFill(g, h - 60, h, '#f0e8ff', '#8a7ac8'); g.fillRect(130, h - 56, 96, 56);
             for (let y = h - 50; y < h - 10; y += 12) for (let x = 136; x < 222; x += 10) lit(g, x, y, 6, 7, P.win[(x + y) % 3]);
             g.fillStyle = '#2a8aff'; g.fillRect(130, h - 66, 96, 10); txt(g, 'ICEBERGS', 150, h - 64, 1, '#ffffff');
+            auReturn(g, 130, h - 66, 96, h, 8);
+            poly(g, [[0, h - 18], [130, h - 18], [124, h - 22], [5, h - 22]], 'rgba(214,206,236,0.8)');
             g.fillStyle = '#c8c0e0'; g.fillRect(0, h - 18, 130, 18); g.fillStyle = '#27c8ff'; g.fillRect(6, h - 16, 118, 12);
             g.fillStyle = 'rgba(255,255,255,0.7)'; for (let x = 10; x < 120; x += 22) g.fillRect(x, h - 14, 1, 10);
             g.fillStyle = 'rgba(255,255,255,0.85)'; g.beginPath(); g.moveTo(0, h - 18); for (let x = 0; x <= 130; x += 10) g.quadraticCurveTo(x + 5, h - 30 - (x % 20 ? 4 : 0), x + 10, h - 18); g.lineTo(0, h - 18); g.fill();
@@ -246,8 +419,8 @@
             txt(g, 'BONDI', 34, h - 46, 2, '#ffe14a', '#c8102e');
           }],
           sc_au_wharf: [220, 90, function (g, w, h, P) {
-            for (let k = 0; k < 5; k++) { const x = 6 + k * 43; g.fillStyle = '#2a8a5a'; g.fillRect(x, h - 40, 38, 40); poly(g, [[x - 2, h - 40], [x + 19, h - 54], [x + 40, h - 40]], '#ffd23f'); txt(g, String(k + 2), x + 16, h - 34, 1, '#ffffff'); lit(g, x + 6, h - 22, 26, 8, P.win[k % 3]); }
-            g.fillStyle = '#1a0a2a'; g.fillRect(0, h - 4, w, 4);
+            for (let k = 0; k < 5; k++) { const x = 6 + k * 43; g.fillStyle = '#2a8a5a'; g.fillRect(x, h - 40, 38, 40); poly(g, [[x - 2, h - 40], [x + 19, h - 54], [x + 40, h - 40]], '#ffd23f'); txt(g, String(k + 2), x + 16, h - 34, 1, '#ffffff'); lit(g, x + 6, h - 22, 26, 8, P.win[k % 3]); auReturn(g, x, h - 40, 38, h - 4, 5, false); }
+            C.depthGround(g, 0, h, w, 6, '#1a0a2a', 'rgba(150,118,88,0.6)');
             txt(g, 'CIRCULAR QUAY', 60, h - 70, 1, '#ffe14a', '#1a0a3a');
           }]
         };
@@ -260,6 +433,6 @@
 
   content.parts['sceneryRoutes_australiaeast'] = function (C) {
 
-    return [[0, 'sc_au_beach', 270], [0.23, 'sc_au_outback', 270], [0.42, 'sc_au_uluru', 260], [0.62, 'sc_au_outback', 270], [0.81, 'sc_au_beach', 270]];
+    return [[0, 'sc_au_beach', 300], [0.23, 'sc_au_outback', 300], [0.42, 'sc_au_uluru', 260], [0.62, 'sc_au_outback', 300], [0.81, 'sc_au_beach', 300]];
   };
 })();

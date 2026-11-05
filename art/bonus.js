@@ -31,7 +31,7 @@
   };
 
   AH.ArtModules.stages['art.bonus.76'] = function (C) {
-    const { FLAT, ell, glow, lg, line, msLogo, reg2, rng, rrect, shade, txt, txtW } = C;
+    const { FLAT, depthFace, depthGround, ell, glow, lg, line, msLogo, poly, reg2, rng, rrect, shade, txt, txtW } = C;
 
     reg2('bonus_bg', 640, 360, function (g) {
         g.fillStyle = lg(g, 0, 0, 0, 300, [[0, '#0a4ad8'], [0.6, '#4a9aff'], [1, '#bfe4ff']]); g.fillRect(0, 0, 640, 360);
@@ -41,6 +41,21 @@
         g.beginPath(); g.moveTo(0, 250); g.bezierCurveTo(160, 170, 420, 160, 640, 230); g.lineTo(640, 360); g.lineTo(0, 360); g.closePath();
         g.fillStyle = lg(g, 0, 170, 0, 360, [[0, '#8ae04a'], [0.4, '#3aa82a'], [1, '#1a5a1a']]); g.fill();
         g.fillStyle = 'rgba(255,255,200,0.3)'; for (let i = 0; i < 60; i++) g.fillRect(r() * 640, 220 + r() * 120, 3 + r() * 6, 0.6);
+        poly(g, [[294, 220], [346, 220], [486, 300], [154, 300]], '#a7b490');
+        poly(g, [[300, 220], [340, 220], [466, 300], [174, 300]], '#c9c1a0');
+        for (const y of [228, 241, 262, 291]) {
+          const d = (y - 220) * 1.58;
+          line(g, 300 - d, y, 340 + d, y, 0.8, '#8a987b');
+        }
+        for (const x of [24, 520]) {
+          depthGround(g, x - 8, 289, 112, 14, '#627b6b', '#a8b99a');
+          for (const dx of [0, 72]) {
+            g.fillStyle = '#d1d8bd'; g.fillRect(x + dx, 167, 16, 110);
+            depthFace(g, x + dx, 167, 16, 277, 4, '#8a9e8d', '#e3e1c4');
+          }
+          g.fillStyle = '#c9d4b8'; g.fillRect(x - 5, 157, 98, 15);
+          depthFace(g, x - 5, 157, 98, 172, 5, '#829e8a', '#e7e5cd');
+        }
       }, FLAT);
 
     reg2('bonus_bg_retro', 640, 360, function (g) {
@@ -55,6 +70,7 @@
         };
         [[0, 'MY PC'], [1, 'RECYCLE'], [2, 'PROJECTS'], [3, 'AZURE'], [2, 'GAMES']].forEach(function (d, i) { icon(16, 16 + i * 44, d[0], d[1]); });
         const win = function (x, y, w, h, title) {
+          poly(g, [[x + 7, y + 7], [x + w + 9, y + 7], [x + w + 9, y + h + 8], [x + 7, y + h + 8]], '#075c62');
           g.fillStyle = '#c0c0c0'; g.fillRect(x, y, w, h);
           g.fillStyle = '#ffffff'; g.fillRect(x, y, w, 1); g.fillRect(x, y, 1, h);
           g.fillStyle = '#404040'; g.fillRect(x, y + h - 1, w, 1); g.fillRect(x + w - 1, y, 1, h);
@@ -70,10 +86,22 @@
         for (let r = 0; r < 6; r++) for (let c = 0; c < 12; c++) { g.fillStyle = (r * 7 + c * 3) % 11 === 0 ? '#ff2a4a' : '#bdbdbd'; g.fillRect(388 + c * 15.5, 88 + r * 14.5, 14, 13); }
         win(250, 150, 180, 70, 'CLIPPY.TXT');
         txt(g, 'IT LOOKS LIKE YOU', 260, 172, 0.6, '#14082a'); txt(g, 'FOUND A SECRET!', 260, 184, 0.6, '#14082a');
+        poly(g, [[0, 246], [640, 246], [640, 300], [0, 300]], '#60777a');
+        for (let x = -160; x <= 800; x += 80) line(g, 320 + (x - 320) * 0.45, 246, x, 300, 0.8, '#8fa29c');
+        for (const y of [254, 270, 293]) line(g, 0, y, 640, y, 0.8, '#7f9593');
+        depthGround(g, 82, 246, 508, 14, '#344f59', '#90a9a4');
+        for (const x of [86, 548]) {
+          g.fillStyle = '#7d9494'; g.fillRect(x, 195, 32, 36);
+          depthFace(g, x, 195, 32, 231, 6, '#364e5b', '#acb9ae');
+          g.fillStyle = '#122d46'; g.fillRect(x + 4, 205, 18, 12);
+          line(g, x + 6, 221, x + 20, 221, 1, '#c9cdb6');
+        }
       }, FLAT);
 
     reg2('retro_top', 32, 8, function (g) {
         g.fillStyle = '#c0c0c0'; g.fillRect(0, 0, 32, 8); g.fillStyle = '#ffffff'; g.fillRect(0, 0, 32, 1.2); g.fillStyle = '#808080'; g.fillRect(0, 7, 32, 1);
+        poly(g, [[0, 0], [27, 0], [32, 4], [5, 4]], '#d9d9cf');
+        line(g, 15, 0.5, 20, 4, 0.7, '#929c9d');
       }, FLAT);
 
     reg2('retro', 32, 32, function (g) {
@@ -86,6 +114,7 @@
         g.fillStyle = '#c0c0c0'; g.fillRect(0, 2, 80, 18); g.fillStyle = '#ffffff'; g.fillRect(0, 2, 80, 1); g.fillStyle = '#404040'; g.fillRect(0, 19, 80, 1); g.fillRect(79, 2, 1, 18);
         g.fillStyle = lg(g, 0, 0, 80, 0, [[0, '#0a1a8a'], [1, '#1a8ad8']]); g.fillRect(2, 4, 76, 8);
         txt(g, 'OK', 6, 6, 0.5, '#ffffff'); g.fillStyle = '#c0c0c0'; g.fillRect(70, 5, 6, 6);
+        depthFace(g, 0, 0, 80, 20, 3, '#747d85', '#e1e2d4');
       }, { shade: 0.3 });
 
     reg2('bonus_bg_xbox', 640, 360, function (g) {
@@ -95,6 +124,16 @@
         g.strokeStyle = 'rgba(80,255,80,0.22)'; g.lineWidth = 0.8;
         for (let i = -10; i <= 10; i++) { g.beginPath(); g.moveTo(320 + i * 14, 230); g.lineTo(320 + i * 70, 360); g.stroke(); }
         for (let k = 0; k < 7; k++) { const y = 230 + k * k * 2.9; g.beginPath(); g.moveTo(0, y); g.lineTo(640, y); g.stroke(); }
+        for (const x of [20, 510]) {
+          depthGround(g, x - 12, 282, 122, 18, '#091c13', '#254a2b');
+          g.fillStyle = '#143521'; g.fillRect(x, 157, 80, 102);
+          depthFace(g, x, 157, 80, 259, 14, '#0b2018', '#38663a');
+          g.fillStyle = '#0a1c12'; g.fillRect(x + 8, 181, 48, 62);
+          for (let y = 190; y < 237; y += 12) line(g, x + 14, y, x + 49, y, 1, '#477947');
+          line(g, x + 4, 173, x + 4, 249, 1.5, '#81bb6f');
+        }
+        ell(g, 320, 248, 74, 13, '#06180d');
+        depthGround(g, 254, 251, 132, 13, '#142d1a', '#385a31');
         ell(g, 320, 130, 62, 62, lg(g, 0, 68, 0, 192, [[0, '#f4fff4'], [0.6, '#c8d8c8'], [1, '#7a8a7a']]));
         g.save(); g.beginPath(); g.arc(320, 130, 62, 0, Math.PI * 2); g.clip();
         g.strokeStyle = '#107c10'; g.lineWidth = 15; g.lineCap = 'round';
@@ -108,6 +147,8 @@
 
     reg2('xbox_top', 32, 8, function (g) {
         g.fillStyle = '#0c140c'; g.fillRect(0, 0, 32, 8); g.fillStyle = '#7dff7a'; g.fillRect(0, 0, 32, 1.4); g.fillStyle = 'rgba(125,255,122,0.35)'; g.fillRect(0, 1.4, 32, 2);
+        poly(g, [[0, 0], [27, 0], [32, 4], [5, 4]], '#3f7141');
+        line(g, 15, 0.5, 20, 4, 0.7, '#92b17a');
       }, FLAT);
 
     reg2('xbox', 32, 32, function (g) {
@@ -119,6 +160,7 @@
         rrect(g, 0, 2, 80, 16, 3, '#0c140c'); g.fillStyle = '#7dff7a'; g.fillRect(2, 2, 76, 1.6);
         g.fillStyle = 'rgba(125,255,122,0.45)'; g.fillRect(2, 15, 76, 1);
         for (let i = 0; i < 4; i++) { ell(g, 14 + i * 17, 10, 3, 3, ['#7dff7a', '#ff4a4a', '#4ab4ff', '#ffd23f'][i]); }
+        depthFace(g, 0, 2, 80, 18, 3, '#142719', '#5b8955');
       }, { shade: 0.3, glow: '#7dff7a' });
   };
 })();

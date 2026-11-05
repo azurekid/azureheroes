@@ -73,22 +73,23 @@ function lab(unlocked = 1) {
   return { lab, AH };
 }
 
-test('every region grants exactly one outfit, hair and accessory at its clear threshold', () => {
+const baseHair = new Set(['afro', 'braids', 'curls', 'coils', 'waves', 'boroughwaves']);
+test('legacy regional thresholds preserve outfits and accessories while textured hair stays open', () => {
   assert.equal(H.suits.length, regionCount + 8);
   assert.equal(H.styles.length, regionCount + 7);
   assert.equal(H.gear.length, regionCount + 6);
   for (let region = 0; region < regionCount; region++) {
     const reward = H.wardrobeFor(region);
     for (const category of ['suit', 'hair', 'gear']) {
-      assert.equal(H.wardrobeOpen(category, reward[category], region + 1), false, `${region} locked ${category}`);
+      assert.equal(H.wardrobeOpen(category, reward[category], region + 1), category === 'hair' && baseHair.has(reward.hair), `${region} locked ${category}`);
       assert.equal(H.wardrobeOpen(category, reward[category], region + 2), true, `${region} cleared ${category}`);
     }
     assert.equal(H.suitUnlock.filter((i) => i === region).length, 1);
-    assert.equal(H.hairUnlock.filter((i) => i === region).length, 1);
-    assert.equal(H.gearUnlock.filter((i) => i === region).length, 1);
+    assert.equal(H.hairUnlock.filter((i) => i === region).length, baseHair.has(reward.hair) ? 0 : 1);
+    assert.ok(H.gearUnlock.filter((i) => i === region).length >= 1);
   }
   assert.equal(H.suitNames[H.wardrobeFor(3).suit], 'KIMONO');
-  for (const hat of H.hats) assert.equal(H.wardrobeOpen('hat', hat[0], 1), true);
+  for (const hat of H.hats.slice(0, -1)) assert.equal(H.wardrobeOpen('hat', hat[0], 1), !['cowboy', 'cork'].includes(hat[0]));
   for (const gear of H.gear.slice(0, 6)) assert.equal(H.wardrobeOpen('gear', gear[0], 1), true);
   for (const hair of H.styles.slice(0, 7)) assert.equal(H.wardrobeOpen('hair', hair, 1), true);
   for (const category of ['suit', 'hair', 'hat', 'gear', 'unknown']) assert.equal(H.wardrobeOpen(category, 'unknown', 11), false);
@@ -99,7 +100,7 @@ test('saved locked or invalid wardrobe falls back without changing old saves', (
     const reward = H.wardrobeFor(region), original = { ...H.def[body], ...reward };
     const data = { unlocked: region + 1, look: original };
     const clean = A.lookOf(data);
-    for (const key of ['suit', 'hair', 'gear']) assert.equal(clean[key], H.def[body][key]);
+    for (const key of ['suit', 'hair', 'gear']) assert.equal(clean[key], key === 'hair' && baseHair.has(reward.hair) ? reward.hair : H.def[body][key]);
     assert.deepEqual(data.look, original);
     const open = A.lookOf({ ...data, unlocked: region + 2 });
     for (const key of ['suit', 'hair', 'gear']) assert.equal(open[key], reward[key]);
@@ -242,6 +243,7 @@ test('Hero Lab rejects every locked category and randomizes only unlocked select
   for (let region = 0; region < regionCount; region++) {
     const reward = H.wardrobeFor(region);
     for (const category of ['suit', 'hair', 'gear']) {
+      if (category === 'hair' && baseHair.has(reward.hair)) continue;
       const { lab: L, AH } = lab(region + 1);
       L.look[category] = reward[category];
       L.done(true);
@@ -329,6 +331,7 @@ test('Gold Mode opens all map worlds for sandbox deployment without changing sav
   AH.UI = { soundButton() {}, musicButton() {}, button: display, pad: String };
   AH.Online = { available: false };
   AH.Save = { data: { unlocked: 1, bests: {}, resume: null },
+    worldOpen: id => id === 1, worldCleared: () => false, route: () => ({ start: 1 }),
     unlock() { calls.push('unlock'); }, save() { calls.push('save'); }, setResume() { calls.push('resume'); } };
   vm.runInNewContext(scenes, { window: { AH }, Phaser: { Scene: class {} } });
   const saved = JSON.stringify(AH.Save.data);
@@ -365,7 +368,7 @@ test('Gold Mode opens all map worlds for sandbox deployment without changing sav
   assert.equal(map().pins.filter((pin) => !pin.locked).length, 1);
 });
 
-test('Gold Mode easter egg is a sandbox: 30 lives, gold suit, no run progress saved or submitted', () => {
+test('Hacker Mode easter egg is a sandbox: 30 lives, hacker outfit, no run progress saved or submitted', () => {
   const writes = [];
   const AH = {
     Levels: { ids: ['amsterdam'] }, Art: A, Audio: { play() {} },
@@ -399,7 +402,8 @@ test('Gold Mode easter egg is a sandbox: 30 lives, gold suit, no run progress sa
   Level.restart.call(fake);
   assert.equal(AH.Run.lives, 30);
   assert.equal(AH.Run.gold, true);
-  assert.equal(G.look({ suit: 3 }).suit, 'gold');
+  assert.equal(G.look({ suit: 3, hat: 'crown' }).suit, H.hackerSuit);
+  assert.equal(G.look({ suit: 3, hat: 'crown' }).hat, 'none');
   // a gold suit can never be loaded from a save or picked in Hero Lab
   assert.equal(A.lookOf({ unlocked: 99, look: { ...H.def.m, suit: 'gold' } }).suit, H.def.m.suit);
   assert.ok(!H.suitNames.includes('GOLDEN HERO'));

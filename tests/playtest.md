@@ -1,5 +1,207 @@
 # Playtest report - Microsoft Azure Heroes 2027
 
+## Regional routes, mission briefings and inclusive wardrobe defaults
+
+- Redmond's guaranteed scenic stops now include Microsoft campus, Pike Place
+  Market, Starbucks, Link light rail, Commons and Building 92. New transit/art
+  remains decorative; terrain, collision and music are unchanged.
+- Registration explicitly selects one of eleven represented regions as the
+  starting world, without location tracking. A pristine guest's default Amsterdam
+  access is replaced; actual guest progress is retained. Clears choose random
+  uncleared destinations, persist the exact Continue target and record individual
+  map clears rather than a numeric prefix. Existing saves migrate without loss.
+- Local-guide briefings explain the key, mode-specific relay, two gems and three
+  enemy tokens. Physics/timer wait for acknowledgment; pause-menu review preserves
+  mission state. The modal covers underlying controls and restores play on Enter,
+  Space or the visible button.
+- Afro, braids, curls, coils and waves are always available. New York/cork/cowboy
+  hats require collected IDs, even on legacy saves. Cowboy is a shared pickup in
+  Redmond, Virginia and New York; hijab remains open. Stable indexes are preserved.
+- PASS all 131 automated tests, changed/new JavaScript syntax checks and
+  `git diff --check`. Tests cover every starting region across multiple seeds,
+  no-repeat routes through all worlds, legacy/non-prefix merges, immutable API
+  starts, invalid/oversized requests, unauthorized writes, scene completion,
+  all-cleared and sandbox no-writes. Wardrobe tests cover free hair, legacy hat
+  locks, shared pickup eligibility, save fallback and unlocked-only randomization.
+- PASS separate Chrome processes for Redmond desktop, Redmond forced-touch and
+  Tokyo forced-touch. Real registration selects Redmond, Continue starts there,
+  guide acknowledgment/review work, and physics/time stay frozen during briefing.
+  The flight guide correctly asks for a blast rather than a held ground shield.
+- PASS assisted Redmond secret-room entry and actual collision collection of
+  cowboy; Hero Lab refuses uncollected New York/cork hats, accepts free coils
+  with collected cowboy, and saves the look. An assisted clear opens a different
+  world, marks only Redmond cleared, and reload retains the chosen destination.
+  Desktop and touch runs selected different next destinations. No runtime exceptions.
+- Reviewed actual screenshots of the registration form, guide panels, Hero Lab
+  and Redmond scenic stops. Camera placement, pickup positioning and mission
+  completion are assisted. This is not unassisted combat/traversal, full mobile
+  responsive-form coverage or real-device touch certification.
+
+## Local guides, collectible wardrobe, boss tokens and faster firing
+
+- Checkpoint guides use each world's local outfit/headwear through the shared
+  civilian rig, with grounded feet and no cape/emblem. Flight retains its
+  airborne checkpoint markers.
+- Three visibly marked existing enemies guarantee boss-access tokens, alongside
+  the deployment key, relay and two-gem requirements. Fixed drop anchors avoid
+  solids, obstacles, lasers and cables. Collected/released tokens survive death;
+  required carriers return even when normal checkpoint respawn exclusions apply.
+  Restart/new layouts reset mission tokens; they never become saved currency.
+- Separate optional outfit, hair, local-hat and artefact caches live in existing
+  matching-world sub-levels/secrets. Flight worlds and Virginia have no such rooms
+  and use side-route stashes. Pickups unlock individual Hero Lab choices; clears
+  alone no longer grant clothes. Old entitlements migrate as a fixed snapshot.
+  New hats still need collection, even on old completed saves. Hijab/base choices
+  remain available. Signed-in progress unions bounded cosmetic IDs; these never
+  grant account permissions. Sandbox collections never save or upload.
+- Konami now displays Cloud Hacker, not the gold hero. All-world selection,
+  30 lives and no saved/submitted run progress remain; no invulnerability added.
+- Quick-release cooldown: 0.16 seconds instead of 0.30; full-charge cooldown:
+  0.36 seconds. Preserve 1.2-second charging, Boost costs and projectile speed.
+- PASS browser integration, all eleven worlds, seed 2027, one Chrome process per
+  world: real enemy defeat callbacks release tokens, real Arcade body overlaps
+  collect all three, and losing a life preserves a collected token plus an
+  uncollected released token while restoring the remaining carrier. Each world
+  also collects and saves a wardrobe item through collision. Existing pipe
+  rooms use the actual warp animation. No runtime exceptions.
+- PASS actual Hero Lab lock/refused-save, always-open hijab and real Konami
+  keyboard sequence in Amsterdam, Tokyo and New York; reload preserves the
+  collected outfit. Captured each ground world's local guide, pickup locations,
+  locked Hero Lab and Hacker title. Amsterdam's forced-touch layout also passes
+  death/token/wardrobe checks and actual pointer presses on BLAST. Keyboard and
+  touch each emit three quick-release shots without refilling Boost.
+- Browser camera/player placement and enemy hits are assisted; death is triggered
+  deliberately. These checks do not certify natural carrier combat, unassisted
+  completion/difficulty, every optional stash's physical traversal, or real-device
+  touch. Frame-aware waits account for headless rendering; unit tests establish
+  the exact cooldown threshold rather than wall-clock browser timing.
+- PASS all 122 automated tests, changed-JavaScript syntax checks and
+  `git diff --check`. Generation covers 100 seeds across all eleven worlds
+  (1,100 layouts), including hazard-free token anchors and unchanged terrain/RNG;
+  repeated mission decoration is idempotent. Save/API tests cover ownership
+  union, frozen migration, malformed/oversized IDs and unauthorized writes.
+
+## Continuous outdoor lighting and full-background Australian sections
+
+- Bondi, the outback roadhouse and Uluru now occupy full 640x360 environment
+  plates with transparent sky, rather than oversized landmark cards. Normal city
+  strips and decorative surface transit fade out within each section; the harbour
+  returns between/after sections. Replaced miniature beach/outback/Uluru pieces
+  remain hidden even between sections. Map art, generated layouts, physical piers,
+  water gaps, boats, enemies, objectives, rewards and music are unchanged.
+- Shared outdoor atmosphere runs a smooth 240-second cycle. `?tod=day` and the
+  other allowlisted phases select its starting point, not a frozen sky.
+  Pause/help, warps and pipe/secret visits freeze the outdoor phase. Indoor art
+  and the HUD retain their lighting; return restores the outdoor atmosphere.
+- PASS 114 automated tests: cycle endpoints/midpoints/wrap, section boundaries,
+  sustained coverage, viewport dimensions, persistent layer allocation,
+  transit restoration, state/room freeze and datacenter exclusion, plus the
+  existing terrain/RNG/save/audio/framework/server/security-boundary regressions.
+- PASS actual Chrome rendering at 1280x720, one process per world: day, sunset,
+  night and sunrise for all eleven worlds (Virginia remains indoors). Sydney
+  additionally captured Bondi centre/exit, harbour gap, outback, Uluru and harbour
+  return, on desktop and with forced-touch controls. No runtime exceptions.
+- PASS live outdoor clock advances; actual pause freezes it. Assisted animated
+  pipe round trips (Sydney, Amsterdam and New York) hide outdoor darkness and
+  freeze the phase; returning restores it. New York's animated sewer-secret
+  entry/return also preserves the phase and the room's authored lighting.
+  These are visual/integration checks with assisted camera/clock/room positioning,
+  not unassisted world completions, natural entrance testing or physical-device
+  touch verification. Human visual acceptance remains pending.
+- Reproduce visually: select world 5 from the map in Gold Mode, start with
+  `?tod=day`, and traverse the coast/outback/Uluru stretches. Use pause to inspect;
+  wait four active outdoor minutes for a complete lighting cycle. Existing
+  world-selection and gameplay controls are unchanged.
+
+## Worldwide painted 2.5D rollout
+
+- Applied bounded local roof/side returns, grounded foundations and receding
+  terrain to all eleven worlds. City modules retain their architectural identity,
+  texture registration order, widths, route fractions and seeded drawing order.
+  Shared helpers draw geometry only; no global skew/filter or replacement engine.
+- All eight underground themes retain far scenery and three foreground variants:
+  Azure Pipelines, GitHub Actions, Docker, AKS, Entra, Functions, London Tube and
+  Paris Metro. Shipping-container roofs/ends, workshop machinery, vault/reactor
+  casings, station pillars and platform edges gain material-specific depth.
+- Cloud Nine, Retro Desktop, Xbox and New York sewer secrets retain their layouts,
+  rewards and controls, with receding paths/interiors and dimensional fixtures.
+  Shared and regional floor-top textures keep their original collision-aligned
+  dimensions; exact-size challenge solids retain low-duct warnings and cache keys.
+- Visual verification uses actual Chrome rendering at 1280x720, seed 2027 and
+  sunset (datacenter lighting remains its own), one browser process per world.
+  Entry, middle, late-world and available guaranteed scenic stops are captured.
+  All underground themes are captured at entry/mid-room; all 24 background
+  variants are also exported from real rendered canvases for a contact-sheet review.
+- Camera/player placement for captures is assisted and scenes are paused. Live
+  room checks use the real warp animation and Arcade floor collisions, followed
+  by keyboard jump/duck checks; this is integration smoke coverage, not an
+  unassisted world completion or difficulty certification. Forced-touch layouts
+  are not physical-device tests or touch-button interaction tests.
+- User review caught Sydney's outback rendering as a floating rectangular card
+  over the harbour. Replaced its broad opaque red backplate with a lower, tapered
+  terrain silhouette, scaled the roadside vignette to its surroundings, and
+  grounded the outback/coast decorative anchors at street level. The beach also
+  loses its rectangular blue/sand card. Route fractions, widths and physics are
+  unchanged; the two decorative vertical anchors intentionally change.
+- Removed Redmond's opaque near-layer sky fill, which had covered the regional
+  panorama with a dark rectangle. Virginia's active `bg_dc_near` layer also gains
+  cabinet/beam returns and receding aisle planes, rather than relying only on
+  scenery strips that rack gameplay does not render.
+- PASS desktop and forced-touch-layout world/room sweeps: all eleven generated
+  layouts remain unchanged during assisted visual inspection, with no runtime
+  exceptions. All eight themes pass actual animated warp, floor landing at
+  y=300, jump and duck checks; room smoke routes finish at 100 health without
+  invulnerability or refills. Input checks wait for actual ground contact rather
+  than assuming a fixed jump duration.
+- PASS all 108 integrated tests, including preserved all-world generation digest,
+  scenery registration/dimensions/random consumption, all 24 underground variants,
+  exact-size solids, all four secret backgrounds, active datacenter layer and
+  Sydney/Redmond backplate regressions. Real-device and final human visual
+  approval remain pending.
+- No new gameplay, layout, soundtrack, dependencies, outbound services, saves,
+  accounts or permissions are part of this visual rollout. Existing audio
+  listening-approval and real-device testing limitations remain.
+
+## New York birds, neighborhoods and sewer secret
+
+- Pigeons now use the same shared flying-bird rig as London's ravens, with a
+  separate head/beak, tail and two wing poses, rather than overlapping round
+  shapes. Ambient pigeons also have a distinct head and unclipped wingbeats.
+  Rats have four feet, rounded ears and a curved tail; their existing crawler
+  behavior, two-hit health, threat labels and credit drops remain unchanged.
+- Brownstones now have flat cornices, masonry, stoops and iron fire escapes with
+  diagonal stairs, treads, landings and railings. The near background also includes
+  smaller brownstones/fire escapes and a park interval. Central Park's guaranteed
+  stop adds a lake, pale arched Bow Bridge, skyline and visible park sign.
+- Replaced New York's phone box/cloud secret with a grounded manhole and a
+  1,280px brick sewer: eight maintenance ledges, 38 coins, one MFA token, one
+  powerup, five rat patrols and an exit manhole. The whole room is reserved before
+  pipe zones, with a 160px buffer; other cities retain their existing secrets.
+- PASS actual Chrome desktop and forced-touch layout, seed 2027, 1280x720,
+  sunrise. Reviewed neighborhood, bird contact-sheet and sewer captures.
+  After assisted positioning on the street manhole, normal contact triggered
+  the warp. Keyboard duck/run and repeated tap blasts crossed the sewer,
+  defeated all five rats and returned via the exit without losing a life.
+  Entry health 88, final 76; three lives remained. No invulnerability, health
+  refill or combat teleportation. No runtime exceptions.
+- The forced-touch run checks layout but still uses keyboard input; it is not
+  a physical-device or touch-button interaction test. These are assisted local
+  routes, not an unassisted full-world balance/completion claim.
+- Sewer music reuses the original Hudson hook in the quieter/slower regional
+  pipe arrangement: D minor, syncopated electronic exploration, with space for
+  danger and reward cues. Live trance/house/pop cycling, mute/resume and restoring
+  New York street music on exit passed in both runs.
+- Real Web Audio renders include each full underground arrangement and a loop
+  join. Trance/house/pop peaks: 0.2091/0.1996/0.2093 (all below -13.5 dBFS);
+  RMS: 0.01977/0.01970/0.01403; absolute DC below 0.000014; loop deltas below
+  0.0001; finite samples with no clipping. Human listening approval remains
+  pending; these engineering checks do not certify artistic quality.
+- All 95 integrated tests pass, including five sewer seeds, isolation/safe
+  patrols, real-module bird/scenery registration, music entry/return and the
+  historical generator digest using the legacy secret fixture. Changed JS
+  syntax and whitespace checks pass. No dependencies, network destinations,
+  accounts, saves or permissions changed.
+
 ## Grounded New York and Amsterdam city depth
 
 - Times Square's previously disconnected central tower now extends to the same

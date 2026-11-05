@@ -5,22 +5,39 @@
   const { ri, pick, clamp, shuffle } = G;
 
   const BONUS = { cloud: ['grass', 'cloud_plat'], retro: ['retro', 'retro_plat'], xbox: ['xbox', 'xbox_plat'] };
+  const REGIONAL_BONUS = {};
+  (AH.WorldOrder || []).forEach((slug) => {
+    const room = AH.Worlds[slug].bonus;
+    if (room) {
+      BONUS[room.theme] = [room.floor, room.platform];
+      REGIONAL_BONUS[room.theme] = room;
+    }
+  });
+  function bonusWidth(theme) { return REGIONAL_BONUS[theme] ? REGIONAL_BONUS[theme].width : 640; }
   function makeBonus(x, theme) {
     const T = BONUS[theme] ? theme : 'cloud';
+    const regional = REGIONAL_BONUS[T], width = bonusWidth(T);
     const clouds = [], coins = [];
     let cx = x + 90;
-    for (let k = 0; k < 4; k++) {
+    for (let k = 0; k < (regional ? 8 : 4); k++) {
       const cy = ri(170, 225) - (k % 2) * 40;
       clouds.push({ x: cx, y: cy, w: 80, h: 16, cloud: BONUS[T][1] });
       for (let c = 0; c < 3; c++) coins.push({ x: cx + 16 + c * 24, y: cy - 24 });
       cx += ri(110, 130);
     }
-    for (let c = 0; c < 14; c++) coins.push({ x: x + 60 + c * 36, y: 300 - 30 - Math.round(Math.sin(c / 13 * Math.PI) * 50) });
-    return {
-      x: x, w: 640, theme: T, floor: { x: x, y: 300, w: 640, h: 100, bliss: BONUS[T][0] }, clouds: clouds, coins: coins,
+    for (let c = 0; c < 14; c++) coins.push({ x: x + 60 + c * (regional ? 80 : 36), y: 300 - 30 - Math.round(Math.sin(c / 13 * Math.PI) * 50) });
+    const room = {
+      x: x, w: width, theme: T, floor: { x: x, y: 300, w: width, h: 100, bliss: BONUS[T][0] }, clouds: clouds, coins: coins,
       token: { x: clouds[2].x + 40, y: clouds[2].y - 60 }, power: { kind: pick(['copilot', 'powerbi', 'defender']), x: clouds[1].x + 40, y: clouds[1].y - 50 },
-      exit: { x: x + 590, y: 300 }
+      exit: { x: x + width - 50, y: 300 }
     };
+    if (regional) {
+      room.enemies = regional.threats.map((enemy) => ({ ...enemy, x: x + enemy.x }));
+      room.presentation = { title: regional.title, y: regional.y, shadow: regional.shadow,
+        sub: regional.sub, subShadow: regional.subShadow, ach: regional.ach };
+      room.music = regional.music;
+    }
+    return room;
   }
 
   const CHALLENGES = {
@@ -101,5 +118,5 @@
     };
   }
 
-  Object.assign(G, { BONUS, CHALLENGES, makeBonus, makePipeZone });
+  Object.assign(G, { BONUS, CHALLENGES, makeBonus, makePipeZone, bonusWidth });
 })();

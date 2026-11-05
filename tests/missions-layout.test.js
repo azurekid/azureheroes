@@ -8,6 +8,8 @@ const plain = (value) => JSON.parse(JSON.stringify(value));
 const withoutMission = (L) => {
   const copy = plain(L);
   delete copy.mission;
+  delete copy.wardrobeSpots;
+  copy.enemies.forEach((enemy) => { delete enemy.bossToken; });
   return copy;
 };
 
@@ -100,6 +102,17 @@ function checkMarkers(L) {
       if (nearHeight) assert.ok(Math.abs(enemy.x - p.x) >= (enemy.range || 0) + 70, 'clear of enemy patrols');
     }
     for (const other of markers.slice(i + 1)) assert.ok(Math.hypot(p.x - other.x, p.y - other.y) >= 100, 'mission markers do not overlap');
+  }
+  assert.equal(L.mission.tokens.length, 3);
+  assert.equal(L.enemies.filter(e => e.bossToken).length, 3);
+  for (const token of L.mission.tokens) {
+    const box = { x: token.x - 14, y: token.y - 14, w: 28, h: 28 };
+    for (const hazard of [...L.platforms, ...(L.obstacles || []), ...(L.lasers || []), ...(L.gates || []),
+      ...(L.cables || []).map(c => ({ x: c.x, y: c.y - 12, w: c.w, h: 12 }))]) {
+      assert.ok(!overlap(box, hazard), 'boss tokens must never overlap solids or hazards');
+    }
+    if (L.mode === 'run') assert.ok(L.platforms.some(p =>
+      p.y === token.y + 24 && p.x <= token.x - 20 && p.x + p.w >= token.x + 20), 'ground tokens have safe support');
   }
 }
 

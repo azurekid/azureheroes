@@ -107,7 +107,7 @@
       this.missionNext.setVisible(!!mission && !bs);
       if (mission && !bs) {
         this.mission.setText('MISSION ' + mission.done + '/' + mission.total + '  GEMS ' + mission.gems + ' NEED ' + mission.quota
-          + '  BONUS ' + mission.bonus).setColor(mission.ready ? '#4dff7a' : '#ffe14a');
+          + (mission.tokenQuota ? '  TOKENS ' + mission.tokens + '/' + mission.tokenQuota : '  BONUS ' + mission.bonus)).setColor(mission.ready ? '#4dff7a' : '#ffe14a');
         this.missionNext.setText(mission.next);
       }
       this.bossLabel.setVisible(!!bs);

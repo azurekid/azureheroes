@@ -55,6 +55,24 @@ test('tap/release and hold/release use the same keyboard and touch charge state'
   assert.equal(p.azureBlast(1), false, 'low Boost cannot shoot for free');
 });
 
+test('tap shots fire almost twice as often while charge timing and Boost costs stay unchanged', () => {
+  for (const weapon of ['azure', 'spread', 'pierce']) {
+    const { p, shots, AH } = playerFixture();
+    p.weapon = weapon;
+    assert.equal(p.azureBlast(), true);
+    assert.equal(p.blastCd, 0.16);
+    assert.equal(p.boost, 100 - AH.Weapons[weapon].cost);
+    p.blastCd -= 0.159;
+    assert.equal(p.azureBlast(), false, 'cooldown is still enforced');
+    p.blastCd = Math.max(0, p.blastCd - 0.0011);
+    assert.equal(p.azureBlast(), true);
+    assert.equal(shots.length, 2);
+    p.blastCd = 0; p.boost = 100;
+    assert.equal(p.azureBlast(1), true);
+    assert.ok(Math.abs(p.blastCd - 0.36) < 1e-12);
+  }
+});
+
 test('temporary weapons replace, expire, and cancel held fire safely', () => {
   const { p, shots } = playerFixture();
   p.equipWeapon('spread');
@@ -179,6 +197,14 @@ test('losing a life restores defeated enemies away from the respawn point', () =
   Object.assign(s, { mode: 'fly', cameras: { main: { scrollX: 1000 } }, player: { x: 1120 } });
   s.respawnEnemies();
   assert.deepEqual(Array.from(s.enemies, e => e.def.x), [1500], 'fly mode only refills ahead of the camera');
+  defs[1].bossToken = { id: 'one' }; defs[2].bossToken = { id: 'two' };
+  s.mission = { tokens: [{ def: { id: 'one' } }, { def: { id: 'two' } }] };
+  s.respawnEnemies();
+  assert.deepEqual(Array.from(s.enemies, e => e.def.x), [250, 900, 1500], 'needed carriers cannot be lost behind flight checkpoints');
+  s.mode = 'run'; s.player.x = 120; s.respawnEnemies();
+  assert.deepEqual(Array.from(s.enemies, e => e.def.x), [250, 900, 1500], 'nearby required carrier returns after death');
+  s.mission.tokens[0].released = true; s.respawnEnemies();
+  assert.deepEqual(Array.from(s.enemies, e => e.def.x), [900, 1500], 'a released token needs no duplicate nearby carrier');
 });
 
 function bossFixture(air = false) {

@@ -121,6 +121,8 @@
         g.fillStyle = 'rgba(255,255,255,0.48)'; g.fillRect(0, 0, 32, 1);
         g.fillStyle = '#bd4c3b'; g.fillRect(0, 1, 32, 1.2);
         for (let x = 2; x < 32; x += 8) { line(g, x, 3, x - 2, 7, 0.5, 'rgba(105,65,57,0.6)'); }
+        poly(g, [[0, 0], [27, 0], [32, 4], [5, 4]], 'rgba(241,214,178,0.35)');
+        for (const x of [8, 24]) line(g, x, 0.5, x + 5, 4, 0.6, '#a47161');
       }, FLAT);
 
     reg2('itcanal', 32, 32, function (g) {

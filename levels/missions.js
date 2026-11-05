@@ -5,7 +5,7 @@
   const intersects = (a, b) => a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
   const separated = (a, b) => Math.hypot(a.x - b.x, a.y - b.y) >= 100;
 
-  function clear(L, x, floor, support, flight, lift = 20) {
+  function clear(L, x, floor, support, flight, lift = 20, allowEnemies = false) {
     const height = Math.max(56, lift + 16);
     const box = { x: x - 28, y: floor - height, w: 56, h: height };
     if (flight) { box.y = floor - 24; box.h = 48; }
@@ -19,14 +19,14 @@
     if (L.secret && Math.abs(x - L.secret.x) < 60) return false;
     if ([].concat(L.coins || [], L.mfaTokens || [], L.powerups || [], L.vehicles || [])
       .some((p) => Math.abs(x - p.x) < 20 && Math.abs((flight ? floor : floor - lift) - p.y) < 36)) return false;
-    return !(L.enemies || []).some((e) => {
+    return allowEnemies || !(L.enemies || []).some((e) => {
       const airborne = e.type === 'drone' || e.type === 'botnet';
       const nearHeight = airborne ? (flight || (e.y < floor && floor - e.y < 240)) : Math.abs(e.y - floor) < 64;
       return nearHeight && Math.abs(x - e.x) < (e.range || 0) + 70;
     });
   }
 
-  function groundSpots(L, platforms, lo, hi) {
+  function groundSpots(L, platforms, lo, hi, allowEnemies = false) {
     const supports = platforms.filter((p) => !p.pipe && !p.ceil && !p.bridge && !p.lowTunnel && p.w >= 72 && p.x < hi && p.x + p.w > lo);
     // Solid street/rack floors already form the traversable baseline. Admit upper
     // ledges only through single jumps: v=440, g=1100, run=190 (no boost needed).
@@ -55,7 +55,7 @@
         // A short hop above an upper ledge avoids covering its existing coin
         // trail. The 64px pickup height is below the unboosted 88px jump apex.
         for (const lift of upper ? [64, 20] : [20]) {
-          if (clear(L, x, p.y, p, false, lift)) spots.push({
+          if (clear(L, x, p.y, p, false, lift, allowEnemies)) spots.push({
             x, y: p.y - lift, upper,
             side: x - p.x <= 68 || p.x + p.w - x <= 68
           });
@@ -85,6 +85,7 @@
   }
 
   G.addMission = function (L) {
+    L.enemies.forEach((enemy) => { delete enemy.bossToken; });
     const end = Math.min(L.width, L.boss ? L.boss.left : L.width - 400) - 180;
     const fly = L.mode === 'fly';
     const spots = fly ? flightSpots(L, end) : groundSpots(L, L.platforms, 320, end);
@@ -124,6 +125,44 @@
       gems.push(Object.assign({ id: 'mission-gem-' + (gems.length + 1), zone: i }, p));
     });
     L.mission = { objectives, gems, gemQuota: 2 };
+    const tokenSpots = fly ? spots : groundSpots(L, L.platforms, 320, end, true)
+      .filter((p) => !p.upper);
+    const carriers = L.enemies.filter((enemy) => enemy.x > 400 && enemy.x < end &&
+      (fly ? enemy.type === 'drone' : ['robot', 'rbac', 'endpoint', 'hacker'].includes(enemy.type) &&
+        L.platforms.some((p) => !p.float && !p.pipe && p.h >= 80 &&
+          Math.abs(p.y - enemy.y) < 2 && enemy.x >= p.x + 32 && enemy.x <= p.x + p.w - 32) &&
+        tokenSpots.some((p) => Math.abs(p.x - enemy.x) <= 160 && p.y === enemy.y - 20)));
+    const tokens = [];
+    for (let i = 0; i < 3; i++) {
+      const options = carriers.filter((e) => !e.bossToken).sort((a, b) =>
+        Math.abs(a.x - end * (0.25 + i * 0.25)) - Math.abs(b.x - end * (0.25 + i * 0.25)));
+      const enemy = options[0];
+      if (!enemy) throw new Error('TOKEN CARRIER PLACEMENT FAILED IN LEVEL ' + L.id);
+      const spot = tokenSpots.filter((p) => fly || p.y === enemy.y - 20)
+        .sort((a, b) => Math.abs(a.x - enemy.x) - Math.abs(b.x - enemy.x))[0];
+      enemy.bossToken = { id: 'boss-token-' + (i + 1), x: spot.x, y: spot.y - (fly ? 0 : 4) };
+      tokens.push(enemy.bossToken);
+    }
+    L.mission.tokens = tokens;
+    L.mission.tokenQuota = 3;
+    const rooms = (L.pipeZones || []).map((z, i) => ({
+      pool: groundSpots(L, z.platforms, z.x + 100, z.x + z.w - 150),
+      lo: z.x + 100, hi: z.x + z.w - 150, zone: i
+    }));
+    if (L.bonus) {
+      const B = L.bonus;
+      rooms.push({ pool: groundSpots(L, [B.floor, ...B.clouds], B.x + 100, B.exit.x - 70),
+        lo: B.x + 100, hi: B.exit.x - 70, bonus: true });
+    }
+    L.wardrobeSpots = Array.from({ length: 6 }, (_, i) => {
+      const room = rooms.length ? rooms[i % rooms.length] :
+        { pool: fly ? spots : groundSpots(L, L.platforms, 320, end, true), lo: 320, hi: end };
+      const target = room.lo + (room.hi - room.lo) * (0.12 + Math.floor(i / Math.max(1, rooms.length)) * (rooms.length ? 0.25 : 0.15));
+      const point = choose(room.pool, target, room.lo, room.hi, true, 'WARDROBE CACHE');
+      if (room.zone !== undefined) point.zone = room.zone;
+      if (room.bonus) point.bonus = true;
+      return point;
+    });
     return L;
   };
 })();

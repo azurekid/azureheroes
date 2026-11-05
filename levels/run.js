@@ -217,7 +217,7 @@
       const a = P[q[0]], b = P[q[1]];
       const ex = Math.round(a.x + a.w * 0.62 - 22), bx = Math.round(b.x + b.w * 0.4 - 22);
       // Reserve enough space for the longest room; rooms must never overlap each other.
-      const Z = makePipeZone(width + 1200 + k * 4400, zoneThemes[k % zoneThemes.length]);
+      const Z = makePipeZone(width + Math.max(1200, 400 + G.bonusWidth(o.secret) + 160) + k * 4400, zoneThemes[k % zoneThemes.length]);
       pipeSolids.push({ x: ex, y: a.y - 46, w: 44, h: 46, pipe: true, theme: Z.theme }, { x: bx, y: b.y - 46, w: 44, h: 46, pipe: true, theme: Z.theme });
       for (let c = 0; c < 3; c++) coins.push({ x: ex + 22, y: Math.max(60 + c * 22, a.y - 70 - c * 22) });
       Z.back = { x: bx + 22, y: b.y - 46 };

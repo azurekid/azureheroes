@@ -48,6 +48,115 @@ description: Use before any game code change. Defines the shared interfaces for 
 
 ## Contract revisions
 
+### Regional starts, random destinations and mission briefing
+
+- Sign-up offers the eleven represented regions, selected explicitly by the
+  player, without geolocation/network lookup. Optional API `startLevel` is a
+  validated represented-world ID, stored once on registration. Old clients
+  omitting it keep their existing behavior.
+- `Save.data.route = {start, available:[id], cleared:[id]}` records individual
+  world access/completion. Migrate old `unlocked` prefixes without losing access,
+  scores, resume or wardrobe. Merge bounded valid ID sets monotonically online;
+  starting-world changes are not permissions. Catalogue IDs stay unchanged.
+- Completion chooses one random uncleared world, excluding the world just
+  completed, opens it, and saves that exact destination for Continue/reload.
+  Replays remain available, but cleared worlds are not automatic destinations.
+  After all worlds are cleared, return to the map. Sandbox routing is run-local.
+- A locally dressed guide presents an explicit start-of-level briefing:
+  deployment key, ground shield/flight blast relay, two gems, three enemy tokens,
+  then boss. Play/timer/physics wait for acknowledgment. The pause menu can
+  reopen the briefing without resetting mission state.
+
+### Always-open textured hair and collection-only hats
+
+- Afro, braids, curls, coils and waves (including borough waves) are base
+  hairstyles, available without location/progression requirements.
+- New York cap, cork hat and cowboy hat require an actual collected ID, even
+  on legacy completed saves. Preserve all indexes; only these three hats override
+  former grandfathering. Hijab remains always available.
+- City rewards may include `collectibleHats: [[key,name,origin,regionIndex]]`.
+  The cowboy hat shares one stable ID across Redmond, Virginia and New York;
+  collecting it in any of those worlds unlocks it everywhere.
+
+### Collected regional wardrobe, boss tokens and Hacker sandbox
+
+- Each run marks three existing, reachable main-world enemies with optional
+  `bossToken: {id,x,y}`. These visibly labelled carriers release guaranteed access
+  tokens on defeat at a safe fixed anchor, not random drops over gaps. Three tokens
+  join (not replace) the existing objectives/gem quota. Token state belongs to
+  `AH.Mission`, survives life loss, resets on restart and never goes into saves.
+  Flight scrolling/checkpoint recovery must account for uncollected tokens.
+- `L.wardrobeSpots` holds optional safe `{x,y,zone?,bonus?}` placements in existing
+  rooms/secrets; flight worlds without rooms use hidden side-route caches.
+  `AH.WardrobePickups` composes separate pickups using city reward metadata.
+  `AH.Art.hero.regionalItems(index)` returns `{id,category,value,name,region}`
+  for outfits, hairstyles, local hats and artefacts; stable IDs are
+  `category:value`. Arrays/indexes are append-only. Religious headwear, including
+  hijab, and base appearance choices are always available.
+- `Save.data.wardrobe = {items: [id], legacyUnlocked, legacyClassic}` records
+  collected cosmetics and a fixed migration snapshot. Existing players keep
+  their former clear-earned rewards and formerly free local hats/artefacts,
+  except collection-only New York/cork/cowboy hats (see revision above);
+  later clears do not grant new wardrobe items. New saves start with no regional
+  collection. Online merges union bounded validated cosmetic IDs and migration
+  snapshots monotonically; these fields never grant account authority.
+  Wardrobe APIs accept full progress objects; numeric legacy arguments preserve
+  the old read-only compatibility behavior. Save/load, preview, randomization and
+  UI all use the same ownership checks.
+- Checkpoint guides use the local reward outfit/headwear through the shared
+  civilian drawing rig, with no cosmetic ownership requirement or gameplay effect.
+- The existing Konami sandbox is now presented as Hacker Mode, using Cloud Hacker
+  instead of the gold hero. Internal `AH.Gold`/`Run.gold` compatibility names,
+  all-world access, 30 lives and no-persistence/no-score-submission rules remain.
+  No new cheat, account privilege or invulnerability is introduced. Sandbox
+  wardrobe pickups never persist or upload collection progress.
+- Faster firing: uncharged blast cooldown is 0.16s (previously 0.30s);
+  fully charged cooldown is 0.36s. Keep 1.2s charge/release, Boost costs,
+  projectile velocities, keyboard/touch parity and no held-fire auto-repeat.
+
+### Outdoor environment sections and continuous lighting
+
+- Optional city art part `environments_<region>` returns ordered descriptors
+  `{key,start,end,fade}`: a local 640x360 background texture and normalized
+  main-world camera-progress bounds, with fade distance in the same units.
+  `AH.Art.environments[region]` collects these through the existing catalogue.
+  Sections replace the harbour/city background across the viewport, not by
+  stretching small landmark textures. Their sky area is transparent.
+  Optional `replaces: [sceneryKey]` permanently hides the corresponding small
+  strip vignettes without changing their placement/RNG or other landmarks.
+- `AH.Environment` in `systems/environment.js` owns outdoor background blending
+  and a continuous 240-second day/night cycle starting at the run's chosen time.
+  Pause/help and indoor/secret-room visits freeze the outdoor clock; indoor art
+  and HUD are not darkened. Returning restores the same outdoor state.
+  Scene wiring only composes existing art; all drawing remains city-owned.
+  No physics, terrain, route, RNG, save, music or account changes.
+
+### Painted 2.5D world rendering
+
+- All city scenery, underground challenges and secret rooms use local painted
+  depth: grounded contact edges, visible side/roof returns and receding terrain
+  or interior planes. Existing silhouettes, architectural detail and sky windows
+  take priority over decorative traffic. No global skew/extruded texture filter.
+- Shared drawing-only helpers `C.depthFace(g,x,top,width,base,depth,side,roof)`
+  and `C.depthGround(g,x,base,width,depth,front,top)` stay inside supplied bounds.
+  Cities choose placement/materials; no city switch in shared engines. Drawing
+  consumes no random numbers. Collision tops, controls, route widths, IDs, saves,
+  room generation and music remain unchanged.
+
+### City-owned secret rooms
+
+- Optional city `.bonus` describes `{theme, floor, platform, width, title, y,
+  shadow, sub, subShadow, ach, music, threats}`. Themes are explicit local data,
+  not executable manifests. `threats` are room-relative enemy definitions.
+- Generated `bonus` may additionally contain `enemies`, `presentation` (title,
+  label colors/position and achievement), and `music` (existing audio context).
+  Room enemies join `L.enemies`, gaining the existing city skin and respawn rules.
+  Rooms without these fields retain existing behavior.
+- New York's `sewer` uses a bottom-aligned `secret_eastus2` manhole, tiled
+  `bonus_bg_sewer`, `sewer`/`sewer_top` floors and `sewer_plat` maintenance ledges.
+  Rats reuse the spider enemy behavior/skin. Sewer music uses New York's original
+  regional `pipe` arrangement in trance/house/pop; returning restores street music.
+
 ### Grounded checkpoints and friendly guides
 
 - Ground checkpoint flags, terminals and pipe bodies use unpadded artwork so their visible
@@ -150,8 +259,10 @@ Touch run controls include DUCK, SHIELD, PAUSE and HELP. On the title screen E o
 - The canvas is `640 * AH.VIEW_SCALE` by `360 * AH.VIEW_SCALE`; a camera patch in `systems/scenes.js` zooms every camera so all game logic,
   layouts and coordinates stay in the 640x360 space. Never hard-code the physical canvas size.
 - `AH.Art.buildHeroHD(scene, look, frame)` returns a high-detail hero texture key; it is not auto-scaled, so callers use `setScale(size / AH.Art.HD)`.
-- `HERO_SUIT` entries have `name` and `unlock` (level index, -1 = always open). `AH.Art.hero.suitOpen(i, unlocked)` is true when
-  `unlocked >= unlock + 2`. `lookOf` falls back to the default suit for a locked suit; the Hero Lab must refuse to save one.
+- `HERO_SUIT` entries have `name` and `unlock` (owning world index, -1 = always open).
+  `AH.Art.hero.suitOpen(i, progress)` uses collected ownership or a fixed legacy
+  snapshot; numeric legacy arguments retain `unlocked >= unlock + 2` compatibility.
+  `lookOf` falls back to the default suit for a locked suit; Hero Lab refuses to save one.
 - Every enemy type in `AH.Enemy.SPEC` needs `label` (pixel-font charset), `cat` (`malware`, `network`, `identity`, `devops`, see `AH.Enemy.CATS`) and a short `info` tip.
   The nameplate and the Hero Handbook (`AH.UI.help(scene, onClose)`) read these fields.
 - Remove enemies with `enemy.remove()` (or `die()`), never by destroying the sprite only, so the nameplate is cleaned up.
@@ -178,11 +289,11 @@ Touch run controls include DUCK, SHIELD, PAUSE and HELP. On the title screen E o
 - Landmarks may come from anywhere in the country, not only the region's city.
 
 ### Save, resume and online contract
-- Konami Gold Mode opens every world on the map for the browser session only.
+- Konami Hacker Mode (formerly Gold Mode) opens every world on the map for the browser session only.
   Map availability uses `AH.Gold.armed` without changing saved `unlocked`, cleared
   states or wardrobe rewards. Deployments remain sandbox runs with no saved or
   submitted progress; reloading restores normal world locks.
-- `AH.Save.data = { best, unlocked, bests: {id: score}, muted, hero, look: {body, skin, hair, hairCol, suit, hat, gear}, resume: {id, score, lives} | null, updated }`. `unlocked` is `n + 1` when all n levels are cleared.
+- `AH.Save.data = { best, unlocked, bests: {id: score}, muted, hero, look: {body, skin, hair, hairCol, suit, hat, gear}, resume: {id, score, lives} | null, updated, wardrobe, route }`. `unlocked` is a frozen legacy prefix snapshot; individual world access/clears now come from `route`, never inferred from the highest ID or best score.
 - Resume rules: level start saves `{id, startScore, startLives}`. Game over saves `{id, 0, 3}`. Level complete saves the next level with the current score and lives, or `null` after the last level. Call `AH.Save.setResume(id, score, lives)`. Never write `resume` directly.
 - `AH.Save.save()` may persist general preferences locally during Gold Mode, but
   must not push progress online while `AH.Gold.run()` is true. Gold run scores,
@@ -244,10 +355,12 @@ Touch run controls include DUCK, SHIELD, PAUSE and HELP. On the title screen E o
   the Rogue Hacker enemy. The built-in hood conceals the hair; other headwear still
   follows its own hair-coverage rules. No pose, including flight, draws a cape or
   changes the hero's abilities.
-- Clearing each region grants one outfit, hairstyle and accessory at
-  `Save.unlocked >= regionIndex + 2`. Existing classic styles, hats and extras stay open.
-- `AH.Art.hero` exposes `hairNames`, `hairUnlock`, `gearUnlock`, `wardrobeOpen(category, value, unlocked)`,
-  `wardrobeFor(regionIndex)` (`{suit, hair, gear}`) and `lookOpen(look, unlocked)`.
+- Regional rewards now require individual matching-world pickups (see collected
+  wardrobe revision). Legacy clear thresholds apply only to migration snapshots.
+  Base styles and religious headwear stay open; old entitlements are preserved.
+- `AH.Art.hero` exposes `hairNames`, `hairUnlock`, `gearUnlock`, `wardrobeOpen(category, value, progress)`,
+  `wardrobeFor(regionIndex)` (`{suit, hair, gear}`), `wardrobeRegions(category,value)`
+  (all matching region indexes) and `lookOpen(look, progress)`.
   Categories are `suit`, `hair`, `hat`, `gear`; unknown selections are never open.
 - `lookOf(data)` replaces locked/unknown suit, hair and gear with the saved body's
   classic defaults, without mutating saved data. Hero Lab can preview locked rewards,
@@ -256,8 +369,9 @@ Touch run controls include DUCK, SHIELD, PAUSE and HELP. On the title screen E o
   kimono with an obi sash; all outfits, hair and extras retain every hero frame,
   32x48 collision-independent canvas and HD rendering. Rewards are respectful wearable
   adaptations, not claims to represent every person in a region.
-- Hero Lab explains the selected reward's required region clear; completion announces
-  all three reward names. Labels use the existing pixel-font charset.
+- Hero Lab explains the selected reward's matching-world stash requirement.
+  Collection announces each item; world completion does not grant clothing.
+  Labels use the existing pixel-font charset.
 
 ### Regional rooms, street stands and music
 - New York is appended as world 11 (`eastus2`, a hosting-region mapping, not a New York

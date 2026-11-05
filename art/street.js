@@ -14,6 +14,9 @@
           g.fillStyle = 'rgba(255,230,190,0.55)'; g.fillRect(x + 1.1, 2 + r * 2.7, 1.4, 0.5);
         }
         g.fillStyle = '#2a1636'; g.fillRect(0, 7.2, 32, 0.8);
+        poly(g, [[0, 0], [27, 0], [32, 4], [5, 4]], 'rgba(224,195,169,0.25)');
+        for (const x of [8, 24]) line(g, x, 0.5, x + 5, 4, 0.6, '#73506b');
+        line(g, 0, 4.8, 32, 4.8, 0.6, '#57354c');
       }, FLAT);
 
     reg2('quay', 32, 32, function (g) {
@@ -34,6 +37,8 @@
         g.fillStyle = 'rgba(30,26,70,0.6)'; g.fillRect(0, 4.4, 32, 0.6); g.fillRect(15.6, 0, 0.6, 4.4); g.fillRect(7.6, 4.4, 0.6, 3.6); g.fillRect(23.6, 4.4, 0.6, 3.6);
         g.fillStyle = 'rgba(255,255,255,0.35)'; g.fillRect(1, 1, 12, 0.5); g.fillRect(17, 1, 12, 0.5);
         g.fillStyle = '#ffd890'; g.globalAlpha = 0.35; g.fillRect(0, 0, 32, 1); g.globalAlpha = 1;
+        poly(g, [[0, 0], [27, 0], [32, 4], [5, 4]], 'rgba(219,219,224,0.2)');
+        for (const x of [8, 24]) line(g, x, 0.5, x + 5, 4, 0.7, '#68647d');
       }, FLAT);
 
     reg2('embank', 32, 32, function (g) {
@@ -50,7 +55,10 @@
 
     reg2('pier_top', 32, 8, function (g) {
         g.fillStyle = lg(g, 0, 0, 0, 8, [[0, '#ffe2a8'], [0.25, '#c8864a'], [1, '#6a3a2a']]); g.fillRect(0, 0, 32, 8);
-        for (let x = 0; x < 32; x += 4) { g.fillStyle = 'rgba(60,24,10,0.6)'; g.fillRect(x, 0, 0.5, 6); g.fillStyle = 'rgba(255,230,180,0.3)'; g.fillRect(x + 0.6, 0.8, 0.5, 4); }
+        for (let x = -4; x < 32; x += 8) {
+          line(g, x, 0, x + 7, 6, 0.8, '#724a30');
+          line(g, x + 1, 0, x + 8, 6, 0.6, '#e1b477');
+        }
         g.fillStyle = '#3a1a12'; g.fillRect(0, 6, 32, 2);
       }, FLAT);
 
@@ -64,6 +72,8 @@
     reg2('neon_top', 32, 8, function (g) {
         g.fillStyle = lg(g, 0, 0, 0, 8, [[0, '#ffd0f0'], [0.2, '#ff3aa0'], [0.45, '#3a1a7a'], [1, '#1a0a40']]); g.fillRect(0, 0, 32, 8);
         for (let x = 1; x < 32; x += 8) lit(g, x, 4.6, 4, 1, x % 16 ? '#27e0ff' : '#ffe14a');
+        poly(g, [[0, 0], [27, 0], [32, 3.5], [5, 3.5]], '#65467e');
+        for (const x of [8, 24]) line(g, x, 0.5, x + 5, 3.5, 0.7, '#c78eb7');
       }, FLAT);
 
     reg2('neon', 32, 32, function (g) {
@@ -77,6 +87,8 @@
     reg2('grass_top', 32, 8, function (g) {
         g.fillStyle = lg(g, 0, 0, 0, 8, [[0, '#d8ff9a'], [0.3, '#5ac83a'], [1, '#2a7a2a']]); g.fillRect(0, 0, 32, 8);
         for (let x = 0; x < 32; x += 2) { g.fillStyle = 'rgba(255,255,200,0.5)'; g.fillRect(x, 0, 0.6, 1.4 + (x % 3)); }
+        poly(g, [[0, 0], [26, 0], [32, 4], [6, 4]], 'rgba(172,218,101,0.24)');
+        for (const x of [7, 20]) line(g, x, 1, x + 4, 3.5, 0.6, '#4c9d37');
       }, FLAT);
 
     reg2('grass', 32, 32, function (g) {

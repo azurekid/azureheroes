@@ -9,7 +9,7 @@
   AH.ArtModules.regions['uksouth'] = content;
 
   AH.ArtModules.stages['worlds.london.scenery.11'] = function (C) {
-    const { R, ell, lg, line, lit, poly, rim, silFill } = C;
+    const { R, depthFace, depthGround, ell, lg, line, lit, poly, rim, silFill } = C;
 
     Object.assign(C, { gothWin, bigBen, parliament, towerBridge, londonEye, shard });
     function gothWin(g, x, y, w, h, c) {
@@ -22,6 +22,7 @@
         const dark = 'rgba(30,16,70,0.55)', gold = '#ffd23f';
         // shaft
         g.fillStyle = stone; g.fillRect(cx - 10 * s, base - 106 * s, 20 * s, 106 * s);
+        depthFace(g, cx - 10 * s, base - 106 * s, 20 * s, base, 4 * s, '#5e526f', '#d2bdaf');
         g.fillStyle = 'rgba(20,10,60,0.25)'; g.fillRect(cx + 4 * s, base - 106 * s, 6 * s, 106 * s);
         [-10, -1, 8].forEach(function (o) { g.fillStyle = 'rgba(255,240,220,0.32)'; g.fillRect(cx + o * s, base - 106 * s, 2 * s, 106 * s); });
         for (let y = 12; y < 104; y += 15) {
@@ -31,6 +32,7 @@
         // clock stage with gilded frame
         const fy = base - 120 * s;
         g.fillStyle = stone; g.fillRect(cx - 13 * s, base - 136 * s, 26 * s, 31 * s);
+        depthFace(g, cx - 13 * s, base - 136 * s, 26 * s, base - 105 * s, 5 * s, '#625771', '#dfc9ad');
         g.fillStyle = 'rgba(20,10,60,0.25)'; g.fillRect(cx + 6 * s, base - 136 * s, 7 * s, 31 * s);
         g.fillStyle = '#b8902a'; g.fillRect(cx - 11.5 * s, fy - 11.5 * s, 23 * s, 23 * s);
         g.fillStyle = gold; g.fillRect(cx - 11 * s, fy - 11 * s, 22 * s, 0.9); g.fillRect(cx - 11 * s, fy + 10.5 * s, 22 * s, 0.9);
@@ -63,12 +65,14 @@
         line(g, cx, base - 199 * s, cx, base - 206 * s, 1, gold);
         ell(g, cx, base - 203 * s, 1.3, 1.3, gold); lit(g, cx - 1.4, base - 208 * s, 2.8, 2.8, gold);
         rim(g, cx - 10 * s, base - 106 * s, 106 * s, 'rgba(255,255,255,0.35)');
+        depthGround(g, cx - 12 * s, base, 24 * s, 3 * s, '#393047', '#b5a2a3');
       }
 
     function parliament(g, x0, x1, base, P) {
         const stone = silFill(g, base - 50, base, '#c8b4b0', '#5a4a98');
         g.fillStyle = 'rgba(40,30,90,0.9)'; poly(g, [[x0, base - 32], [x0 + 6, base - 39], [x1 - 6, base - 39], [x1, base - 32]], '#3a3a80');
         g.fillStyle = stone; g.fillRect(x0, base - 32, x1 - x0, 32);
+        depthFace(g, x0, base - 32, x1 - x0, base, 5, '#53465f', '#b3a5ab');
         g.fillStyle = 'rgba(255,236,200,0.5)'; g.fillRect(x0, base - 32, x1 - x0, 1); g.fillRect(x0, base - 17, x1 - x0, 0.8);
         for (let x = x0 + 3; x < x1 - 3; x += 6) {
           g.fillStyle = 'rgba(30,16,70,0.35)'; g.fillRect(x + 4.4, base - 32, 0.8, 32);
@@ -83,11 +87,13 @@
         const vx = x1 - 26;
         if (vx > x0 + 40) {
           g.fillStyle = stone; g.fillRect(vx, base - 70, 18, 70);
+          depthFace(g, vx, base - 70, 18, base, 4, '#58465f', '#c4b1b1');
           g.fillStyle = 'rgba(20,10,60,0.25)'; g.fillRect(vx + 12, base - 70, 6, 70);
           for (let y = base - 64; y < base - 34; y += 10) { gothWin(g, vx + 4, y, 2.4, 7, P.win[0]); gothWin(g, vx + 10, y, 2.4, 7, 'rgba(20,10,60,0.6)'); }
           [vx, vx + 18].forEach(function (x) { g.fillStyle = '#c8b4b0'; g.fillRect(x - 1, base - 78, 2.4, 8); poly(g, [[x - 1.4, base - 78], [x + 0.2, base - 84], [x + 1.8, base - 78]], '#3a3a80'); });
           g.fillStyle = '#ffd23f'; g.fillRect(vx + 8.6, base - 86, 0.8, 16); g.fillRect(vx + 6, base - 85, 6, 2.6);
         }
+        depthGround(g, x0, base, x1 - x0, 3, '#393047', '#aa9499');
       }
 
     function towerBridge(g, x0, x1, base, P) {
@@ -97,6 +103,8 @@
         // river piers
         tw.forEach(function (tx) {
           poly(g, [[tx - 16, deck + 4], [tx + 16, deck + 4], [tx + 18, base], [tx - 18, base]], '#3a2e78');
+          poly(g, [[tx + 9, deck + 4], [tx + 16, deck + 4], [tx + 18, base], [tx + 11, base]], '#302844');
+          depthGround(g, tx - 18, base, 36, 3, '#29263f', '#a69ba8');
           g.fillStyle = 'rgba(160,200,255,0.4)'; g.fillRect(tx - 18, base - 3, 36, 1);
         });
         // side-span suspension chains (blue with white edge) and hangers
@@ -130,6 +138,7 @@
         // gothic towers
         tw.forEach(function (tx) {
           g.fillStyle = stone; g.fillRect(tx - 13, base - 86, 26, deck - (base - 86));
+          depthFace(g, tx - 13, base - 86, 26, deck + 4, 5, '#675974', '#d2c2b9');
           g.fillStyle = 'rgba(20,10,60,0.28)'; g.fillRect(tx + 6, base - 86, 7, deck - (base - 86));
           g.fillStyle = 'rgba(255,240,220,0.55)'; [base - 86, base - 66, base - 48].forEach(function (y) { g.fillRect(tx - 13.5, y, 27, 1); });
           gothWin(g, tx - 7, deck - 15, 14, 15, '#14082e');
@@ -150,6 +159,8 @@
           g.fillStyle = '#ffd23f'; g.fillRect(tx - 0.3, base - 115, 0.6, 3);
           rim(g, tx - 13, base - 86, deck - (base - 86), 'rgba(255,255,255,0.35)');
         });
+        poly(g, [[x0, deck - 3], [x1 - 5, deck - 3], [x1, deck + 1], [x0, deck + 1]], '#8b94aa');
+        line(g, x0, deck + 3, x1, deck + 3, 1.2, '#4d536e');
       }
 
     function londonEye(g, cx, base, s, P) {
@@ -183,15 +194,18 @@
         g.fillStyle = '#3a2e78'; g.fillRect(cx - 26 * s, base - 4 * s, 52 * s, 4 * s);
         g.fillStyle = '#e8ecff'; g.fillRect(cx - 26 * s, base - 4 * s, 52 * s, 0.8);
         for (let k = 0; k < 6; k++) lit(g, cx - 22 * s + k * 9 * s, base - 2.8 * s, 2 * s, 1.4 * s, P.win[k % P.win.length]);
+        depthGround(g, cx - 26 * s, base, 52 * s, 2 * s, '#343149', '#9c9eb4');
       }
 
     function shard(g, cx, base, s, P) {
         const f = lg(g, cx - 12 * s, 0, cx + 12 * s, 0, [[0, '#5a4ad8'], [0.45, '#b8a0ff'], [1, '#34187a']]);
         poly(g, [[cx - 12 * s, base], [cx - 5 * s, base - 100 * s], [cx - 1 * s, base - 140 * s], [cx + 1 * s, base - 140 * s], [cx + 6 * s, base - 100 * s], [cx + 12 * s, base]], f);
+        poly(g, [[cx + 1 * s, base - 140 * s], [cx + 6 * s, base - 100 * s], [cx + 12 * s, base], [cx + 3 * s, base]], '#34374f');
         g.strokeStyle = 'rgba(255,255,255,0.45)'; g.lineWidth = 0.6;
         for (let k = 1; k < 9; k++) { const y = base - k * 14 * s, w = (12 - k * 1.2) * s; g.beginPath(); g.moveTo(cx - w, y); g.lineTo(cx + w, y); g.stroke(); }
         g.beginPath(); g.moveTo(cx, base); g.lineTo(cx, base - 140 * s); g.stroke();
         lit(g, cx - 1, base - 143 * s, 2, 2.4, '#ff2a4a');
+        depthGround(g, cx - 12 * s, base, 24 * s, 2 * s, '#29283c', '#9792aa');
       }
   };
 
@@ -202,7 +216,7 @@
   };
 
   AH.ArtModules.stages['worlds.london.scenery.122'] = function (C) {
-    const { SC, ell, lg, line, lit, poly } = C;
+    const { SC, depthFace, depthGround, ell, lg, line, lit, poly } = C;
 
     Object.assign(SC.uksouth, {
         sc_uk_stonehenge: [210, 155, function (g, w, h, P) {
@@ -211,6 +225,7 @@
           stones.forEach(function (s, i) {
             const x = s[0], top = h - s[1], sw = s[2];
             poly(g, [[x, top + 8], [x + 4, top], [x + sw - 3, top + 2], [x + sw, h - 26], [x + 2, h - 26]], lg(g, x, top, x + sw, h, [[0, '#c8b7a3'], [0.48, '#766b83'], [1, '#3a3b59']]));
+            poly(g, [[x + sw - 7, top + 3], [x + sw - 3, top + 2], [x + sw, h - 26], [x + sw - 5, h - 26]], '#575365');
             line(g, x + 4, top + 4, x + sw - 4, top + 5, 1.2, i % 2 ? P.accent : '#e5cda9');
           });
           [[51, h - 96, 58], [97, h - 102, 62], [142, h - 89, 61]].forEach(function (b, i) {
@@ -218,12 +233,16 @@
             line(g, b[0] + 4, b[1] + 2, b[0] + b[2] - 5, b[1] + 3, 1.5, P.accent);
           });
           ell(g, 104, h - 23, 64, 5, 'rgba(255,215,145,0.22)');
+          poly(g, [[72, h], [110, h - 28], [124, h - 28], [126, h]], '#7c7966');
+          depthGround(g, 0, h, w, 4, '#293a38', '#647455');
         }],
         sc_uk_edinburgh: [230, 205, function (g, w, h, P) {
           poly(g, [[8, h - 23], [29, h - 66], [56, h - 82], [77, h - 119], [109, h - 141], [145, h - 151], [181, h - 119], [211, h - 49], [226, h - 23]], lg(g, 0, h - 151, 0, h, [[0, '#88749a'], [0.5, '#544568'], [1, '#252441']]));
           const base = h - 48;
           g.fillStyle = lg(g, 34, base - 83, 177, h, [[0, '#c3a9a7'], [0.45, '#805b77'], [1, '#322b54']]);
           g.fillRect(40, base - 39, 139, 39); g.fillRect(54, base - 76, 115, 38);
+          depthFace(g, 40, base - 39, 139, base, 8, '#51394e', '#a58a96');
+          depthFace(g, 54, base - 76, 115, base - 38, 6, '#593e56', '#af939a');
           poly(g, [[42, base - 76], [95, base - 99], [151, base - 76]], '#a88493');
           g.fillStyle = '#4a3a60'; g.fillRect(67, base - 127, 42, 53);
           poly(g, [[63, base - 127], [88, base - 158], [113, base - 127]], '#c7a8a0');
@@ -231,6 +250,8 @@
           for (let x = 49; x < 172; x += 15) { lit(g, x, base - 29, 5, 9, P.win[(x / 15 | 0) % 3]); lit(g, x + 2, base - 65, 4, 8, P.win[(x / 15 + 1 | 0) % 3]); }
           for (let x = 46; x < 178; x += 26) { line(g, x, base - 3, x, base - 22, 1.3, P.accent); }
           line(g, 24, h - 21, 221, h - 21, 3, P.accent);
+          poly(g, [[54, base], [160, base], [181, h - 22], [28, h - 22]], '#5b4b60');
+          depthGround(g, 24, h, 197, 22, '#302d43', '#6e5d70');
         }],
         sc_uk_angel: [250, 185, function (g, w, h, P) {
           const cx = 124, foot = h - 16;
@@ -244,11 +265,14 @@
           line(g, cx - 10, foot - 89, cx + 9, foot - 89, 2, P.accent);
           line(g, 16, foot - 17, 235, foot - 17, 2, '#a9bd84');
           line(g, 20, foot - 10, 230, foot - 10, 1, P.accent);
+          poly(g, [[93, foot - 8], [155, foot - 8], [166, h], [82, h]], '#4e4b54');
+          depthGround(g, 82, h, 84, 5, '#30353f', '#8f8b7a');
         }],
         sc_uk_liver: [190, 215, function (g, w, h, P) {
           const base = h - 15;
           g.fillStyle = lg(g, 0, base - 125, 0, h, [[0, '#c7b1a2'], [0.55, '#735878'], [1, '#2c294e']]);
           g.fillRect(18, base - 110, 154, 110);
+          depthFace(g, 18, base - 110, 154, base, 9, '#4c3b55', '#a58c98');
           g.fillRect(30, base - 135, 32, 25); g.fillRect(128, base - 135, 32, 25);
           [46, 144].forEach(function (x, i) {
             g.fillStyle = '#554269'; g.fillRect(x - 12, base - 165, 24, 32);
@@ -267,6 +291,7 @@
           });
           for (let x = 25; x < 166; x += 12) for (let y = base - 100; y < base - 25; y += 19) lit(g, x, y, 4, 7, P.win[(x / 12 + y / 19 | 0) % 3]);
           line(g, 13, base - 4, 179, base - 4, 2, P.accent);
+          depthGround(g, 13, h, 166, 15, '#2b2b40', '#8b7d8c');
         }],
         sc_uk_blackpool: [130, 225, function (g, w, h, P) {
           const cx = 65, base = h - 13;
@@ -286,6 +311,8 @@
             line(g, cx - half, y, cx + half, y, 1.3, P.accent);
           }
           line(g, 26, base - 9, 105, base - 9, 2, '#efb894');
+          poly(g, [[34, base - 9], [96, base - 9], [106, h], [24, h]], '#62556b');
+          depthGround(g, 24, h, 82, 5, '#302b40', '#9b7e8d');
         }],
         sc_uk_glenfinnan: [270, 165, function (g, w, h, P) {
           const viaductTop = h - 71;
@@ -293,8 +320,10 @@
           // Long stone viaduct with repeated rounded arches.
           g.fillStyle = lg(g, 0, viaductTop, 0, h, [[0, '#b39b9f'], [0.5, '#735c79'], [1, '#34314f']]);
           g.fillRect(12, viaductTop, 246, 12);
+          poly(g, [[12, viaductTop], [249, viaductTop - 5], [258, viaductTop], [12, viaductTop + 3]], '#b6a4a1');
           for (let x = 23; x < 250; x += 38) {
             g.fillRect(x, viaductTop + 9, 8, h - viaductTop - 9);
+            poly(g, [[x + 5, viaductTop + 12], [x + 8, viaductTop + 9], [x + 8, h], [x + 5, h]], '#4e4256');
             g.beginPath(); g.ellipse(x + 4, viaductTop + 26, 15, 18, 0, Math.PI, 0); g.fill();
             g.fillRect(x - 11, viaductTop + 26, 30, h - viaductTop - 26);
             g.fillStyle = '#27304a'; g.beginPath(); g.ellipse(x + 4, viaductTop + 27, 11, 14, 0, Math.PI, 0); g.fill();
@@ -310,6 +339,7 @@
           for (let x = 87; x < 230; x += 14) lit(g, x, viaductTop - 20, 5, 4, P.win[(x / 14 | 0) % 3]);
           for (let x = 90; x < 224; x += 20) ell(g, x, viaductTop - 8, 5, 5, '#171a37');
           g.fillStyle = '#42456c'; g.fillRect(92, viaductTop - 35, 18, 4); ell(g, 101, viaductTop - 41, 5, 7, 'rgba(220,210,220,0.55)');
+          depthGround(g, 12, h, 246, 3, '#293344', '#63706f');
         }]
       });
   };
@@ -341,7 +371,7 @@
   };
 
   content.parts['SC_uksouth'] = function (C) {
-    const { bigBen, lg, lit, londonEye, parliament, poly, shard, silFill, towerBridge } = C;
+    const { bigBen, depthFace, depthGround, lg, line, lit, londonEye, parliament, poly, shard, silFill, towerBridge } = C;
 
     return {
           sc_uk_bigben: [190, 272, function (g, w, h, P) { parliament(g, 30, 190, h, P); bigBen(g, 28, h, 1.28, P); }],
@@ -349,12 +379,15 @@
           sc_uk_stpauls: [170, 170, function (g, w, h, P) {
             const f = silFill(g, h - 160, h, '#c8c0f0', '#5a4aa8');
             g.fillStyle = f; g.fillRect(10, h - 60, 150, 60); g.fillRect(55, h - 90, 60, 30);
+            depthFace(g, 10, h - 60, 150, h, 8, '#71617e', '#dbd0ce');
+            depthFace(g, 55, h - 90, 60, h - 60, 5, '#8a7892', '#ddd4cf');
             g.beginPath(); g.ellipse(85, h - 90, 32, 40, 0, Math.PI, 0); g.fill();
             g.fillRect(80, h - 140, 10, 14); poly(g, [[78, h - 140], [85, h - 152], [92, h - 140]], f);
             lit(g, 84, h - 156, 2, 3, '#ffd23f');
             [20, 150].forEach(function (x) { g.fillStyle = f; g.fillRect(x - 8, h - 100, 16, 40); poly(g, [[x - 8, h - 100], [x, h - 118], [x + 8, h - 100]], f); });
             for (let x = 16; x < 156; x += 8) { g.fillStyle = 'rgba(60,40,140,0.6)'; g.fillRect(x, h - 56, 1.6, 50); }
             for (let k = -4; k <= 4; k++) { g.fillStyle = 'rgba(60,40,140,0.5)'; g.fillRect(85 + k * 6, h - 88, 1, 26); }
+            depthGround(g, 10, h, 150, 5, '#51435b', '#c3b5b7');
           }],
           sc_uk_gherkin: [80, 200, function (g, w, h, P) {
             g.beginPath(); g.moveTo(22, h); g.bezierCurveTo(4, h - 110, 20, h - 180, 40, h - 196); g.bezierCurveTo(60, h - 180, 76, h - 110, 58, h); g.closePath();
@@ -362,15 +395,24 @@
             g.save(); g.clip(); g.strokeStyle = 'rgba(10,30,60,0.6)'; g.lineWidth = 1.2;
             for (let k = -12; k < 12; k++) { g.beginPath(); g.moveTo(k * 12, h); g.lineTo(k * 12 + 80, h - 200); g.stroke(); }
             g.restore();
+            depthGround(g, 20, h, 40, 4, '#303342', '#8c9ca2');
           }],
           sc_uk_terrace: [180, 110, function (g, w, h, P) {
             for (let x = 0; x < w; x += 30) {
               const hh = 70 + ((x * 7) % 30);
               g.fillStyle = silFill(g, h - hh, h, x % 60 ? '#5a3a8a' : '#4a3a7a', P.bot); g.fillRect(x, h - hh, 30, hh);
+              depthFace(g, x, h - hh, 30, h, 4, '#403044', '#9c8293');
+              poly(g, [[x, h - hh], [x + 4, h - hh - 4], [x + 25, h - hh - 4], [x + 30, h - hh]], '#706779');
+              for (let by = h - hh + 5; by < h - 12; by += 5) {
+                line(g, x + 1, by, x + 25, by, 0.35, '#a27986');
+                for (let bx = x + 3 + (by % 2) * 3; bx < x + 25; bx += 8) line(g, bx, by, bx, by + 4, 0.3, '#947381');
+              }
               g.fillStyle = '#2a1a4a'; g.fillRect(x + 4, h - hh - 8, 6, 8); g.fillRect(x + 20, h - hh - 8, 6, 8);
               for (let y = h - hh + 8; y < h - 12; y += 14) for (let k = 0; k < 3; k++) lit(g, x + 4 + k * 9, y, 4, 8, P.win[(x + y + k) % 3]);
               g.fillStyle = ['#ff2a4a', '#2a8a5a', '#2a4ab8'][(x / 30) % 3]; g.fillRect(x + 12, h - 12, 6, 12);
+              poly(g, [[x + 10, h - 3], [x + 18, h - 3], [x + 22, h], [x + 8, h]], '#ad949e');
             }
+            depthGround(g, 0, h, w, 2, '#30283c', '#aa949c');
           }],
           sc_uk_tbridge: [240, 120, function (g, w, h, P) { towerBridge(g, 0, 240, h, P); }],
           sc_uk_shard: [60, 210, function (g, w, h, P) { shard(g, 30, h, 1.45, P); }]
@@ -378,12 +420,14 @@
   };
 
   content.parts['SC_EXTRA_uksouth'] = function (C) {
-    const { ell, lit, poly, silFill, txt } = C;
+    const { depthFace, depthGround, ell, lit, poly, silFill, txt } = C;
 
     return {
           sc_uk_buckingham: [240, 110, function (g, w, h, P) {
             const f = silFill(g, h - 80, h, '#d8d0f0', '#6a5ab0');
             g.fillStyle = f; g.fillRect(6, h - 56, 228, 56); g.fillRect(90, h - 66, 60, 66);
+            depthFace(g, 6, h - 56, 228, h, 8, '#807287', '#ddd1d1');
+            depthFace(g, 90, h - 66, 60, h, 6, '#8f7e94', '#e6d9d3');
             poly(g, [[86, h - 66], [120, h - 78], [154, h - 66]], f);
             for (let x = 94; x < 148; x += 7) { g.fillStyle = '#ffffff'; g.fillRect(x, h - 62, 2.4, 40); }
             for (let y = h - 50; y < h - 8; y += 14) for (let x = 12; x < 228; x += 10) { if (x > 88 && x < 152) continue; lit(g, x, y, 5, 9, P.win[(x + y) % 3]); }
@@ -391,15 +435,18 @@
             [24, 216].forEach(function (x) { g.fillStyle = '#c8102e'; g.fillRect(x - 5, h - 18, 10, 18); poly(g, [[x - 6, h - 18], [x, h - 24], [x + 6, h - 18]], '#14082a'); g.fillStyle = '#14082a'; g.fillRect(x - 2, h - 15, 4, 6); });
             g.fillStyle = '#ffd23f'; g.fillRect(118, h - 14, 4, 14); ell(g, 120, h - 18, 3, 4, '#ffd23f');
             g.fillStyle = '#14082a'; for (let x = 0; x < w; x += 4) g.fillRect(x, h - 8, 0.8, 8); g.fillRect(0, h - 8, w, 0.8);
+            depthGround(g, 0, h, w, 3, '#3f354a', '#b7a8b0');
           }],
           sc_uk_towerldn: [170, 140, function (g, w, h, P) {
             const f = silFill(g, h - 120, h, '#e0d8f8', '#6a5ab0');
             g.fillStyle = '#6a5a9a'; g.fillRect(0, h - 40, 170, 40); for (let x = 0; x < 170; x += 8) g.fillRect(x, h - 44, 5, 4);
             g.fillStyle = f; g.fillRect(40, h - 100, 90, 100);
+            depthFace(g, 40, h - 100, 90, h, 8, '#796986', '#cfc4d0');
             [[40, 1], [130, 0], [40, 0], [130, 1]].slice(0, 4).forEach(function (t, i) { const tx = i < 2 ? (i === 0 ? 44 : 126) : (i === 2 ? 70 : 100); g.fillStyle = f; g.fillRect(tx - 7, h - 122, 14, 22); if (i === 0 || i === 1) { g.beginPath(); g.ellipse(tx, h - 122, 7, 8, 0, Math.PI, 0); g.fill(); g.fillStyle = '#ffd23f'; g.fillRect(tx - 0.5, h - 134, 1, 5); } else { for (let k = -6; k < 7; k += 4) g.fillRect(tx + k, h - 126, 2.6, 4); } });
             for (let x = 46; x < 128; x += 6) g.fillRect(x, h - 104, 3.6, 4);
             for (let y = h - 90; y < h - 20; y += 18) for (let x = 52; x < 122; x += 14) { g.fillStyle = '#1a0a2a'; g.beginPath(); g.ellipse(x + 2.5, y, 2.5, 3, 0, Math.PI, 0); g.fill(); lit(g, x, y, 5, 9, P.win[(x + y) % 3]); }
             txt(g, 'TOWER OF LONDON', 40, h - 12, 1, '#ffe14a', '#1a0a3a');
+            depthGround(g, 0, h, w, 3, '#45374f', '#a995ac');
           }]
         };
   };

@@ -111,7 +111,6 @@
 
     reg2('bg_near_' + RD_REGION, 640, 190, function (g, w, h) {
         const r = rng(337);
-        g.fillStyle = '#101d34'; g.fillRect(0, 0, w, h);
         g.fillStyle = '#142939'; g.beginPath(); g.moveTo(0, h - 38);
         for (let x = 0; x <= w; x += 48) g.quadraticCurveTo(x + 24, h - 56 - r() * 18, x + 48, h - 34 - r() * 8);
         g.lineTo(w, h); g.lineTo(0, h); g.closePath(); g.fill();
@@ -163,6 +162,8 @@
         g.fillStyle = lg(g, 0, 0, 0, 8, [[0, '#b7e879'], [0.28, '#60b95a'], [1, '#2e7045']]); g.fillRect(0, 0, 32, 8);
         for (let x = 0; x < 32; x += 2) { g.fillStyle = x % 4 ? 'rgba(235,255,183,0.7)' : 'rgba(31,111,59,0.75)'; g.fillRect(x, 0, 0.7, 1.2 + (x % 3) * 0.6); }
         g.fillStyle = '#254c43'; g.fillRect(0, 7, 32, 1);
+        poly(g, [[0, 0], [27, 0], [32, 4], [5, 4]], 'rgba(182,214,131,0.25)');
+        for (const x of [7, 20]) line(g, x, 1, x + 4, 3.5, 0.6, '#539354');
       }, FLAT);
 
     reg2('rd', 32, 32, function (g) {

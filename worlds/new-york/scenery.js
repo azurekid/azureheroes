@@ -11,7 +11,21 @@
   AH.ArtModules.stages['worlds.new-york.scenery.19'] = function (C) {
     const { ell, glowRect, lg, line, lit, poly } = C;
 
-    Object.assign(C, { nyLiberty, nyEmpire, nyChrysler, nyBridge });
+    Object.assign(C, { nyLiberty, nyEmpire, nyChrysler, nyBridge, nyFireEscape });
+    function nyFireEscape(g, x, top, base, width, floor) {
+        for (let y = top; y + floor < base; y += floor) {
+          g.fillStyle = '#242b3b'; g.fillRect(x, y, width, 2.5);
+          line(g, x, y - 6, x + width, y - 6, 1, '#b39b89');
+          for (let rail = x; rail <= x + width; rail += 4) line(g, rail, y - 6, rail, y, 0.8, '#323644');
+          const left = x + 2, right = x + width - 2;
+          line(g, right, y + 3, left, y + floor, 2, '#202938');
+          line(g, right, y - 2, left, y + floor - 5, 0.8, '#b39b89');
+          for (let rung = 0; rung <= 6; rung++) {
+            const t = rung / 6, rx = right + (left - right) * t, ry = y + 3 + (floor - 3) * t;
+            line(g, rx - 2, ry, rx + 2, ry, 0.9, '#98908a');
+          }
+        }
+      }
     function nyLiberty(g, x, base, s, P) {
         g.save(); g.translate(x, base); g.scale(s, s);
         g.fillStyle = '#294f67'; g.fillRect(-15, -12, 30, 12); g.fillRect(-12, -20, 24, 8);
@@ -80,17 +94,33 @@
   };
 
   AH.ArtModules.stages['worlds.new-york.scenery.26'] = function (C) {
-    const { FLAT, PAL, lit, reg2, skyline } = C;
+    const { FLAT, PAL, ell, line, lit, nyFireEscape, reg2, skyline } = C;
 
     reg2('bg_near_eastus2', 640, 190, function (g, w, h) {
         const P = PAL.eastus2;
         skyline(w, h, 211, '#172344', P.accent, 36, 105, 0.3, P.win)(g);
         for (let tile = 0; tile < w; tile += 160) {
-          g.fillStyle = 'rgba(12,25,48,0.88)'; g.fillRect(tile, h - 37, 160, 37);
-          g.fillStyle = '#496078'; g.fillRect(tile, h - 39, 160, 2);
-          for (let x = tile + 5; x < tile + 156; x += 16) {
-            g.fillStyle = '#233650'; g.fillRect(x, h - 31, 11, 24);
-            lit(g, x + 1.4, h - 29, 7.5, 18, P.win[(x / 16 | 0) % 3]);
+          if (tile === 320) {
+            g.fillStyle = '#284e49'; g.fillRect(tile, h - 26, 160, 26);
+            ell(g, tile + 80, h - 13, 61, 10, '#456b73');
+            for (let x = tile + 9; x < tile + 160; x += 23) {
+              g.fillStyle = '#34394a'; g.fillRect(x, h - 51, 3, 32);
+              ell(g, x + 1, h - 52, 13, 22, '#355e51');
+            }
+            line(g, tile + 48, h - 15, tile + 110, h - 15, 2, '#aca28d');
+            continue;
+          }
+          for (let house = 0; house < 4; house++) {
+            const x = tile + house * 40, top = h - 72 - (house % 2) * 13;
+            g.fillStyle = ['#634755', '#785354', '#594354', '#70505b'][house];
+            g.fillRect(x, top, 38, h - top);
+            g.fillStyle = '#b28a79'; g.fillRect(x, top, 38, 3); g.fillRect(x + 2, top - 4, 34, 4);
+            for (let y = top + 10; y < h - 16; y += 16) for (let wx = x + 6; wx < x + 34; wx += 13) {
+              g.fillStyle = '#202d43'; g.fillRect(wx, y, 7, 10);
+              lit(g, wx + 1, y + 1, 5, 7, P.win[house % 3]);
+              line(g, wx - 1, y + 10, wx + 8, y + 10, 0.8, '#af8975');
+            }
+            nyFireEscape(g, x + 16, top + 25, h - 8, 17, 16);
           }
           g.fillStyle = '#d7bd93'; g.fillRect(tile + 6, h - 5, 148, 1);
         }
@@ -98,16 +128,20 @@
   };
 
   AH.ArtModules.stages['worlds.new-york.scenery.82'] = function (C) {
-    const { MP, SC, ell, lamp, lg, line, lit, msLogo, nyBridge, nyChrysler, nyEmpire, nyLiberty, poly, silFill, tree, txt } = C;
+    const { MP, SC, ell, lamp, lg, line, lit, msLogo, nyBridge, nyChrysler, nyEmpire, nyFireEscape, nyLiberty, poly, rrect, silFill, tree, txt } = C;
+
+    // New York depth: sooty stone returns, warm cornice caps and granite kerbs/decks.
+    const nyReturn = (g, x, top, width, base, depth, roof) => C.depthFace(g, x, top, width, base, depth, 'rgba(14,20,44,0.48)', roof === false ? 'rgba(0,0,0,0)' : 'rgba(255,214,160,0.36)');
+    const nyKerb = (g, x, base, width, depth) => C.depthGround(g, x, base, width, depth, '#1d2338', 'rgba(200,190,170,0.45)');
 
     MP.eastus2 = { top: '#243c69', bot: '#6b476f', accent: '#ffb36b', win: ['#ffe9a0', '#98d9ff', '#ff9e86'] };
 
     Object.assign(SC, {
         eastus2: {
-          sc_ny_liberty: [150, 178, function (g, w, h, P) { nyLiberty(g, 75, h - 4, 1.7, P); }],
-          sc_ny_empire: [100, 194, function (g, w, h, P) { nyEmpire(g, 50, h - 4, 1.18, P); }],
-          sc_ny_chrysler: [80, 188, function (g, w, h, P) { nyChrysler(g, 40, h - 4, 1.1, P); }],
-          sc_ny_brooklynbridge: [300, 126, function (g, w, h, P) { nyBridge(g, 8, h - 4, 1.02, P); }],
+          sc_ny_liberty: [150, 178, function (g, w, h, P) { nyKerb(g, 35, h, 80, 4); nyLiberty(g, 75, h - 4, 1.7, P); nyReturn(g, 49.5, h - 24.4, 51, h - 4, 6); nyReturn(g, 54.6, h - 38, 40.8, h - 24.4, 4); }],
+          sc_ny_empire: [100, 194, function (g, w, h, P) { nyKerb(g, 14, h, 72, 4); nyEmpire(g, 50, h - 4, 1.18, P); nyReturn(g, 20.5, h - 124.4, 59, h - 12.3, 8); nyReturn(g, 25.2, h - 139.7, 49.6, h - 124.4, 4); nyReturn(g, 31.1, h - 149.2, 37.8, h - 139.7, 3); }],
+          sc_ny_chrysler: [80, 188, function (g, w, h, P) { nyKerb(g, 10, h, 60, 4); nyChrysler(g, 40, h - 4, 1.1, P); nyReturn(g, 19.1, h - 98.6, 41.8, h - 9.5, 6); nyReturn(g, 22.4, h - 109.6, 35.2, h - 98.6, 3); }],
+          sc_ny_brooklynbridge: [300, 126, function (g, w, h, P) { nyBridge(g, 8, h - 4, 1.02, P); [39, 218].forEach((tx) => nyReturn(g, 8 + (tx - 6) * 1.02, h - 99.9, 12.24, h - 29.5, 4, false)); }],
           sc_ny_times: [300, 330, function (g, w, h, P) {
             g.save();
             g.translate(0, h - 235);
@@ -206,7 +240,14 @@
               const brick = ['#794c54', '#995c55', '#69455a'][i];
               g.fillStyle = silFill(g, top, base, brick, '#322c4b'); g.fillRect(x, top, width, tall);
               g.fillStyle = '#c99b77'; g.fillRect(x - 2, top, width + 4, 4); g.fillRect(x + 3, top + 23, width - 6, 2);
-              poly(g, [[x - 3, top], [x + width / 2, top - 8], [x + width + 3, top]], '#44314b');
+              poly(g, [[x + width - 9, top + 4], [x + width, top + 9], [x + width, base], [x + width - 9, base]], '#44314b');
+              g.fillStyle = '#453345'; g.fillRect(x + 3, top - 5, width - 6, 5);
+              for (let corbel = x + 4; corbel < x + width - 3; corbel += 7) {
+                g.fillStyle = '#d0a382'; g.fillRect(corbel, top + 4, 3, 4);
+              }
+              for (let y = top + 8; y < base - 3; y += 6) {
+                line(g, x + 2, y, x + width - 10, y, 0.4, 'rgba(218,160,125,0.26)');
+              }
               for (let y = top + 11; y < base - 32; y += 22) {
                 for (let wx = x + 9; wx < x + width - 7; wx += 24) {
                   g.fillStyle = '#302b43'; g.fillRect(wx, y, 13, 14); g.fillStyle = '#a8c9cb'; g.fillRect(wx + 1, y + 1, 11, 10);
@@ -217,13 +258,9 @@
               g.fillStyle = '#342640'; g.fillRect(x + width / 2 - 9, base - 31, 18, 31);
               g.fillStyle = '#b98161'; g.fillRect(x + width / 2 - 12, base - 32, 24, 3);
               for (let step = 0; step < 4; step++) { g.fillStyle = step % 2 ? '#a9795f' : '#c08b68'; g.fillRect(x + width / 2 - 16 + step * 2, base - 6 + step * 1.4, 32 - step * 4, 2); }
-              for (let y = top + 12; y < base - 37; y += 18) {
-                const fx = x + width - 12;
-                line(g, fx, y, fx + 9, y, 1, '#302941'); line(g, fx + 9, y, fx + 9, y + 5, 0.9, '#302941');
-                line(g, fx + 9, y + 5, fx - 2, y + 5, 0.9, '#302941');
-                line(g, fx - 2, y + 5, fx - 2, y + 11, 0.9, '#302941');
-                line(g, fx - 3, y + 10, fx + 10, y + 10, 0.7, '#c2a282');
-              }
+              nyFireEscape(g, x + width - 33, top + 27, base - 20, 26, 22);
+              line(g, x + width / 2 - 18, base - 16, x + width / 2 - 12, base - 3, 1.2, '#272b38');
+              line(g, x + width / 2 + 18, base - 16, x + width / 2 + 12, base - 3, 1.2, '#272b38');
             }
             g.fillStyle = '#24283f'; g.fillRect(0, base - 2, w, 2);
             [27, 119, 207].forEach((x) => lamp(g, x, base - 1, 33, '#ffd17c'));
@@ -249,18 +286,38 @@
             txt(g, '42 ST', 104, base - 124, 0.75, '#bf3344');
             for (let x = 5; x < 196; x += 16) { g.fillStyle = '#252b42'; g.fillRect(x, base - 7, 12, 7); }
             g.fillStyle = '#d5c8ae'; g.fillRect(0, base - 3, w, 3);
+            nyReturn(g, 2, base - 87, 196, base - 77, 3); nyReturn(g, 157, base - 78, 4, base - 6, 2, false); nyKerb(g, 0, h, w, 3);
           }],
           sc_ny_centralpark: [250, 164, function (g, w, h, P) {
             const base = h - 3;
+            [[74, 25, 16], [98, 9, 18], [124, 32, 13], [147, 18, 19], [172, 37, 15]].forEach(([x, top, width]) => {
+              g.fillStyle = '#3e5365'; g.fillRect(x, top, width, base - 35 - top);
+              for (let y = top + 6; y < base - 40; y += 10) for (let wx = x + 3; wx < x + width - 3; wx += 6) {
+                lit(g, wx, y, 2, 4, '#a4b9b3');
+              }
+            });
             g.fillStyle = '#263d4e'; g.fillRect(0, base - 20, w, 20);
             g.fillStyle = '#6e7667'; g.beginPath(); g.moveTo(0, base - 21); g.quadraticCurveTo(118, base - 69, 250, base - 23); g.lineTo(250, base); g.lineTo(0, base); g.closePath(); g.fill();
             g.fillStyle = '#a29a7a'; g.beginPath(); g.moveTo(74, base); g.quadraticCurveTo(125, base - 50, 177, base - 3); g.lineTo(167, base); g.closePath(); g.fill();
             [[25, 117, '#35624a'], [64, 112, '#3e7251'], [192, 126, '#346148'], [228, 107, '#3f704c']].forEach((t) => tree(g, t[0], base - 15, t[1], t[2]));
+            ell(g, 132, base - 28, 63, 16, lg(g, 0, base - 44, 0, base - 12, [[0, '#648f8d'], [1, '#304d6a']]));
+            for (let y = base - 35; y < base - 17; y += 5) line(g, 97, y, 164, y, 0.6, '#8aaca3');
+            // Bow Bridge's pale arch and open railing separate the park from a generic grove.
+            g.beginPath(); g.moveTo(77, base - 29); g.quadraticCurveTo(132, base - 60, 184, base - 29);
+            g.strokeStyle = '#dbcfb2'; g.lineWidth = 5; g.stroke();
+            g.beginPath(); g.moveTo(77, base - 38); g.quadraticCurveTo(132, base - 69, 184, base - 38);
+            g.strokeStyle = '#dbcfb2'; g.lineWidth = 1.3; g.stroke();
+            for (let x = 81; x < 184; x += 7) {
+              const t = (x - 77) / 107, y = base - 29 - 62 * t * (1 - t);
+              line(g, x, y, x, y - 9, 0.9, '#dbcfb2');
+            }
             for (let x = 7; x < 68; x += 14) { line(g, x, base - 27, x, base - 44, 0.8, '#c5c6b3'); ell(g, x, base - 44, 1.8, 2, '#ffe09c'); }
             line(g, 95, base - 20, 95, base - 35, 1.2, '#31384a'); line(g, 95, base - 34, 123, base - 34, 1.2, '#31384a');
             line(g, 95, base - 27, 123, base - 27, 1.2, '#31384a'); [98, 120].forEach((x) => line(g, x, base - 27, x, base - 19, 1, '#31384a'));
             g.fillStyle = '#d1be92'; g.fillRect(5, base - 17, 240, 2);
-            txt(g, 'CENTRAL PARK', 81, base - 11, 0.76, '#e8e4c4');
+            rrect(g, 4, base - 84, 94, 15, 2, '#1e4c44');
+            txt(g, 'CENTRAL PARK', 10, base - 79, 0.9, '#e8e4c4');
+            nyKerb(g, 0, h, w, 3);
           }],
           sc_ny_midtown: [230, 330, function (g, w, h, P) {
             const base = h - 3, buildings = [[2, 61, 262], [68, 65, 291], [140, 86, 276], [192, 38, 310]];
@@ -287,11 +344,14 @@
             for (let y = water + 8; y < base; y += 12) for (let x = 8 + (y % 3) * 7; x < w; x += 45) line(g, x, y, x + 27, y + 1, 0.7, 'rgba(192,225,230,0.46)');
             g.fillStyle = '#433c4d'; g.fillRect(0, base - 82, w, 7); g.fillStyle = '#8c806f'; g.fillRect(0, base - 86, w, 4);
             for (let x = 8; x < w; x += 28) { g.fillStyle = '#473b43'; g.fillRect(x, base - 78, 5, 78); line(g, x, base - 76, x + 3, base - 4, 0.8, '#927259'); }
+            C.depthGround(g, 0, base - 75, w, 7, '#3c3443', 'rgba(184,157,117,0.55)');
+            for (let x = 8; x < w; x += 28) nyReturn(g, x, base - 75, 5, base, 2, false);
             g.fillStyle = '#68574a'; g.fillRect(0, base - 113, w, 27);
             g.fillStyle = '#b89d75'; g.fillRect(0, base - 116, w, 3);
             for (let x = 11; x < w; x += 29) { g.fillStyle = '#292a3b'; g.fillRect(x, base - 108, 16, 14); lit(g, x + 2, base - 106, 12, 10, P.win[(x / 29 | 0) % 3]); }
             [27, 127, 230].forEach((x) => { line(g, x, base - 116, x, base - 140, 1.2, '#5e5147'); ell(g, x, base - 140, 3, 3, '#ffdc8a'); });
             txt(g, 'HUDSON PIER', 83, base - 92, 0.75, '#f7e4c1');
+            nyReturn(g, 0, base - 116, w, base - 86, 6);
           }],
           sc_ny_elevated: [280, 164, function (g, w, h, P) {
             const base = h - 3;
@@ -305,13 +365,82 @@
             for (let x = 27; x < 242; x += 22) { g.fillStyle = '#10203a'; g.fillRect(x, base - 75, 15, 11); lit(g, x + 1, base - 74, 12, 8, '#b8dce2'); }
             g.fillStyle = '#121f34'; g.fillRect(13, base - 57, 14, 5); g.fillRect(244, base - 57, 14, 5);
             txt(g, 'MTA EXPRESS', 92, base - 43, 0.72, '#ffe4ae');
+            nyReturn(g, 20, base - 79, 235, base - 54, 5); for (let x = 20; x + 17 <= w; x += 84) nyReturn(g, x - 11, base - 99, 28, base - 95, 2);
+            nyKerb(g, 0, h, w, 3);
           }]
         }
       });
   };
 
   AH.ArtModules.stages['worlds.new-york.scenery.89'] = function (C) {
-    const { defs, lg, line, lit, reg2, rrect, shade, txt, wheels } = C;
+    const { FLAT, defs, ell, lg, line, lit, poly, reg2, rrect, shade, txt, wheels } = C;
+
+    reg2('secret_eastus2', 54, 18, function (g) {
+        ell(g, 27, 11, 26, 6, '#171e2b');
+        ell(g, 27, 8, 24, 6, '#848b88');
+        ell(g, 27, 8, 20, 4.5, '#39464e');
+        for (let x = 12; x < 44; x += 5) line(g, x, 5, x - 3, 11, 0.8, '#a2aaa0');
+        line(g, 13, 7, 42, 7, 1, '#1b2935');
+        line(g, 10, 10, 39, 10, 1, '#1b2935');
+        g.fillStyle = '#373e48'; g.fillRect(1, 15, 52, 3);
+      }, FLAT);
+    reg2('sewer', 64, 32, function (g) {
+        g.fillStyle = '#3a4445'; g.fillRect(0, 0, 64, 32);
+        for (let y = 0; y < 32; y += 8) for (let x = -16 + (y % 16 ? 16 : 0); x < 64; x += 32) {
+          g.fillStyle = '#68726a'; g.fillRect(x + 1, y + 1, 30, 6);
+          line(g, x + 2, y + 1, x + 29, y + 1, 0.7, '#899080');
+        }
+      }, FLAT);
+    reg2('sewer_top', 64, 8, function (g) {
+        g.fillStyle = '#afb49a'; g.fillRect(0, 0, 64, 3);
+        g.fillStyle = '#555f58'; g.fillRect(0, 3, 64, 5);
+        for (let x = 0; x < 64; x += 16) line(g, x, 0, x, 7, 1, '#303d40');
+      }, FLAT);
+    reg2('sewer_plat', 80, 20, function (g) {
+        g.fillStyle = '#263d46'; g.fillRect(0, 0, 80, 16);
+        g.fillStyle = '#9baba2'; g.fillRect(0, 0, 80, 3);
+        for (let x = 3; x < 80; x += 7) {
+          line(g, x, 4, x, 13, 1.5, '#718b8a');
+          ell(g, x, 17, 1.4, 1.4, '#afab8b');
+        }
+      }, FLAT);
+    reg2('bonus_bg_sewer', 640, 360, function (g, w, h) {
+        g.fillStyle = lg(g, 0, 0, 0, h, [[0, '#101e2b'], [0.6, '#293e42'], [1, '#142f37']]);
+        g.fillRect(0, 0, w, h);
+        for (let y = 12; y < 300; y += 12) for (let x = -24 + (y % 24 ? 24 : 0); x < w; x += 48) {
+          g.fillStyle = y % 24 ? '#394c4c' : '#354548'; g.fillRect(x + 1, y + 1, 46, 10);
+          line(g, x + 2, y + 2, x + 44, y + 2, 0.5, '#52615a');
+        }
+        for (let x = 18; x < w; x += 154) {
+          g.fillStyle = '#172d35'; g.fillRect(x, 164, 112, 137);
+          g.beginPath(); g.arc(x + 56, 164, 56, Math.PI, 0); g.fill();
+          g.beginPath(); g.arc(x + 56, 164, 58, Math.PI, 0);
+          g.strokeStyle = '#778078'; g.lineWidth = 9; g.stroke();
+          line(g, x - 2, 164, x - 2, 299, 8, '#657169');
+          line(g, x + 114, 164, x + 114, 299, 8, '#657169');
+          g.fillStyle = '#0b202c'; g.fillRect(x + 8, 170, 96, 130);
+          for (let rib = 0; rib < 4; rib++) {
+            const inset = rib * 9;
+            line(g, x + 14 + inset, 190 + inset, x + 14 + inset, 295, 1, '#28414a');
+          }
+          rrect(g, x + 50, 116, 12, 19, 3, '#343f44');
+          lit(g, x + 53, 121, 6, 9, '#eac887');
+          ell(g, x + 56, 145, 22, 5, 'rgba(230,194,120,0.08)');
+        }
+        for (const y of [26, 44]) {
+          line(g, 0, y, w, y, 9, '#152a34');
+          line(g, 0, y - 2, w, y - 2, 2, '#718279');
+          for (let x = 14; x < w; x += 80) { g.fillStyle = '#8b8b72'; g.fillRect(x, y - 7, 4, 14); }
+        }
+        g.fillStyle = '#284f4d'; g.fillRect(0, 287, w, 73);
+        for (let y = 292; y < h; y += 11) for (let x = (y % 3) * 11; x < w; x += 43) {
+          line(g, x, y, x + 22, y, 0.7, '#58786a');
+        }
+        poly(g, [[290, 300], [290, 210], [307, 210], [307, 300]], '#172c35');
+        for (let y = 215; y < 298; y += 10) line(g, 291, y, 306, y, 2, '#9ba897');
+        rrect(g, 410, 208, 190, 25, 2, '#193945');
+        txt(g, 'AZURE MONITOR: CHECK THE FLOW', 418, 217, 0.65, '#b8ddd3');
+      }, FLAT);
 
     reg2('amb_train_eastus2', 248, 46, function (g) {
         for (let car = 0; car < 2; car++) {

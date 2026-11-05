@@ -21,7 +21,12 @@ npm test             # gameplay, skills, security boundaries and API tests
 
 Levels are picked on an **Azure world map**. Each pin is an Azure region. Cleared pins get a green tick and are joined by gold flight routes, and a plane flies the latest leg. Select a pin with the arrow keys or a tap, then press Enter or tap it again to deploy.
 
-The game remembers where you left off. **C: Continue** on the title screen or map resumes the level you were playing, also after a game over (the score then restarts at zero so the high score table stays fair). After a cleared level, Continue takes you to the next one with your score and lives.
+The game remembers where you left off. **C: Continue** on the title screen or map resumes the level you were playing, also after a game over (the score then restarts at zero so the high score table stays fair). Clearing a world chooses a **random uncleared world**, without repeats until all eleven are cleared. Continue saves that exact destination with your score and lives. Previously opened worlds remain replayable; existing saves keep their clears and access.
+
+At each level's start a locally dressed guide explains the deployment key, relay,
+two hidden gems and three enemy-carried boss tokens. Press **Enter / Space** or
+tap **BEGIN MISSION** to start; the timer and physics wait. Review these tasks
+with **Pause > MISSION** without resetting your progress.
 
 ![World map](docs/screenshots/world-map.png)
 
@@ -37,14 +42,14 @@ The game remembers where you left off. **C: Continue** on the title screen or ma
 | 6 | `italynorth` | Venice Lagoon Run: Rialto, St Mark's, gondolas, Colosseum, Leaning Tower of Pisa, a Trevi portal | Maximus the Ransomer | Run |
 | 7 | `brazilsouth` | Rio Sugarloaf Pursuit: Christ the Redeemer, Sugarloaf, Brasilia, Iguazu | Capoeira Cryptojacker (hovering) | Flight |
 | 8 | `mexicocentral` | Mexico City Skyway: Teotihuacan, Chichen Itza, Angel of Independence, hot air balloons | El Luchador Zero-Day (hovering) | Flight |
-| 9 | `westus2` | Redmond Campus Lake Run: Microsoft campus, Space Needle, Mt Rainier, an Xbox bonus door | The DDoS Enforcer | Run |
+| 9 | `westus2` | Redmond Campus Lake Run: Microsoft campus, Pike Place Market, Starbucks, Link light rail, Space Needle, Mt Rainier, an Xbox bonus door | The DDoS Enforcer | Run |
 | 10 | `eastus` | Virginia Data Center: Capitol, Washington Monument, hack terminals, Sec Gates | High-Risk CyberGuardian | Data center |
 | 11 | `eastus2` | New York Hudson Run: Statue of Liberty, Empire State, Chrysler Building, Brooklyn Bridge, Times Square, brownstones, hot dog carts, yellow cabs, rats and pigeons | Zero Day Boxer | Run |
 
 New York uses East US 2 as its Azure hosting-region mapping; this does not imply a
 New York datacenter. Its map pin marks the city, with an offset to keep Virginia tappable.
 
-Levels are generated at random each time a level starts, so platforms, lasers, enemies, coins, power-ups and MFA tokens land in new places on every run. Run levels mix gaps, steps up, drops and floating platforms at different heights, and every region has its own coins, enemy skins, scenery props, traffic, birds and sky objects (planes, balloons, blimps, helicopters). Outdoor worlds also get a random time of day, from sunrise to night; Virginia's data center uses indoor lighting.
+Levels are generated at random each time a level starts, so platforms, lasers, enemies, coins, power-ups and MFA tokens land in new places on every run. Run levels mix gaps, steps up, drops and floating platforms at different heights, and every region has its own coins, enemy skins, scenery props, traffic, birds and sky objects (planes, balloons, blimps, helicopters). Outdoor worlds start at a random time of day, then smoothly cycle through night, sunrise, morning, day, afternoon and sunset every four minutes of active outdoor play. Pause/help, warps and underground visits freeze the outdoor clock; Virginia's data center keeps its indoor lighting.
 
 Every region also has cyber-threat enemies: **Phishing hoppers** leap at you, **Ransomware chargers** wind up and dash, and **DDoS botnet clouds** follow you and drop bombs. Street and data-center levels also feature pipeline bugs, vulnerable container images, overprivileged RBAC robots, exposed-endpoint turrets, stale guest-account crawlers and **Rogue Hackers** who fire from handheld terminals. Their bolts can be blocked with the MFA Shield. Defeating them reveals tips about GitHub Actions, Defender for Cloud, Entra MFA and access reviews, least privilege and Azure Private Link.
 
@@ -53,14 +58,17 @@ Every region also has cyber-threat enemies: **Phishing hoppers** leap at you, **
 Running to the finish is no longer enough. Each world has two required tasks:
 recover its **deployment key**, then **secure the relay**. On ground, stay near the
 relay and hold **E / SHIELD** for 1.5 seconds; in flight, hit it with a blast
-after recovering the key. Collect **any two of six gems** to unlock the boss.
+after recovering the key. Collect **any two of six gems** and **three boss-access
+tokens** dropped by clearly marked **TOKEN CARRIER** enemies to unlock the boss.
+Every carrier guarantees its token; drops stay at safe marked collection points,
+not down a pit. Ordinary enemies still drop their Azure Credit.
 The HUD shows counts and the next task's direction; the arena entrance shows
 whether access is locked. Extra gems and optional **duck-to-scan** caches award
 bonus score. Watch for glints on side routes and in underground rooms.
 
-Completed tasks and collected gems survive losing a life, but restart/new layouts
+Completed tasks, released tokens and collected gems/tokens survive losing a life, but restart/new layouts
 reset them. They are run-local and do not change accounts or saved unlocks.
-Flight scrolling waits before missed required objectives and needed gems; you
+Flight scrolling waits before missed required objectives, needed gems and tokens; you
 still need to steer, fight and finish before the timer expires. Underground
 bonus gems are never the only way to satisfy the quota.
 
@@ -80,14 +88,24 @@ Run levels are not just rooftops. The ground matches the city: canal quays and b
 - **Vertical routes**: taller steps, deeper drops and more upper walkways reward jumping between street and rooftop routes. Pipe entrances and returns are reserved before hazards are placed.
 - **Amsterdam street life**: blue/white articulated trams, moving yellow commuter trains and glass-roof canal cruises join Hollandse Haring stands and bicycles. Centraal and a canal-cruise vista are guaranteed scenic stops.
 - **Tokyo street life**: moving silver/orange metro trains on elevated tracks, a Shibuya station, denser road traffic, pedestrian crossings and Azure/Copilot/GitHub/Xbox billboards. Detailed sakura groves and falling petals accompany the existing flight controls; the metro is scenery, not a ground-mode room.
-- **Australian coast and outback**: guaranteed Sydney surf/beach, red-earth roadhouses and Uluru highlights, plus roof-rack expedition 4x4 traffic and jumpable vehicles. Harbour ferries, routes and the Boxing Roo remain.
+- **Australian coast and outback**: Bondi's ocean, surf club and curved beach,
+  red-earth roadhouses and Uluru become full-viewport environment stretches, with
+  smooth transitions back to Sydney Harbour rather than floating scenery cards.
+  City strips and decorative traffic fade away inside these sections. Playable
+  piers, ferries, gaps, vehicles, enemies and objectives remain unchanged.
+- **Continuous lighting**: outdoor skies, background colours and illumination
+  blend through a four-minute day/night cycle. Add `?tod=day` (or `night`,
+  `sunrise`, `morning`, `afternoon`, `sunset`) to choose the starting phase for
+  testing; the cycle still runs. Pause/help and indoor visits preserve its phase.
 - **Paris street life**: boulangerie stalls on the quays, Haussmann zinc rooftops, bateaux-mouches on the Seine and Guimard Metro entrances. The Eiffel Tower, Sacre-Coeur and Moulin Rouge appear more often than other local landmarks.
-- **Grounded city depth**: New York's Times Square and Midtown have much taller
-  skyscrapers, shaded sides and visible street foundations. Times Square retains
-  angled billboards, receding paving and reflected sign light. Amsterdam's canal
-  houses gain subtle side faces and paved quay foundations while keeping their
-  distinctive gables and windows. This is painted 2.5D, not a new movement mode:
-  scenery widths/routes, platforms, combat and objectives are unchanged.
+- **Painted 2.5D throughout**: all eleven worlds use grounded foundations,
+  shaded architectural returns and receding terrain, keeping their local identity:
+  Dutch gables, Parisian zinc roofs, Tokyo streets, coastal scenery and datacenter
+  aisles. All eight underground themes and the cloud, retro, Xbox and New York
+  sewer secrets also have dimensional platforms and interior or terrain planes.
+  New York retains tall skyscrapers and angled Times Square billboards.
+  This is visual depth, not a new movement mode: scenery widths/routes, collision,
+  combat and objectives are unchanged. No new engine, models or dependencies.
 - **No repeats**: a scenery strip of local landmarks and Microsoft billboards scrolls behind the street. The same landmark never shows twice on screen.
 - **Landmarks first**: decorative roads, slim rail decks, trains and trams sit behind
   the landmark strip, with more space between arrivals. Facades and signs stay
@@ -110,6 +128,8 @@ Every level ends in a street-fighter style showdown with that region's boss: a c
 | Cosmos Beam | Replaces the blaster for 25 s: pierces three enemies, five when charged; stops at walls |
 
 **Tap F and release for a quick shot; hold F up to 1.2 seconds, then release for a stronger shot.**
+Quick shots now have a **0.16-second cooldown** (previously 0.30); full-charge
+cooldown is 0.36 seconds. Projectile speed, charging and Boost costs are unchanged.
 The touch BLAST button works the same way. The HUD shows the weapon, remaining pickup
 time and charge; a glowing muzzle signals charge readiness. Charged Azure/Cosmos shots
 deal up to three normal hits and use up to 20 extra Boost. Spread pellets each deal one
@@ -121,25 +141,38 @@ Clippy warns you when health is low, and Xbox-style achievements pop up for firs
 
 The game renders at 1280x720 (`AH.VIEW_SCALE = 2`) while game logic stays at 640x360, so the hero, HUD and text stay sharp. The Hero Lab and title screen use a high-detail hero portrait.
 
-**Regional wardrobe.** Each clear unlocks an outfit with a distinct garment shape,
-a hairstyle and an accessory, announced on the deployment screen. Preview locked
-items in Hero Lab, but clear their region before saving them. Classic wardrobe and
-previously earned progress remain available. The **Cowboy** (denim western shirt,
+**Regional wardrobe.** Find separate outfit, hairstyle, local-hat and artefact
+caches in the matching world's secrets/sub-levels. Flight worlds and
+Virginia's datacenter, which have no underground rooms, use hidden side-route
+stashes instead. Clearing a world alone no longer grants its clothes. Pickups
+permanently unlock that item in Hero Lab, locally and in signed-in cloud progress.
+Locked items can be previewed, but not saved or randomly equipped.
+Existing players retain their previously earned outfits and formerly free local
+hats/artefacts, **except the New York cap, cork hat and cowboy hat: these always
+require collection**, including on legacy saves. Find the New York cap in New York,
+the cork hat in Sydney, and the shared cowboy hat in any US world: Redmond,
+Virginia or New York. Virginia uses side-route stashes; the other two use secrets.
+Afro, braids, curls, coils and waves (including Borough Waves) are **available
+from the start**, without regional requirements. Religious headwear such as the
+**hijab is always available**.
+Checkpoint helpers wear the local outfit and headwear without requiring collection.
+The **Cowboy** (denim western shirt,
 leather vest, sheriff star, buckle), **India Kurta** (long kurta under a Nehru
 jacket) and **Cloud Hacker** (capeless, with the Rogue Hacker's hood, red visor,
 dark zip hoodie and portable terminal) outfits are open from the start. Cloud
 Hacker has the normal abilities; choose `NONE` on the headwear row for its hood,
 which hides the selected hair, or choose a hat or hijab to wear that instead.
 
-**Gold Mode (easter egg).** On the title screen type Up, Up, Down, Down, Left,
-Right, Left, Right, A. You get access to every world, a golden suit and 30 lives
+**Hacker Mode (formerly Gold Mode, easter egg).** On the title screen type Up, Up, Down, Down, Left,
+Right, Left, Right, A. You get access to every world, the Cloud Hacker outfit and 30 lives
 for that browser session. Worlds are not marked cleared and wardrobe rewards
 are not unlocked.
-Gold runs are a sandbox: their scores are never submitted to the leaderboard and
-run progress is not saved (no bests, unlocks or continue point). General device
-preferences, such as music style, remain separate. Reload the page to leave Gold Mode.
+Hacker runs are a sandbox: their scores are never submitted to the leaderboard and
+run progress is not saved (no bests, wardrobe collection, unlocks or continue point).
+This changes the appearance, not account permissions or invulnerability. General device
+preferences, such as music style, remain separate. Reload the page to leave Hacker Mode.
 
-| Clear region | Outfit | Hairstyle | Accessory |
+| Collection region | Outfit | Hairstyle (textured base styles are always open) | Accessory |
 |---|---|---|---|
 | Amsterdam | Canal Jacket | Canal Braid | Tulip Pin |
 | London | Formal Coat | Tailored Part | Pocket Watch |
@@ -201,9 +234,15 @@ active.scene.start('Level', { id: 1 }); // Amsterdam; replace 1 with any world I
 ```
 
 New York is world **11**: use `{ id: 11 }` in the snippet above. In normal
-progression it unlocks after Virginia. Check the skyline at entry, Times Square
-and brownstones farther along the route, both pipe rooms, hot dog carts and the
-Zero Day Boxer arena. Press R for a fresh layout; N switches the music style.
+progression it can be your selected sign-up start or a random next destination.
+Check the skyline at entry, Times Square
+and the brownstones' iron fire escapes, Central Park's lake and Bow Bridge,
+both pipe rooms, hot dog carts and the Zero Day Boxer arena. The marked manhole
+replaces the phone-booth secret: stand on it to enter a 1,280px sewer with rat
+patrols, maintenance ledges and rewards. Crouch/slide and use low blasts; stand
+at the far manhole to return to the same street. The optional sewer uses New York's
+regional underground music, not the Windows-style cloud bonus.
+Press R for a fresh layout; N switches the music style.
 
 Once the level appears, inspect its two randomly selected pipe destinations:
 
@@ -389,7 +428,7 @@ security-sensitive hosting/workflow invariants; skills alone cannot guarantee se
 
 ## High scores and accounts
 
-Press **L** on the title screen to register or log in with a hero name (3-15 letters or digits), a password and a location shown on the dashboard. Progress (unlocked levels, best scores and resume point) syncs to the account, so you can continue on another device. Press **B** for the dashboard with rank, player name, location, best score and furthest level.
+Press **L** on the title screen to register or log in with a hero name (3-15 letters or digits), a password and a location shown on the dashboard. At registration, choose the closest of the **eleven represented Azure regions** as your starting world; no geolocation or location lookup is performed. This is a game-world mapping, not a claim that every landmark has a datacenter. Progress (individual opened/cleared worlds, best scores, collected wardrobe and resume point) syncs to the account, so you can continue on another device. Existing progress is preserved. Press **B** for the dashboard with rank, player name, location, best score and furthest level.
 
 Accounts only appear when the page is served by `server.js`. On a static host the game quietly stays in guest mode.
 
@@ -397,11 +436,11 @@ Accounts only appear when the page is served by `server.js`. On a static host th
 |--------|------|---------|
 | GET | `/api/health` | Detects online mode |
 | GET | `/api/leaderboard?limit=20` | Top scores |
-| POST | `/api/register` | `{ name, password, location, progress }` returns a token |
+| POST | `/api/register` | `{ name, password, location, startLevel, progress }` returns a token; optional `startLevel` must be a represented world ID (1-11) |
 | POST | `/api/login` | `{ name, password }` returns a token and the profile |
 | GET | `/api/me` | Current profile (Bearer token) |
 | POST | `/api/logout` | Revokes the token |
-| PUT | `/api/progress` | Merges saved progress (unlocks never go backwards) |
+| PUT | `/api/progress` | Merges saved progress, including `route: {start, available: [id], cleared: [id]}` and wardrobe; access/clears never go backwards and registration start is immutable |
 | POST | `/api/score` | `{ score, level, city }` returns best and rank |
 
 Passwords are hashed with salted scrypt, tokens are random, stored as SHA-256 hashes and expire after 30 days. Requests are rate limited, input is validated and only the game files are served. Data is stored in `DATA_DIR/heroes.json`.

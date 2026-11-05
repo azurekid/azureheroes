@@ -23,7 +23,7 @@
   };
 
   AH.ArtModules.stages['worlds.london.art.79'] = function (C) {
-    const { FLAT, cargoBox, cloudDeck, cloudFacility, dockCrane, ell, glow, lg, line, lit, metroPoster, metroTiles, poly, reg2, rng, rrect, shade, txt, txtW, wheels, workshopArm } = C;
+    const { FLAT, cargoBox, cloudDeck, cloudFacility, depthFace, depthGround, dockCrane, ell, glow, lg, line, lit, metroPoster, metroTiles, poly, reg2, rng, rrect, shade, txt, txtW, wheels, workshopArm } = C;
 
     Object.assign(C, { tubeRoundel, tubeBlock });
     function tubeRoundel(g, x, y, r, label) {
@@ -44,6 +44,7 @@
           g.fillStyle = '#efc34b'; g.fillRect(0, h - 5, w, 5);
           for (let x = 0; x < w; x += 10) poly(g, [[x, h], [x + 4, h - 5], [x + 8, h - 5], [x + 4, h]], '#26344f');
         }
+        depthFace(g, 0, 0, w, h, Math.min(5, h / 5), '#555f6a', '#b8c0bb');
       }
 
     reg2('cloud_floor_tube', 128, 64, function (g) {
@@ -53,6 +54,7 @@
         for (let x = 3; x < 128; x += 5) { ell(g, x, 5, 0.5, 0.5, '#c0bba5'); line(g, x, 10, x, 14, 0.6, '#a7a69c'); }
         txt(g, 'MIND THE GAP', 36, 16, 0.65, '#183d78');
         g.fillStyle = 'rgba(10,18,37,0.4)'; g.fillRect(0, 34, 128, 30);
+        for (let x = 8; x < 128; x += 24) line(g, x, 0.5, x + 6, 8, 0.8, '#454f5e');
       }, FLAT);
 
     reg2('challenge_sign_tube', 248, 36, function (g) {
@@ -67,16 +69,25 @@
           for (let r = 150; r >= 30; r -= 18) { g.strokeStyle = r % 36 ? '#4a535e' : '#1a2532'; g.lineWidth = 4; g.beginPath(); g.ellipse(x + 160, 205, r, r * 0.86, 0, 0, Math.PI * 2); g.stroke(); }
           line(g, x + 10, 286, x + 310, 286, 2, '#9e9c92');
           line(g, x + 10, 293, x + 310, 293, 2, '#3c4653');
+          poly(g, [[x + 147, 217], [x + 173, 217], [x + 300, 360], [x + 20, 360]], '#141c28');
+          for (const dx of [-1, 1]) line(g, x + 160 + dx * 8, 217, x + 160 + dx * 112, 360, 1.5, '#66717a');
+          for (const y of [230, 250, 280, 325]) {
+            const reach = (y - 217) * 0.85;
+            line(g, x + 160 - reach, y, x + 160 + reach, y, 2, '#34414c');
+          }
         }
       }, FLAT);
 
     for (let variant = 0; variant < 3; variant++) reg2('challenge_bg_tube' + (variant ? '_' + variant : ''), 640, 360, function (g) {
         const station = ['WESTMINSTER', 'BAKER STREET', 'PICCADILLY'][variant];
+        depthGround(g, 0, 272, 640, 25, '#686d70', '#a8a99d');
         metroTiles(g, 0, 140, 640, 125, '#b8b8b0', '#707781');
         for (let x = 0; x < 640; x += 128) {
           g.strokeStyle = '#626c79'; g.lineWidth = 9; g.beginPath(); g.arc(x + 64, 140, 60, Math.PI, 0); g.stroke();
           g.strokeStyle = '#c1c5be'; g.lineWidth = 2; g.beginPath(); g.arc(x + 64, 140, 55, Math.PI, 0); g.stroke();
           g.fillStyle = '#53616d'; g.fillRect(x, 137, 8, 128);
+          poly(g, [[x + 8, 137], [x + 18, 146], [x + 18, 265], [x + 8, 265]], '#3d4d5c');
+          g.strokeStyle = '#344352'; g.lineWidth = 6; g.beginPath(); g.arc(x + 69, 145, 60, Math.PI, 0); g.stroke();
           lit(g, x + 26, 143, 71, 2.6, '#f0ecd3');
         }
         g.fillStyle = '#183d78'; g.fillRect(0, 160, 640, 3);
@@ -100,6 +111,7 @@
         txt(g, 'TICKETS', 22, 247, 0.6, '#faf1ce');
         [177, 298].forEach((x) => { g.fillStyle = '#6e463b'; g.fillRect(x, 246, 72, 4); line(g, x + 6, 250, x + 6, 263, 2, '#283d53'); line(g, x + 66, 250, x + 66, 263, 2, '#283d53'); });
         g.fillStyle = '#b7b4a1'; g.fillRect(0, 264, 640, 5); g.fillStyle = '#e0bf54'; g.fillRect(0, 269, 640, 1.5);
+        for (let x = 20; x < 640; x += 40) line(g, x - 7, 265, x, 269, 0.8, '#71796f');
         g.fillStyle = '#171d2a'; g.fillRect(0, 272, 640, 28);
         for (let x = 0; x < 640; x += 13) line(g, x, 279, x + 4, 297, 2, '#414652');
         line(g, 0, 284, 640, 284, 1.8, '#a7a99e'); line(g, 0, 296, 640, 296, 1.5, '#777d83');
@@ -157,6 +169,11 @@
           const r = rng(700 + i);
           for (let n = 0; n < 60; n++) { g.fillStyle = 'rgba(195,173,128,0.15)'; g.fillRect(r() * 128, 14 + r() * 50, 1 + r() * 6, 0.7); }
           g.fillStyle = accent; g.fillRect(88, 5, 12, 1);
+          for (let x = 0; x < 128; x += 32) {
+            poly(g, [[x, 0], [x + 25, 0], [x + 31, 8], [x + 6, 8]], '#75858b');
+            line(g, x + 6, 8, x + 31, 8, 0.8, '#263d4c');
+          }
+          line(g, 0, 0.5, 128, 0.5, 1, accent);
         }, FLAT);
         reg2('challenge_sign_' + theme, 248, 36, function (g) {
           rrect(g, 0, 0, 248, 36, 3, '#172834');
@@ -192,6 +209,11 @@
               g.fillRect(r() * 640, 242 + r() * 92, 3 + r() * 35, 0.7);
             }
           } else {
+            poly(g, [[0, 0], [640, 0], [540, 84], [100, 84]], '#203747');
+            for (const x of [0, 160, 320, 480, 640]) line(g, x, 0, 320 + (x - 320) * 0.68, 84, 2, '#526976');
+            g.fillStyle = '#293f4c'; g.fillRect(0, 270, 640, 90);
+            for (let x = 0; x <= 640; x += 80) line(g, 320 + (x - 320) * 0.65, 270, x, 360, 1, '#526572');
+            for (const y of [282, 307, 344]) line(g, 0, y, 640, y, 1, '#526572');
             for (let x = 8; x < 640; x += 104) {
               g.fillStyle = '#233b4c'; g.fillRect(x, 92, 92, 146);
               g.fillStyle = lg(g, x, 92, x, 238, [[0, '#759297'], [0.6, '#b6b59e'], [1, '#5d777e']]);
@@ -203,6 +225,7 @@
             for (let x = 12; x < 640; x += 160) {
               g.fillStyle = '#3b505d'; g.fillRect(x, 225, 125, 45);
               for (let y = 231; y < 266; y += 9) line(g, x + 8, y, x + 116, y, 1, '#61727b');
+              depthFace(g, x, 225, 125, 270, 8, '#213746', '#758792');
             }
           }
         }, FLAT);
@@ -214,6 +237,8 @@
               dockCrane(g, 430 - variant * 24, 62, 280, 150, '#6b5b52');
               g.fillStyle = '#273e4c'; g.fillRect(0, 264, 640, 36);
               line(g, 0, 265, 640, 265, 2, '#70818a');
+              for (let x = -32; x < 640; x += 64) line(g, x, 265, x + 28, 299, 0.8, '#4a626b');
+              line(g, 0, 282, 640, 282, 1, '#203541');
               for (let x = 8; x < 640; x += 160) {
                 const stack = (Math.floor((x - 8) / 160) + variant) % 3;
                 cargoBox(g, x, 222, 138, 40, stack, theme === 'aks' ? 'AKS FREIGHT' : 'AZURE CARGO');
@@ -227,6 +252,7 @@
                 poly(g, [[lx + dx, 168], [lx + dx - 25, 264], [lx + dx + 35, 264]], 'rgba(242,207,146,0.06)');
               }
             } else {
+              depthGround(g, 0, 300, 640, 32, '#152b39', '#4b626c');
               for (const x of [5, 632]) {
                 g.fillStyle = lg(g, x, 0, x + 8, 0, [[0, '#344c5e'], [0.4, '#80918c'], [1, '#283d50']]); g.fillRect(x, 46, 8, 254);
                 for (let y = 60; y < 300; y += 24) ell(g, x + 4, y, 1, 1, '#b1b8a5');
@@ -243,6 +269,7 @@
                 ell(g, x + 7, 186, 4, 4, '#83918d');
               }
               rrect(g, 377, 168, 210, 78, 3, '#304957');
+              depthFace(g, 377, 168, 210, 246, 12, '#203743', '#657e86');
               for (let x = 389; x < 570; x += 58) {
                 rrect(g, x, 178, 48, 35, 2, '#192c3b');
                 g.fillStyle = '#69a1a1'; g.fillRect(x + 3, 181, 42, 27);

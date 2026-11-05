@@ -104,7 +104,8 @@ test('boss entry and direct completion refuse incomplete missions', () => {
     AH: { Levels: { ids: [1] } }, globals: { Phaser: { Scene: class {} } }
   });
   const scene = new AH.Scenes[5](), notices = [];
-  scene.mission = { ready: false };
+  scene.player = { x: 0 };
+  scene.mission = { ready: false, snapshot() { return { next: 'COLLECT BOSS TOKEN' }; } };
   scene.toast = (text) => notices.push(text);
   scene.startBoss();
   scene.levelComplete();

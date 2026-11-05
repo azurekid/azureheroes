@@ -18,6 +18,7 @@
         const S = L.suit === 'gold' ? GOLD_SUIT : HERO_SUIT[L.suit] || HERO_SUIT[0];
         Object.assign(H, S);
         H.outfit = S.outfit || null;
+        H.guide = !!L.guide;
         const s = HERO_SKIN[L.skin] || HERO_SKIN[1], h = HERO_HAIR[L.hairCol] || HERO_HAIR[0];
         H.skinL = s[0]; H.skin = s[1]; H.skinD = s[2];
         H.hairL = h[0]; H.hair = h[1]; H.hairD = h[2];
@@ -30,6 +31,7 @@
     applyLook(HERO_DEF.m);
 
     function heroCape(g, f, len) {
+        if (H.guide) return;
         const cx = (x) => Math.max(0.6, x);
         const L = len;
         const pts = [[12, 14], [20, 15], [19.5, 24], [17.5, L - 7], [15.5, L - 1.5], [13, L - 5], [10.5 - f * 0.45, L], [7.5 - f * 0.7, L - 4.5],
@@ -57,6 +59,7 @@
       }
 
     function heroEmblem(g, cx, cy, s) {
+        if (H.guide) return;
         const gl = g.createRadialGradient(cx, cy, 0.5, cx, cy, 6.5 * s);
         gl.addColorStop(0, 'rgba(159,240,255,0.95)'); gl.addColorStop(0.5, 'rgba(79,200,255,0.5)'); gl.addColorStop(1, 'rgba(79,200,255,0)');
         g.fillStyle = gl; g.fillRect(cx - 8, cy - 6.6, 16, 14);
@@ -215,7 +218,7 @@
 
     const hairG = (g, x0, y0, x1, y1) => lg(g, x0, y0, x1, y1, [[0, H.hairL], [0.5, H.hair], [1, H.hairD]]);
 
-    const HAT_LINE = { cowboy: 4.8, sombrero: 4.6, bowler: 5.8, beret: 4.6, crown: 3.2, cork: 4.6, boater: 4.6, cap: 5.8, tricorn: 5.2, hijab: 99, hackerhood: 99 };
+    const HAT_LINE = { cowboy: 4.8, sombrero: 4.6, bowler: 5.8, beret: 4.6, crown: 3.2, cork: 4.6, boater: 4.6, cap: 5.8, nycap: 5.8, tricorn: 5.2, hijab: 99, hackerhood: 99 };
 
     function hatBack(g) {
         if (HAT !== 'hijab') return;
@@ -357,7 +360,7 @@
           F.forEach((f) => { const a = f[1], x = 15 + Math.cos(a) * 5, y = 4.2 + Math.sin(a) * 3.4; ell(g, x, y, 4.6, 1.1, f[0], Math.atan2(Math.sin(a) * 3.4, Math.cos(a) * 5)); line(g, 15.6, 3.4, x + Math.cos(a) * 3, y + Math.sin(a) * 3, 0.3, 'rgba(255,255,255,0.7)'); });
           rrect(g, 11.2, 3.4, 11.6, 1.8, 0.7, V(3.4, 5.2, [[0, '#fff0a0'], [1, '#d09020']]));
           ell(g, 19.6, 4.3, 1, 0.9, '#3ad8ff'); ell(g, 15, 4.3, 0.7, 0.7, '#ff3aa8');
-        } else if (HAT === 'cap') {
+        } else if (HAT === 'cap' || HAT === 'nycap') {
           // crown sits low on the scalp: band slants from y 5.7 at the brow to y 7.4 behind the ear
           g.save(); g.beginPath(); g.moveTo(9, -2); g.lineTo(26, -2); g.lineTo(26, 5.7); g.lineTo(21.6, 5.7); g.lineTo(10.4, 7.4); g.lineTo(9, 7.4); g.closePath(); g.clip();
           ell(g, 16.6, 6.4, 6.3, 5.9, lg(g, 12, 0.5, 20, 7, [[0, '#8adcff'], [0.35, '#2a8af0'], [0.75, '#1260c8'], [1, '#0a3a8a']]));

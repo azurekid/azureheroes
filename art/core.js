@@ -39,7 +39,7 @@
 
   AH.ArtModules.stages['art.core.0'] = function (C) {
 
-    Object.assign(C, { cv, R, outline, crisp, shade, glow, upscale, reg, reg2, regArt, disc, rng, lerpCol, lg, poly, ell, rrect, limb, line });
+    Object.assign(C, { cv, R, outline, crisp, shade, glow, upscale, reg, reg2, regArt, disc, rng, lerpCol, lg, poly, ell, rrect, limb, line, depthFace, depthGround });
     const NAVY = '#0a0720';
 
     const D = 2;
@@ -47,6 +47,22 @@
     const defs = {};
 
     const density = { value: D, hd: false };
+
+    function depthFace(g, x, top, width, base, depth, side, roof) {
+        const d = Math.min(depth, width / 3, (base - top) / 3);
+        poly(g, [[x + width - d, top], [x + width, top + d], [x + width, base], [x + width - d, base]], side);
+        poly(g, [[x, top], [x + width - d, top], [x + width, top + d], [x + d, top + d]], roof);
+      }
+
+    function depthGround(g, x, base, width, depth, front, top) {
+        const d = Math.min(depth, width / 4);
+        g.fillStyle = front; g.fillRect(x, base - d, width, d);
+        poly(g, [[x, base - d], [x + width - d, base - d], [x + width, base - d / 2], [x + d, base - d / 2]], top);
+        for (let tx = x + d; tx < x + width - d; tx += 24) {
+          line(g, tx, base - d, tx + d, base - d / 2, 0.6, 'rgba(20,25,40,0.3)');
+        }
+        line(g, x + d, base - d / 2, x + width, base - d / 2, 0.8, 'rgba(240,226,204,0.45)');
+      }
 
     function cv(w, h) {
         const c = document.createElement('canvas');

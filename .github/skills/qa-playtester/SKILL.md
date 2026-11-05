@@ -27,6 +27,18 @@ and Australian 4x4 sizes.
   stops in desktop and forced-touch layouts. Roads, rail decks and land traffic
   must stay behind landmark facades and signs; compare with transit hidden where
   possible rather than treating texture registration as visual verification.
+- For global painted-depth changes, inspect entry/later/scenic stops in all eleven
+  worlds, all eight underground themes and their three variants, and all four
+  secret-room themes. Check actual datacenter aisles as well as city strips.
+  Verify roof/side contact, receding terrain, readable hazards/exits and unchanged
+  texture/collision bounds. Camera scroll uses logical coordinates even at 2x output;
+  scenery scroll factors must be accounted for when centering landmarks.
+- Outdoor atmosphere: verify the continuous 240-second cycle, wrap continuity,
+  deterministic `?tod` starting phase, pause/help/warp freeze and room-return
+  restoration. Indoor art and HUD keep their authored lighting. For full-background
+  sections inspect each fade boundary and centre, city/transit suppression and
+  harbour return at day/sunset/night/sunrise, including forced-touch layout.
+  Assisted camera/clock positioning is visual evidence, not unassisted completion.
 - Music checks: follow [music-producer](../music-producer/SKILL.md)'s actual-render and human
   listening gates; do not approve timbre from fake Web Audio nodes.
   Select trance, house and pop by keyboard and touch; check migration of old styles.
@@ -38,6 +50,19 @@ and Australian 4x4 sizes.
   not substitute for listening feedback.
 - Verify every world's wardrobe bundle in every pose, locked hair/accessories as well
   as outfits, old-save fallback and unlocked-only randomization.
+- Verify individual wardrobe stashes, room scoping, permanent ownership/reload/cloud
+  union, frozen legacy entitlements and always-open hijab. Clearing new worlds must
+  not grant clothing. Hacker Mode must use Cloud Hacker and never save collections.
+  Check local guide garments/headwear, guaranteed three-token carrier drops,
+  collision collection, death/checkpoint recovery and boss gating. Tap cooldown
+  is 0.16s with unchanged charge/Boost costs and keyboard/touch release behavior.
+- Verify textured hair without progress and New York/cork/cowboy hats locked
+  even on legacy completed saves; collect cowboy in each eligible US world.
+- Regional routing: select each represented sign-up region, preserve old saves,
+  randomize only uncleared destinations, persist exact Continue destination,
+  and mark only actual clears on the map. Test all-cleared and sandbox no-writes.
+  Check account-form focus restoration and desktop/touch guide acknowledgment,
+  frozen timer/physics and pause-menu mission review.
 - Test Down/S duck versus E shield (ground, air and crouch guard), low shots, once-per-slide damage, ceiling clearance,
   actual touch actions, all cloud-room themes, time grants, disjoint bounds and pipe returns.
 - Use deterministic seeds for generation assertions and real Arcade collision traversal.

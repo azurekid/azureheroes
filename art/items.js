@@ -9,6 +9,35 @@
     Object.assign(C, { flag });
     const FLAT = { shade: 0, noOutline: true };
 
+    reg2('mission_briefing', 604, 282, function (g) {
+      rrect(g, 1, 1, 602, 280, 9, '#0b1230');
+      g.strokeStyle = '#27e0ff'; g.lineWidth = 2; g.strokeRect(5, 5, 594, 272);
+      g.fillStyle = '#152c46'; g.fillRect(16, 56, 88, 178);
+      line(g, 118, 62, 118, 236, 1, '#285268');
+      line(g, 16, 42, 588, 42, 1, '#285268');
+    }, FLAT);
+
+    reg2('boss_access_token', 24, 28, function (g) {
+      poly(g, [[12, 1], [22, 7], [22, 21], [12, 27], [2, 21], [2, 7]], '#39c985');
+      poly(g, [[12, 4], [19, 9], [19, 19], [12, 24], [5, 19], [5, 9]], '#15435a');
+      ell(g, 10, 12, 3.5, 3.5, '#d6ffca'); ell(g, 10, 12, 1.5, 1.5, '#15435a');
+      line(g, 12, 14, 17, 19, 2, '#d6ffca'); line(g, 15, 16, 13, 18, 2, '#d6ffca');
+    }, FLAT);
+    for (const kind of ['suit', 'hat', 'gear', 'hair']) reg2('wardrobe_cache_' + kind, 30, 30, function (g) {
+      rrect(g, 1, 1, 28, 28, 4, '#243452'); line(g, 5, 27, 25, 27, 1, '#ffb8e3');
+      if (kind === 'hat') {
+        rrect(g, 7, 8, 16, 10, 4, '#f3bb75'); rrect(g, 4, 17, 22, 4, 1, '#e38860');
+      } else if (kind === 'suit') {
+        poly(g, [[10, 6], [4, 11], [7, 16], [10, 14], [10, 24], [21, 24], [21, 14], [24, 16], [27, 11], [21, 6], [18, 10], [14, 10]], '#77dce6');
+        line(g, 15, 11, 15, 23, 1, '#e8ffff');
+      } else if (kind === 'gear') {
+        rrect(g, 7, 10, 17, 14, 3, '#d5a467'); line(g, 11, 10, 11, 6, 2, '#f3d9a9');
+        line(g, 11, 6, 20, 6, 2, '#f3d9a9'); line(g, 20, 6, 20, 10, 2, '#f3d9a9');
+      } else {
+        ell(g, 15, 15, 9, 10, '#b78c6c'); poly(g, [[6, 15], [6, 7], [12, 4], [23, 7], [24, 15], [19, 9], [9, 12]], '#593b51');
+      }
+    }, FLAT);
+
     [['coin0', 12], ['coin1', 8], ['coin2', 4], ['coin3', 8]].forEach(function (c) {
         reg2(c[0], 14, 14, function (g) {
           const w = c[1] / 2;

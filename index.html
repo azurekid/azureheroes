@@ -21,7 +21,7 @@
     #acct form { width: min(340px, 92vw); padding: 18px 20px; background: #0b0830; border: 3px solid #27e0ff; box-shadow: 0 0 0 3px #0b0830, 0 0 0 5px #ff7ad9, 0 0 24px #3a1fb0; font: bold 13px monospace; color: #c9a0ff; letter-spacing: 1px; -webkit-user-select: text; user-select: text; touch-action: manipulation; }
     #acct h2 { margin: 0 0 12px; color: #7fe8ff; font-size: 20px; text-align: center; text-shadow: 2px 2px #3a1fb0; }
     #acct label { display: block; margin: 8px 0 3px; }
-    #acct input { width: 100%; box-sizing: border-box; padding: 8px; background: #14083a; border: 2px solid #5a3fc0; color: #ffe14a; font: bold 16px monospace; text-transform: uppercase; outline: none; }
+    #acct input, #acct select { width: 100%; box-sizing: border-box; padding: 8px; background: #14083a; border: 2px solid #5a3fc0; color: #ffe14a; font: bold 16px monospace; text-transform: uppercase; outline: none; }
     #acct input[type=password] { text-transform: none; }
     #acct input:focus { border-color: #27e0ff; }
     #acct .row { display: flex; gap: 8px; margin-top: 14px; }
@@ -44,6 +44,9 @@
       <input id="ah-pass" name="pass" type="password" maxlength="128" required>
       <div class="loc"><label for="ah-loc">LOCATION (CITY, COUNTRY)</label>
       <input id="ah-loc" name="loc" maxlength="20" placeholder="AMSTERDAM, NL"></div>
+      <div class="region"><label for="ah-region">CLOSEST REGION - STARTING WORLD</label>
+      <select id="ah-region" name="region"></select>
+      <div class="note">Choose the closest represented region. No location tracking.</div></div>
       <div class="row"><button type="submit">LOG IN</button><button type="button" class="cancel">CANCEL</button></div>
       <button type="button" class="swap">CREATE A NEW ACCOUNT</button>
       <div class="err"></div>
@@ -163,6 +166,8 @@
   <script src="systems/enemies.js"></script>
   <script src="systems/boss.js"></script>
   <script src="systems/mission.js"></script>
+  <script src="systems/wardrobe-pickups.js"></script>
+  <script src="systems/environment.js"></script>
   <script src="systems/scenes.js"></script>
   <script>
     window.addEventListener('load', function () {

@@ -32,7 +32,13 @@ description: 'Create Azure Heroes code-drawn pixel art, duck/slide poses, cloud 
   are collected automatically in catalogue order using the city's region.
   `city.art.registryOrder[name]` exists only to preserve historical insertion order;
   new content normally uses catalogue order, not a shared city switch.
-- Set `city.rewards` to `{suit,hair,gear,outfit?,classicHat?,classicGear?}`.
+- Whole-environment highlights use `environments_<region>` (see game-contract),
+  with dedicated 640x360 city-owned artwork, transparent sky, distant/middle/near
+  detail and terrain reaching the viewport edges. Do not enlarge a small landmark
+  card. `systems/environment.js` blends sections and suppresses city strips and
+  decorative transit; keep physical platforms/hazards unchanged. Inspect entry,
+  centre and exit in daylight and night, not just texture registration.
+- Set `city.rewards` to `{suit,hair,gear,outfit?,classicHat?,classicGear?,collectibleHats?}`.
   Append references in `art/wardrobe.js`'s stable saved arrays, never insert or
   reindex. The suit's `unlock` and hair/gear unlock fields use the world index.
 
@@ -55,9 +61,21 @@ description: 'Create Azure Heroes code-drawn pixel art, duck/slide poses, cloud 
 - HD hero: hero frames are drawn at density `DEN`; extra detail goes behind the `HDX` flag (`heroHDTorso`, `heroHead`) so in-game frames stay readable. Preview with `AH.Art.buildHeroHD`.
 - Regional rewards: add outfit, hairstyle and accessory together through the
   game-contract wardrobe APIs. Outfits must change garment structure (Japan: kimono
-  and obi), not only palette. Keep classic items open, honor locks in preview/save,
+  and obi), not only palette. Keep base/religious choices open, honor locks in preview/save,
   and render both bodies and every gameplay/HD pose without clipping.
+- Local hats/outfits/artefacts are individual city-matched collectible rewards;
+  follow the collected-wardrobe contract rather than granting them on clears.
+  Keep religious headwear always open and migrate previous entitlements.
+  Afro/braids/curls/coils/waves remain base styles. New York/cork/cowboy hats
+  require actual collection, including legacy saves. Use optional
+  `collectibleHats` for shared US cowboy pickups and `wardrobeRegions` for hints;
+  never duplicate saved indexes or add city switches to shared ownership logic.
+  Checkpoint helpers use `AH.Art.buildGuide` and the shared civilian hero rig,
+  wearing local reward garments/headwear without capes or ownership requirements.
 - Enemies must read as their threat at a glance: give each a distinct silhouette and a cue of its cloud resource (padlock, RBAC badge, container, endpoint).
+- Regional flying birds reuse `birdFrame` where possible: separate head/beak,
+  tapered tail and a clearly different raised/lowered wing silhouette. Check at
+  gameplay scale, not only enlarged. Ambient pigeons remain non-hostile.
 - Cyber-threat enemies (`phish_*`, `ram_*`, `botnet_*`, `ebomb`) are shared by every region.
 - Cloud threats (`bug_*`, `image_*`, `rbac_*`, `endpoint_*`, `guest_*`) have two shared frames. Draw the real thing:
   `bug` is a six-legged beetle (faces right), `endpoint` an open laptop broadcasting a public globe with its port on the
@@ -104,11 +122,22 @@ description: 'Create Azure Heroes code-drawn pixel art, duck/slide poses, cloud 
 - Keep bottom-anchored flags, terminals and solid pipe textures free of transparent
   glow padding; visible feet/bases must meet the collision surface. Friendly
   checkpoint guides are non-solid, visually distinct from enemies and grounded.
-- For visual-only 2.5D scenery, keep perspective faces, vanishing-point paving and
+- Painted 2.5D is the baseline for every world, underground theme and secret room.
+  For visual-only changes, keep perspective faces, vanishing-point paving and
   lighting inside the city's declared scenery bounds. Taller art may extend upward
   but must preserve width/route spacing and a bottom-aligned foundation. Every
   facade and side face must meet painted ground; avoid disconnected floating slabs.
   New York uses skyscraper scale; Amsterdam retains narrow, ornate Dutch gables.
-  Do not change collision,
-  generation, random consumption or route spacing. Capture matching seed, camera,
-  time-of-day and viewport before/after; obtain review before extending the style.
+  Reuse `C.depthFace` and `C.depthGround` for bounded roof/side returns and contact
+  planes; choose materials and placement locally, not through a global skew/filter.
+  Datacenters need visible aisle/cabinet depth in the backgrounds actually used by
+  gameplay, not unused scenery registrations. Underground backgrounds keep all
+  three variants, readable signs and low-contrast machinery behind solid platforms.
+  Coastal/outback vignettes must taper into the ground, not sit on opaque
+  rectangular sky/terrain cards. Check their actual `sceneryRoutes` baseY against
+  the street baseline; bottom-aligned pixels still float if the anchor is raised.
+  Keep distant props in proportion to surrounding architecture.
+  Surface textures retain their original sizes and collision-aligned top edges.
+  Do not change collision, generation, random consumption or route spacing.
+  Capture matching seed, logical camera, time-of-day and viewport for comparisons;
+  review entry/later stops and room variants, not just texture registration.

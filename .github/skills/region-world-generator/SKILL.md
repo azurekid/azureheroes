@@ -45,15 +45,29 @@ Rules for the brief:
 - Reuse existing ambient kinds and art when they fit (`taxi`, `schoolbus`, `plane`); add new
   code-drawn ones only for missing icons. Never duplicate a landmark another world already owns
   unless the city is the real location (and then move it, do not copy it).
+- Local secrets should fit the city: New York uses a manhole and a rat-filled
+  sewer, not London's phone box or the shared Windows-style cloud room. Keep
+  bonus descriptors/art city-owned, reserve their full width before pipe rooms,
+  and reuse existing enemy behavior and regional underground music.
 - Ask the contributor only when the region choice is genuinely ambiguous, the city overlaps
   an existing world, or a detail could be culturally sensitive. Otherwise state assumptions and proceed.
 - Check the current world list before treating an example as a new region. New York already
   exists as world 11; improve it rather than appending another New York or reusing its region.
+- Registration presents represented regions, not geographic inference. Keep IDs
+  stable and API region bounds aligned with catalogue additions. Progression picks
+  random uncleared worlds; never gate a new city behind a numeric predecessor.
+  Redmond's scenic route includes Pike Place, Starbucks, Link and Microsoft campus;
+  preserve grounded station/rail alignment and original code-drawn branding.
 
 ## Region identity checklist (all required for a new world)
 1. **Azure region**: real region id, e.g. `westeurope`, plus a city. Set `AH.Worlds[slug].world` in its `world.js` (`id, region, regionName, city, name, mode, theme, tint, landmarks, hint, opt, boss, map`). Append the slug to the explicit catalogue and scripts to `index.html`; preserve IDs.
 2. **Landmarks**: recognisable pieces in the scenery strip, plus a tinted sky, a painted far panorama (`bg_far_<region>`, also the map thumbnail) and near layers in the city's art modules. Reuse shared drawing helpers.
 2b. **Scenery strip**: 6+ local landmark pieces `sc_<prefix>_<name>` plus Microsoft billboards, listed in `sceneryKeys`. Levels use the painted panorama `bg_far_<region>` (the map thumbnail) as the far layer, so the signature skyline is always visible. List every strip key that duplicates a painted landmark in `AH.Art.panoramaLandmarks[region]`; the strip skips those. Local architecture (canal houses, zinc roofs) stays full size and near-continuous; every 3-4 pieces a 110-190px sky window shows the sun and panorama. Never thin or shrink the strip to calm a level; reduce moving traffic instead. The strip never shows the same key twice on screen. Give run levels a matching `ground`/`water` style (quays, promenades, piers) instead of plain rooftops.
+2c. **Painted depth**: apply the shared 2.5D contract to scenery, local surfaces,
+    underground themes and city-owned secrets. Use locally appropriate roof/side
+    returns, grounded foundations and receding quays, streets or interior aisles.
+    Preserve signature silhouettes, sky windows, texture bounds and seeded drawing
+    order; do not skew entire textures or move collision to fit the picture.
 3. **Local enemies**: a skin for each enemy type the level uses (`robot` = walker, `drone` = flyer, `spider` = crawler). Textures `en_<region>_<type>_0/1`. Behaviour and stats never change, only the look. Every enemy still takes 2 hits and drops 1 Azure Credit.
 4. **Local pickups**: regional currency glyph on the Azure Credit (`coin_<region>0..3`).
 5. **Local props**: 2 decorative objects per world (`prop_<name>`), placed at random along the level, never solid.
@@ -74,6 +88,11 @@ Rules for the brief:
   ground blocks do not hide the landmark strip.
 - Scenic routes (`AH.Art.sceneryRoutes`) must keep a region's signature landmarks, not just transit pieces. Amsterdam
   opens with the detailed `sc_we_centraal` and includes `sc_we_schiphol` with its planes; one design per real landmark.
+- Use optional city `environments_<region>` data for immersive full-background
+  stretches such as Bondi/outback, rather than a floating scenic card. Follow the
+  game-contract section bounds/fades, transparent-sky and 640x360 art requirements.
+  Keep map panoramas, physics, layout RNG and regional music unchanged for purely
+  visual sections. The shared outdoor clock cycles independently of progress.
 - Fly: gap height >= 132px, successive gap centres differ by <= 120px.
 - Length 8,000-13,000px so levels stay challenging. The timer scales with width.
 - Reserve pipe entrances/returns and checkpoints first. Place hazards and enemies from shuffled eligible areas; keep the boss arena clear.
@@ -95,6 +114,9 @@ Rules for the brief:
 - Appending a world keeps existing players' `unlocked` counts valid. Inserting one in the middle shifts level ids.
 - Append one suit, hairstyle and accessory reward for the new world index. Preserve all old
   wardrobe indexes and test locks, old saves and every pose, including HD.
+  Include local headwear and individual collectible placements in existing local
+  secrets/sub-levels, not automatic clear rewards. Keep religious options open.
+  Guides wear the city's reward outfit/headwear through the shared civilian rig.
 - Landmarks can come from the whole country (e.g. Colosseum and Pisa for Italy), not only the region's city.
 - Optional: `ambient` moving objects, `opt.secret` theme, and `opt.pipes` warp pipes (see game-contract).
 - Optional local flavour (see game-contract "Regional rooms"): `stand` (a street stall such as

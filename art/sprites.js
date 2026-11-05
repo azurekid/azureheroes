@@ -12,6 +12,7 @@
     const sceneryStars = C.sceneryRegistry('sceneryStars');
     const panoramaLandmarks = C.sceneryRegistry('panoramaLandmarks');
     const sceneryRoutes = C.sceneryRegistry('sceneryRoutes');
+    const environments = C.sceneryRegistry('environments');
 
     Object.keys(SC).forEach(function (r) {
         sceneryKeys[r] = Object.keys(SC[r]);
@@ -64,6 +65,7 @@
         sceneryKeys: sceneryKeys,
         sceneryStars: sceneryStars,
         sceneryRoutes: sceneryRoutes,
+        environments: environments,
         panoramaLandmarks: panoramaLandmarks,
         billKeys: billKeys,
         buildCloudPlatform: function (scene, p) {
@@ -97,10 +99,20 @@
           skins: HERO_SKIN.map((c) => c[1]), hairCols: HERO_HAIR.map((c) => c[1]), styles: HERO_HAIR_STYLES, hats: HERO_HATS, gear: HERO_GEAR,
           suits: HERO_SUIT.map((c) => c.suit), suitNames: HERO_SUIT.map((c) => c.name), suitUnlock: HERO_SUIT.map((c) => c.unlock), def: HERO_DEF,
           hairNames: Object.assign({ swoop: 'SWOOP', buzz: 'BUZZ CUT', afro: 'AFRO', long: 'LONG', pony: 'PONYTAIL', braids: 'BRAIDS', bob: 'BOB' }, Object.fromEntries(HERO_REGIONAL_HAIR.map((x) => [x[0], x[1]]))),
-          hairUnlock: HERO_HAIR_STYLES.map(hairUnlock), gearUnlock: HERO_GEAR.map((x) => x[3] === undefined ? -1 : x[3]),
-          wardrobeOpen: wardrobeOpen, wardrobeFor: wardrobeFor, lookOpen: lookOpen,
+          hairUnlock: HERO_HAIR_STYLES.map(hairUnlock), gearUnlock: HERO_GEAR.map((gear) => {
+            const item = AH.WorldOrder.flatMap((slug, i) => C.regionalItems(i)).find((x) => x.category === 'gear' && x.value === gear[0]);
+            return item ? item.region : -1;
+          }),
+          wardrobeOpen: wardrobeOpen, wardrobeFor: wardrobeFor, regionalItems: C.regionalItems, lookOpen: lookOpen,
+          wardrobeRegions: (category, value) => AH.WorldOrder.map((slug, i) => i)
+            .filter(i => C.regionalItems(i).some(item => item.category === category && item.value === value)),
+          hatUnlock: HERO_HATS.map((hat) => {
+            const item = AH.WorldOrder.flatMap((slug, i) => C.regionalItems(i)).find((x) => x.category === 'hat' && x.value === hat[0]);
+            return item ? item.region : -1;
+          }),
+          hackerSuit: HERO_SUIT.findIndex((suit) => suit.outfit === 'hacker'),
           suitOpen: suitOpen,
-          // suit indexes newly opened by clearing level index i
+          // Regional suit indexes, retained for legacy callers.
           suitsFor: (i) => HERO_SUIT.map((c, k) => (c.unlock === i ? k : -1)).filter((k) => k >= 0)
         },
         // saved Hero Lab look, falling back to the classic hero / heroine presets; locked suits fall back to the default
@@ -109,11 +121,25 @@
           const out = L && (L.body === 'm' || L.body === 'f') ? Object.assign({}, HERO_DEF[L.body], L) : Object.assign({}, HERO_DEF[data && data.hero === 'f' ? 'f' : 'm']);
           // older saves stored the hijab as a hairstyle; it is headwear now
           if (out.hair === 'hijab') { out.hair = HERO_DEF[out.body].hair; out.hat = 'hijab'; }
-          if (!suitOpen(out.suit, data && data.unlocked)) out.suit = HERO_DEF[out.body].suit;
-          if (!wardrobeOpen('hair', out.hair, data && data.unlocked)) out.hair = HERO_DEF[out.body].hair;
-          if (!wardrobeOpen('gear', out.gear, data && data.unlocked)) out.gear = HERO_DEF[out.body].gear;
-          if (!wardrobeOpen('hat', out.hat, data && data.unlocked)) out.hat = HERO_DEF[out.body].hat;
+          if (!suitOpen(out.suit, data)) out.suit = HERO_DEF[out.body].suit;
+          if (!wardrobeOpen('hair', out.hair, data)) out.hair = HERO_DEF[out.body].hair;
+          if (!wardrobeOpen('gear', out.gear, data)) out.gear = HERO_DEF[out.body].gear;
+          if (!wardrobeOpen('hat', out.hat, data)) out.hat = HERO_DEF[out.body].hat;
           return out;
+        },
+        buildGuide: function (scene, region, variant) {
+          const index = AH.WorldOrder.findIndex((slug) => AH.Worlds[slug].world.region === region);
+          if (index < 0) throw new Error('UNKNOWN GUIDE REGION: ' + region);
+          const prefix = 'checkpoint_local_' + region + '_' + variant + '_', key = prefix + 'idle';
+          if (!scene.textures.exists(key)) {
+            const items = C.regionalItems(index), look = Object.assign({}, HERO_DEF[variant % 2 ? 'f' : 'm'], wardrobeFor(index), {
+              hat: (items.find((x) => x.category === 'hat') || {}).value || 'none',
+              skin: (index + variant) % HERO_SKIN.length, guide: true
+            });
+            try { regHero(prefix, look, ['idle']); } finally { C.applyLook(HERO_DEF.m); }
+            scene.textures.addCanvas(key, defs[key]);
+          }
+          return key;
         },
         HD: 8,
         // high-density (HD x) portrait frame for Title / Hero Lab; not auto-scaled, so callers setScale(size / HD)
@@ -257,6 +283,7 @@
   AH.ArtModules.stages['art.scenery.84'](C);
   AH.ArtModules.stages['worlds.amsterdam.scenery.85'](C);
   AH.ArtModules.stages['art.ambient.86'](C);
+  AH.ArtModules.stages['worlds.redmond.transit'](C);
   AH.ArtModules.stages['worlds.amsterdam.scenery.87'](C);
   AH.ArtModules.stages['worlds.tokyo.scenery.88'](C);
   AH.ArtModules.stages['worlds.new-york.scenery.89'](C);

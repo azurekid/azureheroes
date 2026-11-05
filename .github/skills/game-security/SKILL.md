@@ -24,11 +24,16 @@ description: 'Apply Azure Heroes secure contribution checks. Use for all game ch
 ## Non-negotiable checks
 - No hardcoded credentials, master passwords, undocumented routes, hidden privilege,
   secret key sequences, production debug bypasses or score/health cheats.
-- Sole documented exception: the Konami **Gold Mode** easter egg (`AH.Gold` in
-  `systems/scenes.js`, README "Gold Mode"). It opens all worlds, adds a gold suit and extra lives in a
+- Sole documented exception: the Konami **Hacker Mode** easter egg (formerly Gold Mode; internal `AH.Gold` in
+  `systems/scenes.js`, README "Hacker Mode"). It opens all worlds, uses Cloud Hacker and extra lives in a
   session-only sandbox: gold runs must never call `submitScore`, `recordScore`,
-  `unlock`, `setResume` or push progress, and the gold suit must never load from a save.
-  Keep the Gold Mode test in `tests/wardrobe.test.js` green; do not add other sequences.
+  `unlock`, `setResume`, collect wardrobe or push progress. No gold appearance,
+  new invulnerability or account permissions. Preserve bounded cosmetic IDs and
+  monotonic collection merges at the server boundary.
+  Regional start IDs and route sets must be bounded to represented worlds;
+  registration start is immutable. Test malformed/oversized route data and
+  unauthorized writes. Region choice requires no geolocation service or permission.
+  Keep the sandbox tests in `tests/wardrobe.test.js` green; do not add other sequences.
 - No `eval`, `new Function`, execution of remote text, encoded executable payloads or
   shell construction from user data. Do not add silent error suppression to hide failures.
 - Keep server authorization on every private operation, strong password hashing,

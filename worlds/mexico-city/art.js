@@ -128,6 +128,8 @@
     reg2('adobe_top',32,8,function(g){
         g.fillStyle=lg(g,0,0,0,8,[[0,'#ffd182'],[.45,'#b96b4e'],[1,'#75404a']]);g.fillRect(0,0,32,8);g.fillStyle='#ffdf98';g.fillRect(0,0,32,1.2);g.fillStyle='#704050';g.fillRect(0,6.8,32,1.2);
         for(let x=2;x<32;x+=6){g.fillStyle='#1bb7ad';poly(g,[[x,2],[x+2,4],[x,6],[x-2,4]],g.fillStyle);g.fillStyle='#e84b5c';g.fillRect(x+2,3,1,2);}
+        poly(g,[[0,0],[27,0],[32,4],[5,4]],'rgba(246,192,132,.3)');
+        for(const x of [8,24])poly(g,[[x,0],[x+1,0],[x+6,4],[x+5,4]],'#a46650');
       },FLAT);
   };
 

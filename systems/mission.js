@@ -9,17 +9,21 @@
       this.mode = level.mode;
       this.objectives = (level.mission?.objectives || []).map((def) => ({ def, done: false, progress: 0 }));
       this.gems = (level.mission?.gems || []).map((def) => ({ def, done: false }));
+      this.tokens = (level.mission?.tokens || []).map((def) => ({ def, done: false, released: false }));
+      this.tokenQuota = level.mission?.tokenQuota || 0;
       this.quota = level.mission?.gemQuota || 0;
       this.enabled = !!level.mission;
     }
 
     get cacheReady() { return this.objectives.filter((item) => item.def.kind === 'cache' && item.def.required).every((item) => item.done); }
     get gemCount() { return this.gems.filter((item) => item.done).length; }
-    get ready() { return this.gemCount >= this.quota && this.objectives.every((item) => !item.def.required || item.done); }
+    get tokenCount() { return this.tokens.filter((item) => item.done).length; }
+    get ready() { return this.tokenCount >= this.tokenQuota && this.gemCount >= this.quota && this.objectives.every((item) => !item.def.required || item.done); }
 
     pending() {
       const required = this.objectives.filter((item) => item.def.required && !item.done);
       if (this.gemCount < this.quota) required.push(...this.gems.filter((item) => !item.done && item.def.zone === undefined));
+      required.push(...this.tokens.filter((item) => !item.done));
       return required.sort((a, b) => a.def.x - b.def.x);
     }
 
@@ -32,6 +36,7 @@
       const required = this.objectives.find((item) => item.def.required && !item.done);
       if (required) return required;
       if (this.gemCount < this.quota) return this.gems.find((item) => !item.done && item.def.zone === undefined);
+      if (this.tokenCount < this.tokenQuota) return this.tokens.find((item) => !item.done);
       return null;
     }
 
@@ -40,10 +45,11 @@
       const required = this.objectives.filter((item) => item.def.required), next = this.next();
       const direction = next ? Math.abs(next.def.x - x) < 70 ? 'NEAR' : next.def.x > x ? 'RIGHT' : 'LEFT' : '';
       let action = next?.def.label || 'FIND A GEM';
+      if (next && this.tokens.includes(next)) action = next.released ? 'COLLECT BOSS TOKEN' : 'DEFEAT TOKEN CARRIER';
       if (next?.def.kind === 'relay') action = this.mode === 'fly' ? 'BLAST RELAY' : 'HOLD SHIELD AT RELAY';
       if (next?.progress) action += ' ' + Math.floor(next.progress * 100) + '%';
       return { done: required.filter((item) => item.done).length, total: required.length,
-        gems: this.gemCount, quota: this.quota,
+        gems: this.gemCount, quota: this.quota, tokens: this.tokenCount, tokenQuota: this.tokenQuota,
         bonus: this.objectives.filter((item) => !item.def.required && item.done).length,
         ready: this.ready, next: this.ready ? 'BOSS ACCESS GRANTED - EXTRA GEMS OPTIONAL' : action + ' ' + direction };
     }
@@ -56,10 +62,25 @@
           gem ? 'GEM' : def.label, { scale: 1, color: gem ? '#ff7ad9' : '#7fe8ff', ox: 0.5 }).setDepth(29);
         scene.tweens.add({ targets: item.sprite, alpha: gem ? 0.6 : 0.8, yoyo: true, repeat: -1, duration: gem ? 800 : 1100 });
       }
+      for (const item of this.tokens) {
+        item.sprite = scene.add.image(item.def.x, item.def.y, 'boss_access_token').setDepth(28).setVisible(false);
+        item.label = new AH.PixelText(scene, item.def.x, item.def.y - 24,
+          'BOSS TOKEN', { scale: 1, color: '#4dff7a', ox: 0.5 }).setDepth(29).setVisible(false);
+      }
       if (this.enabled && scene.L.boss) {
         this.accessLabel = new AH.PixelText(scene, scene.L.boss.trigger - 70,
           (scene.L.boss.floor || 250) - 72, 'BOSS ACCESS LOCKED', { scale: 1, color: '#ffb060', ox: 0.5 }).setDepth(29);
       }
+    }
+
+    releaseToken(id, scene) {
+      const item = this.tokens.find((item) => item.def.id === id);
+      if (!item || item.done || item.released) return false;
+      item.released = true;
+      if (item.sprite) item.sprite.setVisible(true);
+      if (item.label) item.label.setVisible(true);
+      scene.toast('TOKEN RELEASED - COLLECT IT FOR BOSS ACCESS');
+      return true;
     }
 
     complete(item, scene) {
@@ -69,6 +90,12 @@
       if (item.sprite) item.sprite.setVisible(false);
       if (item.label) item.label.setVisible(false);
       const gem = !item.def.kind;
+      const token = this.tokens.includes(item);
+      if (token) {
+        scene.toast('BOSS TOKEN ' + this.tokenCount + '/' + this.tokenQuota + ' RECOVERED');
+        AH.Audio.play('unlock');
+        return true;
+      }
       scene.addScore(gem ? 750 : item.def.required ? 1000 : 1500, item.def.x, item.def.y - 20);
       scene.toast(gem ? 'AZURE GEM ' + this.gemCount + ' FOUND - ' + this.quota + ' REQUIRED'
         : item.def.kind === 'cache' ? 'DEPLOYMENT KEY FOUND - SECURE THE RELAY' : item.def.tip);
@@ -101,6 +128,10 @@
           : this.mode === 'fly' ? 'SCAN' : 'S: DUCK TO SCAN ' + Math.floor(item.progress * 100) + '%');
         else if (item.label) item.label.setText(def.label);
         if (item.progress >= 1) this.complete(item, scene);
+      }
+      if (!scene.inPipe && !scene.inBonus) for (const item of this.tokens) {
+        if (!item.done && item.released && overlaps(rect, { x: item.def.x - 22, y: item.def.y - 22, w: 44, h: 44 }))
+          this.complete(item, scene);
       }
     }
 

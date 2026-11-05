@@ -9,7 +9,7 @@
   AH.ArtModules.regions['francecentral'] = content;
 
   AH.ArtModules.stages['worlds.paris.scenery.114'] = function (C) {
-    const { FR_PREFIX, ell, glowRect, lamp, lg, line, lit, msLogo, poly, rrect, silFill, txt, txtW } = C;
+    const { FR_PREFIX, depthFace, depthGround, ell, glowRect, lamp, lg, line, lit, msLogo, poly, rrect, silFill, txt, txtW } = C;
 
     Object.assign(C, { frEiffel, frArc, frSacre, frMontparnasse, frNotreDame, frMoulin, frWallace, frHaussmann, frCafe, frBoulang, frOffice });
     function frEiffel(g, cx, base, s, FR_PREFIX) {
@@ -56,16 +56,21 @@
           [-1, 1].forEach(function (sd) { ell(g, X(q[0] * sd), Y(q[1]), 0.9 * s, 0.9 * s, '#fff0b0'); });
         });
         g.fillStyle = '#2c1c3c'; g.fillRect(X(-40), Y(1.5), 16 * s, 1.5 * s); g.fillRect(X(24), Y(1.5), 16 * s, 1.5 * s);
+        [-40, 24].forEach((u) => depthGround(g, X(u), base, 16 * s, 2 * s, '#362c3b', '#a88a78'));
+        poly(g, [[X(0), Y(94)], [X(13), Y(94)], [X(13), Y(89)], [X(4), Y(90)]], '#51374c');
+        poly(g, [[X(25), Y(49)], [X(25), Y(42)], [X(18), Y(43)], [X(18), Y(48)]], '#65424e');
       }
 
     function frArc(g, cx, base, s, FR_PREFIX) {
         const w = 88 * s, h = 70 * s, x = cx - w / 2, y = base - h;
         g.fillStyle = silFill(g, y, base, '#d6a86e', '#71456d');
         g.fillRect(x, y + 13 * s, w, h - 13 * s);
+        depthFace(g, x, y + 13 * s, w, base, 10 * s, '#805d6b', '#d2b88a');
         poly(g, [[x - 5 * s, y + 16 * s], [cx, y - 2 * s], [x + w + 5 * s, y + 16 * s], [x + w, y + 24 * s], [x, y + 24 * s]], '#e4b96e');
         g.fillStyle = '#f1d089'; g.fillRect(x - 3 * s, y + 20 * s, w + 6 * s, 4 * s);
         g.fillStyle = '#8d526e'; g.fillRect(cx - 12 * s, y + 30 * s, 24 * s, 37 * s);
         g.fillStyle = '#261a43'; g.fillRect(cx - 7 * s, y + 36 * s, 14 * s, 31 * s);
+        poly(g, [[cx + 7 * s, y + 36 * s], [cx + 12 * s, y + 30 * s], [cx + 12 * s, y + 67 * s], [cx + 7 * s, y + 67 * s]], '#a47775');
         g.fillStyle = '#f0ce84'; g.fillRect(cx - 10 * s, y + 63 * s, 20 * s, 4 * s);
         for (let i = 0; i < 7; i++) {
           const px = x + (8 + i * 12) * s;
@@ -77,6 +82,7 @@
           lit(g, px, y + 43 * s, 3 * s, 10 * s, FR_PREFIX.win[i % FR_PREFIX.win.length]);
         }
         line(g, x - 4 * s, base - 2 * s, x + w + 4 * s, base - 2 * s, 2 * s, '#e8c77d');
+        depthGround(g, x - 4 * s, base, w + 8 * s, 2 * s, '#624855', '#d7bc93');
       }
 
     function frSacre(g, cx, base, s, FR_PREFIX) {
@@ -148,20 +154,26 @@
           ell(g, X(u), Y(35), 3.2 * s, 2 * s, '#4d6e65'); line(g, X(u + (u < 0 ? 2 : -2)), Y(35), X(u + (u < 0 ? 3 : -3)), Y(39), 1.2 * s, '#4d6e65');
           ell(g, X(u), Y(38), 1.2 * s, 1.4 * s, '#5c8075');
         });
+        poly(g, [[X(20), Y(46)], [X(26), Y(42)], [X(26), Y(22)], [X(20), Y(22)]], '#b49daa');
+        depthGround(g, X(-28), Y(22), 56 * s, 2 * s, '#8e7e8d', '#e9d8cd');
+        poly(g, [[X(-9), Y(0)], [X(-5), Y(22)], [X(-3.5), Y(22)], [X(-6), Y(0)]], '#a1929d');
       }
 
     function frMontparnasse(g, cx, base, s, FR_PREFIX) {
         poly(g, [[cx - 19 * s, base], [cx - 13 * s, base - 128 * s], [cx - 6 * s, base - 146 * s], [cx + 6 * s, base - 146 * s], [cx + 13 * s, base - 128 * s], [cx + 19 * s, base]], lg(g, cx - 19 * s, base - 146 * s, cx + 19 * s, base, [[0, '#675278'], [0.55, '#332748'], [1, '#1c1834']]));
+        poly(g, [[cx + 6 * s, base - 146 * s], [cx + 13 * s, base - 128 * s], [cx + 19 * s, base], [cx + 10 * s, base], [cx + 6 * s, base - 128 * s]], '#241f35');
         g.fillStyle = '#e9a6ac'; g.fillRect(cx - 20 * s, base - 128 * s, 40 * s, 2.5 * s);
         for (let y = 0; y < 12; y++) for (let x = 0; x < 5; x++) lit(g, cx - 11 * s + x * 5 * s, base - 119 * s + y * 9.2 * s, 2 * s, 3.6 * s, FR_PREFIX.win[(x + y) % 3]);
         line(g, cx, base - 146 * s, cx, base - 157 * s, 1.4 * s, '#e6c57f');
         glowRect(g, '#fff0a0', cx - 2 * s, base - 160 * s, 4 * s, 3 * s);
+        depthGround(g, cx - 19 * s, base, 38 * s, 3 * s, '#252034', '#918391');
       }
 
     function frNotreDame(g, cx, base, s, FR_PREFIX) {
         const x = cx - 56 * s, y = base - 66 * s;
         g.fillStyle = silFill(g, y, base, '#9f6b78', '#482c59'); g.fillRect(x + 3 * s, y + 30 * s, 106 * s, 36 * s);
         g.fillRect(x, y + 4 * s, 31 * s, 62 * s); g.fillRect(x + 81 * s, y + 4 * s, 31 * s, 62 * s);
+        [0, 81].forEach((u) => depthFace(g, x + u * s, y + 4 * s, 31 * s, base, 5 * s, '#654956', '#c4aa96'));
         g.fillStyle = '#d6a66f'; g.fillRect(x - 2 * s, y + 27 * s, 116 * s, 4 * s);
         for (let t = 0; t < 2; t++) {
           const tx = x + 3 * s + t * 81 * s;
@@ -175,6 +187,7 @@
         for (let a = 0; a < 8; a++) { const an = a * Math.PI / 4; line(g, cx, y + 43 * s, cx + Math.cos(an) * 8 * s, y + 43 * s + Math.sin(an) * 8 * s, 1 * s, '#f3d17f'); }
         g.fillStyle = '#2c1b42'; g.fillRect(cx - 5 * s, y + 52 * s, 10 * s, 14 * s);
         for (let i = 0; i < 8; i++) lit(g, x + 8 * s + i * 14 * s, y + 35 * s, 3 * s, 8 * s, FR_PREFIX.win[i % 3]);
+        depthGround(g, x, base, 112 * s, 2 * s, '#473245', '#ac9291');
       }
 
     function frMoulin(g, cx, base, s, FR_PREFIX) {
@@ -182,6 +195,7 @@
         const X = function (u) { return cx + u * s; }, Y = function (v) { return base - v * s; };
         g.fillStyle = lg(g, 0, Y(42), 0, Y(0), [[0, '#ef4c68'], [0.55, '#b3264a'], [1, '#55163a']]);
         g.fillRect(X(-50), Y(42), 100 * s, 42 * s);
+        depthFace(g, X(-50), Y(42), 100 * s, base, 6 * s, '#70233c', '#ba5a63');
         g.fillStyle = '#6e1838'; g.fillRect(X(-52), Y(44), 104 * s, 3 * s);
         for (let u = -48; u <= 48; u += 4) { glowRect(g, '#ffe39a', X(u - 1.2), Y(44.6), 2.4 * s, 2.4 * s); ell(g, X(u), Y(43.4), 0.9 * s, 0.9 * s, '#fff2c0'); }
         for (let u = -44; u <= 44; u += 11) if (u < -30 || u > -6) {
@@ -222,6 +236,7 @@
           g.restore();
         }
         ell(g, hx, hy, 3.4 * s, 3.4 * s, '#3a0d22'); ell(g, hx, hy, 2.2 * s, 2.2 * s, '#ffd978');
+        depthGround(g, X(-50), base, 100 * s, 2 * s, '#382131', '#b08b83');
       }
 
     function frWallace(g, cx, base, s) {
@@ -242,6 +257,7 @@
         g.fillStyle = '#2c594d'; g.fillRect(cx - 5 * s, base - 23 * s, 10 * s, 11 * s);
         for (let x = -8; x <= 8; x += 16) { ell(g, cx + x * s, base - 27 * s, 1.6 * s, 1.6 * s, '#d4c184'); line(g, cx + x * s, base - 27 * s, cx + x * s, base - 21 * s, 0.8 * s, light); }
         line(g, cx - 13 * s, base - 7 * s, cx + 13 * s, base - 7 * s, 1.4 * s, light);
+        depthGround(g, cx - 16 * s, base, 32 * s, 3 * s, '#6d665c', '#d4c2a1');
       }
 
     function frHaussmann(g, x0, base, w, FR_PREFIX) {
@@ -261,6 +277,8 @@
           poly(g, [[x - 1.5, eave], [x + 3, top + 3], [x + bw - 3, top + 3], [x + bw + 1.5, eave]], lg(g, 0, top + 3, 0, eave, [[0, zinc[0]], [0.5, zinc[1]], [1, zinc[2]]]));
           for (let zx = x + 3; zx < x + bw - 2; zx += 3) line(g, zx, top + 4, zx + (zx - x - bw / 2) * 0.05, eave - 1, 0.35, 'rgba(230,240,255,0.25)');
           g.fillStyle = zinc[0]; g.fillRect(x + 3, top + 2.4, bw - 6, 1);
+          poly(g, [[x + bw - 8, top + 3], [x + bw - 3, top + 3], [x + bw + 1, eave], [x + bw - 5, eave]], zinc[2]);
+          line(g, x + bw - 8, top + 3, x + bw - 5, eave, 0.6, zinc[0]);
           const cols = Math.max(2, Math.floor(bw / 13)), step = (bw - 8) / cols;
           for (let c = 0; c < cols; c++) {
             const wx = x + 4 + c * step + step / 2 - 2.4;
@@ -273,6 +291,7 @@
           // limestone facade, cornice and string courses
           g.fillStyle = lg(g, x, eave, x + bw, base, [[0, stone[0]], [0.6, stone[1]], [1, stone[2]]]);
           g.fillRect(x, eave, bw, hh - 16);
+          depthFace(g, x, eave, bw, base, 5, stone[2], stone[0]);
           g.fillStyle = stone[0]; g.fillRect(x - 1.5, eave, bw + 3, 1.8);
           g.fillStyle = 'rgba(40,24,52,0.35)'; g.fillRect(x - 1, eave + 1.8, bw + 2, 1); g.fillRect(x + bw - 1, eave, 1, hh - 16);
           const rows = Math.floor((hh - 16 - 14) / 12);
@@ -300,6 +319,9 @@
             g.fillStyle = '#2a1a36'; g.fillRect(sx, gy + 3, 8 + (c + 1 < cols ? step : 0) * 0.5, 10);
             lit(g, sx + 1, gy + 5, 6 + (c + 1 < cols ? step : 0) * 0.5, 7, FR_PREFIX.win[(c + index) % FR_PREFIX.win.length]);
           }
+          poly(g, [[x + bw - 5, eave + 2], [x + bw, eave + 5], [x + bw, base], [x + bw - 5, base]], stone[2]);
+          for (let sy = eave + 13; sy < base - 10; sy += 12) line(g, x + bw - 5, sy, x + bw, sy + 2, 0.5, stone[1]);
+          depthGround(g, x, base, bw, 2, '#574453', '#baa59b');
           x += bw;
         });
       }
@@ -307,6 +329,7 @@
     function frCafe(g, x, base, w, FR_PREFIX) {
         const x0 = x - w / 2;
         g.fillStyle = '#432a57'; g.fillRect(x0 + 8, base - 53, w - 16, 53);
+        depthFace(g, x0 + 8, base - 53, w - 16, base, 6, '#302439', '#a48a8d');
         poly(g, [[x0 + 4, base - 43], [x0 + w - 4, base - 43], [x0 + w - 10, base - 24], [x0 + 10, base - 24]], '#e8c796');
         const stripes = Math.floor((w - 20) / 12);
         for (let i = 0; i < stripes; i++) { g.fillStyle = i % 2 ? '#f5e1c2' : '#cf5675'; g.fillRect(x0 + 10 + i * ((w - 20) / stripes), base - 42, (w - 20) / stripes, 17); }
@@ -315,6 +338,8 @@
         g.fillStyle = '#231831'; g.fillRect(x0 + 13, base - 15, w - 26, 15);
         for (let px = x0 + 20; px < x0 + w - 15; px += 16) lit(g, px, base - 12, 5, 9, FR_PREFIX.win[Math.floor(px) % 3]);
         g.fillStyle = '#a87a70'; g.fillRect(x0 + 14, base - 1, w - 28, 1);
+        poly(g, [[x0 + w - 10, base - 43], [x0 + w - 4, base - 43], [x0 + w - 10, base - 24], [x0 + w - 15, base - 24]], '#9b6470');
+        depthGround(g, x0 + 8, base, w - 16, 2, '#4b3546', '#c4a697');
       }
 
     function frBoulang(g, x, base, w, FR_PREFIX) {
@@ -322,12 +347,14 @@
         const x0 = x - w / 2, top = base - 128, shop = base - 64;
         const stone = FR_PREFIX.stone || ['#f6e6cc', '#dcc0a6', '#8f6e83'], zinc = FR_PREFIX.zinc || ['#a9b8d0', '#6f7c9c', '#3c3f62'];
         poly(g, [[x0 - 1, top + 16], [x0 + 4, top + 2], [x0 + w - 4, top + 2], [x0 + w + 1, top + 16]], lg(g, 0, top, 0, top + 16, [[0, zinc[0]], [1, zinc[2]]]));
+        poly(g, [[x0 + w - 10, top + 2], [x0 + w - 4, top + 2], [x0 + w + 1, top + 16], [x0 + w - 6, top + 16]], zinc[2]);
         for (let c = 0; c < 4; c++) {
           const dx = x0 + 14 + c * (w - 28) / 3 - 4;
           g.fillStyle = stone[1]; g.fillRect(dx, top + 6, 8, 10); ell(g, dx + 4, top + 6, 4, 3, stone[0]);
           lit(g, dx + 1.6, top + 8, 4.8, 6, FR_PREFIX.win[c % 3]);
         }
         g.fillStyle = lg(g, 0, top + 16, 0, shop, [[0, stone[0]], [1, stone[1]]]); g.fillRect(x0, top + 16, w, shop - top - 16);
+        depthFace(g, x0, top + 16, w, base, 6, stone[2], stone[0]);
         g.fillStyle = stone[0]; g.fillRect(x0 - 2, top + 16, w + 4, 2);
         for (let row = 0; row < 2; row++) for (let c = 0; c < 5; c++) {
           const wx = x0 + 10 + c * (w - 26) / 4, wy = top + 22 + row * 16;
@@ -381,12 +408,15 @@
         poly(g, [[x0 + w - 14, base], [x0 + w - 10, base - 15], [x0 + w - 3, base - 15], [x0 + w + 1, base]], '#3a2a24');
         g.fillStyle = '#25302c'; g.fillRect(x0 + w - 11, base - 14, 9, 10);
         txt(g, 'PAIN', x0 + w - 10.5, base - 11, 0.32, '#f4f1e6');
+        poly(g, [[x0 + w - 6, shop + 30], [x0 + w - 2, shop + 31], [x0 + w - 2, base - 4], [x0 + w - 6, base - 4]], '#173d43');
+        depthGround(g, x0, base, w, 2, '#4c3a45', '#bca99c');
       }
 
     function frOffice(g, x, base, w, FR_PREFIX) {
         const x0 = x - w / 2, bw = Math.min(w - 12, 130), left = x - bw / 2, h = 86;
         g.fillStyle = lg(g, left, base - h, left + bw, base, [[0, '#735481'], [0.55, '#493858'], [1, '#28223b']]);
         g.fillRect(left, base - h, bw, h);
+        depthFace(g, left, base - h, bw, base, 9, '#352b42', '#b99ca5');
         g.fillStyle = '#f0bc72'; g.fillRect(left, base - h, bw, 2);
         for (let row = 0; row < 5; row++) for (let col = 0; col < 9; col++) {
           const wx = left + 6 + col * ((bw - 14) / 9), wy = base - h + 8 + row * 13;
@@ -396,11 +426,12 @@
         msLogo(g, x - 26, base - 28, 9);
         txt(g, 'MICROSOFT', x - 14, base - 25, 0.44, '#332642');
         g.fillStyle = '#f7e8d5'; g.fillRect(x - 15, base - 9, 30, 9);
+        depthGround(g, left, base, bw, 3, '#332c3c', '#bba8a7');
       }
   };
 
   AH.ArtModules.stages['worlds.paris.scenery.120'] = function (C) {
-    const { FR_PREFIX, FR_REGION, SC, ell, frArc, frBoulang, frCafe, frEiffel, frHaussmann, frMoulin, frNotreDame, frOffice, frSacre, frWallace, glowRect, lamp, lg, line, poly, txt } = C;
+    const { FR_PREFIX, FR_REGION, SC, depthFace, depthGround, ell, frArc, frBoulang, frCafe, frEiffel, frHaussmann, frMoulin, frNotreDame, frOffice, frSacre, frWallace, glowRect, lamp, lg, line, poly, txt } = C;
 
     SC[FR_REGION] = {
         sc_fr_eiffel: [176, 200, function (g, w, h, FR_PREFIX) {
@@ -409,19 +440,26 @@
           g.fillStyle = lg(g, 0, h - 9, 0, h, [[0, '#6f9a68'], [1, '#2f4a45']]); g.fillRect(0, h - 8, w, 8);
           [8, 22, 36, 140, 154, 168].forEach(function (x, i) { g.fillStyle = '#3a2a3a'; g.fillRect(x - 0.8, h - 12, 1.6, 6); ell(g, x, h - 15, 7, 5.4, i % 2 ? '#4f7a58' : '#40664f'); ell(g, x - 2, h - 17, 3, 1.8, 'rgba(190,220,150,0.45)'); });
           [56, 120].forEach(function (x) { lamp(g, x, h - 4, 18, '#ffd98a'); });
+          poly(g, [[70, h], [83, h - 8], [93, h - 8], [106, h]], '#aeaa8e');
+          depthGround(g, 0, h, w, 2, '#35473d', '#89916e');
         }],
         sc_fr_arc: [176, 142, function (g, w, h, FR_PREFIX) { frHaussmann(g, 0, h - 2, w, FR_PREFIX); frArc(g, w / 2, h - 2, 1.45, FR_PREFIX); }],
         sc_fr_louvre: [194, 146, function (g, w, h, FR_PREFIX) {
           frHaussmann(g, 0, h - 2, w, FR_PREFIX);
           const base = h - 30, x = w / 2;
           g.fillStyle = '#6f4a67'; g.fillRect(13, base - 59, w - 26, 57);
+          depthFace(g, 13, base - 59, w - 26, base - 2, 7, '#503849', '#ba9b86');
           g.fillStyle = '#d9ad73'; g.fillRect(11, base - 62, w - 22, 4);
           for (let i = 0; i < 13; i++) { const px = 21 + i * 12; g.fillStyle = '#d6b783'; g.fillRect(px, base - 53, 2.6, 34); }
           // glass pyramid, gold frame and cool lit panes
           poly(g, [[x - 39, base], [x, base - 52], [x + 39, base]], 'rgba(106,202,210,0.55)');
+          poly(g, [[x, base - 52], [x + 39, base], [x + 12, base - 6]], 'rgba(45,99,124,0.7)');
           line(g, x - 39, base, x, base - 52, 2, '#e8c778'); line(g, x + 39, base, x, base - 52, 2, '#e8c778'); line(g, x - 39, base, x + 39, base, 2, '#e8c778');
           line(g, x - 19, base, x, base - 52, 0.8, '#e4ebdf'); line(g, x + 19, base, x, base - 52, 0.8, '#e4ebdf'); line(g, x - 26, base - 17, x + 26, base - 17, 0.8, '#f5df9b');
           glowRect(g, '#83e7e5', x - 17, base - 28, 34, 22);
+          poly(g, [[13, base + 2], [w - 13, base + 2], [w, h - 2], [0, h - 2]], '#a68e8c');
+          for (let px = 20; px < w; px += 30) line(g, x, base + 2, px, h - 2, 0.5, '#756275');
+          depthGround(g, 0, h - 2, w, 2, '#594555', '#c9b3a5');
         }],
         sc_fr_notredame: [178, 160, function (g, w, h, FR_PREFIX) { frNotreDame(g, w / 2, h - 2, 1.28, FR_PREFIX); }],
         sc_fr_sacrecoeur: [176, 180, function (g, w, h, FR_PREFIX) { frSacre(g, w / 2, h - 2, 1.32, FR_PREFIX); }],
@@ -446,7 +484,7 @@
   };
 
   AH.ArtModules.stages['worlds.paris.scenery.126'] = function (C) {
-    const { SC, ell, lg, line, lit, poly, silFill, txt } = C;
+    const { SC, depthFace, depthGround, ell, lg, line, lit, poly, silFill, txt } = C;
 
     Object.assign(SC.francecentral, {
         sc_fr_montsaintmichel: [190, 210, function (g, w, h, P) {
@@ -455,6 +493,7 @@
           for (let x = 0; x < w; x += 22) { line(g, x, h - 27 + (x % 3) * 2, x + 12, h - 27 + (x % 3) * 2, 0.8, 'rgba(206,246,255,0.65)'); }
           poly(g, [[cx - 71, base], [cx - 55, h - 43], [cx - 38, h - 74], [cx - 18, h - 88], [cx + 28, h - 88], [cx + 51, h - 60], [cx + 75, base]], lg(g, 0, h - 90, 0, base, [[0, '#c6a579'], [1, '#543d5f']]));
           g.fillStyle = '#d4bd9b'; g.fillRect(cx - 38, h - 102, 75, 20); g.fillRect(cx - 28, h - 119, 56, 21); g.fillRect(cx - 20, h - 139, 41, 22); g.fillRect(cx - 12, h - 159, 25, 22);
+          [[-38, 102, 75, 82], [-28, 119, 56, 98], [-20, 139, 41, 117], [-12, 159, 25, 137]].forEach((q) => depthFace(g, cx + q[0], h - q[1], q[2], h - q[3], 4, '#8f7480', '#e0cab1'));
           for (let x = cx - 36; x < cx + 35; x += 12) lit(g, x, h - 96, 4, 7, P.win[(x / 12 | 0) % 3]);
           for (let x = cx - 25; x < cx + 25; x += 12) lit(g, x, h - 114, 4, 7, P.win[(x / 12 | 0) % 3]);
           for (let x = cx - 18; x < cx + 18; x += 12) lit(g, x, h - 134, 4, 7, P.win[(x / 12 | 0) % 3]);
@@ -462,11 +501,14 @@
           g.fillStyle = '#4c3658'; g.fillRect(cx - 5, h - 186, 10, 17); poly(g, [[cx - 7, h - 186], [cx, h - 195], [cx + 7, h - 186]], P.accent);
           line(g, cx, h - 194, cx, h - 203, 1.2, P.accent);
           line(g, cx - 60, h - 51, cx + 58, h - 51, 1.2, P.accent);
+          poly(g, [[cx + 13, h - 82], [cx + 51, h - 60], [cx + 75, base], [cx + 47, base]], '#6c5364');
+          depthGround(g, cx - 71, base, 146, 3, '#433445', '#b69b8a');
         }],
         sc_fr_pontdugard: [230, 140, function (g, w, h, P) {
           const base = h - 4, arch = '#a998a9';
           g.fillStyle = silFill(g, h - 108, base, '#d3b39f', '#5a4668');
           g.fillRect(10, h - 35, 210, 31); g.fillRect(18, h - 76, 194, 22); g.fillRect(28, h - 109, 174, 18);
+          [[10, 35, 210, 4], [18, 76, 194, 54], [28, 109, 174, 91]].forEach((q) => depthFace(g, q[0], h - q[1], q[2], h - q[3], 4, '#725b6a', '#cdb7a1'));
           for (let i = 0; i < 6; i++) {
             const x = 10 + i * 36;
             g.fillStyle = '#281d3b'; g.beginPath(); g.ellipse(x + 15, h - 4, 15, 29, 0, Math.PI, 0); g.fill(); g.fillRect(x, h - 4, 30, 29);
@@ -480,13 +522,16 @@
           for (let x = 14; x < 222; x += 13) line(g, x, h - 109, x, h - 103, 1, P.accent);
           g.fillStyle = lg(g, 0, h - 13, 0, base, [[0, '#3796aa'], [1, '#1b3c58']]); g.fillRect(0, h - 13, w, 9);
           line(g, 0, h - 13, w, h - 13, 1.5, '#e4c58e');
+          [10, 208].forEach((x) => depthGround(g, x, base, 12, 3, '#57465b', '#b6a291'));
         }],
         sc_fr_carcassonne: [220, 150, function (g, w, h, P) {
           const base = h - 4, wall = lg(g, 0, h - 94, 0, base, [[0, '#d2ae88'], [0.55, '#9a6c76'], [1, '#503d62']]);
           g.fillStyle = wall; g.fillRect(12, h - 78, 196, 74);
+          depthFace(g, 12, h - 78, 196, base, 7, '#704c5e', '#c3a08d');
           for (let i = 0; i < 8; i++) {
             const x = 8 + i * 27, hh = 86 + (i % 3) * 10;
             g.fillStyle = wall; g.fillRect(x, h - hh, 19, hh);
+            depthFace(g, x, h - hh, 19, base, 4, '#775362', '#d5b095');
             poly(g, [[x - 2, h - hh], [x + 9.5, h - hh - 15], [x + 21, h - hh]], '#77516d');
             g.fillStyle = '#30203e'; g.fillRect(x + 5, h - hh + 12, 8, 17); lit(g, x + 7, h - hh + 14, 4, 10, P.win[i % 3]);
             g.fillStyle = '#d2ae88'; for (let k = 0; k < 4; k++) g.fillRect(x + k * 5, h - hh + 2, 3, 4);
@@ -496,15 +541,18 @@
           for (let x = 102; x < 120; x += 10) lit(g, x, h - 32, 4, 8, P.win[(x / 10 | 0) % 3]);
           line(g, 10, h - 77, 209, h - 77, 1.4, P.accent);
           txt(g, 'CARCASSONNE', 77, h - 8, 0.55, '#fff0b1', '#3e2943');
+          depthGround(g, 8, h, 208, 4, '#433044', '#a18581');
         }],
         sc_fr_chambord: [230, 160, function (g, w, h, P) {
           const base = h - 4;
           g.fillStyle = silFill(g, h - 89, base, '#e1c9bb', '#765273'); g.fillRect(14, h - 68, 202, 64);
+          depthFace(g, 14, h - 68, 202, base, 7, '#896878', '#d9c6b7');
           g.fillStyle = '#d8c0b9'; g.fillRect(4, h - 77, 222, 11);
           for (let x = 20; x < 216; x += 18) { lit(g, x, h - 52, 5, 9, P.win[(x / 18 | 0) % 3]); }
           [23, 60, 99, 138, 177, 208].forEach(function (x, i) {
             const hh = [53, 78, 112, 94, 76, 55][i];
             g.fillStyle = silFill(g, h - hh, h - 65, '#d7beb7', '#795576'); g.fillRect(x - 12, h - hh + 13, 24, hh - 13);
+            depthFace(g, x - 12, h - hh + 13, 24, base, 4, '#8b6578', '#dac1ae');
             poly(g, [[x - 15, h - hh + 14], [x, h - hh - 3], [x + 15, h - hh + 14]], i % 2 ? '#9a7185' : '#c69a7f');
             g.fillStyle = '#d5b9ab'; g.fillRect(x - 2, h - hh - 10, 4, 10);
             if (i % 2 === 0) lit(g, x - 2, h - hh + 24, 4, 8, P.win[i % 3]);
@@ -514,10 +562,12 @@
           poly(g, [[108, h - 112], [115, h - 126], [122, h - 112]], P.accent);
           for (let i = 0; i < 7; i++) { const x = 49 + i * 23; poly(g, [[x, h - 65], [x + 7, h - 78], [x + 14, h - 65]], '#8c657a'); }
           line(g, 8, h - 66, 222, h - 66, 1.2, P.accent);
+          depthGround(g, 4, h, 222, 4, '#574153', '#ba9f9a');
         }],
         sc_fr_strasbourg: [150, 240, function (g, w, h, P) {
           const cx = w / 2, base = h - 4;
           g.fillStyle = silFill(g, h - 108, base, '#d6c1bd', '#664a74'); g.fillRect(24, h - 93, 102, 89);
+          depthFace(g, 24, h - 93, 102, base, 7, '#7b5d76', '#d2b8ab');
           g.fillStyle = '#d9c1b6'; g.fillRect(16, h - 101, 118, 9);
           for (let x = 33; x < 121; x += 14) lit(g, x, h - 78, 5, 8, P.win[(x / 14 | 0) % 3]);
           g.fillStyle = '#d7c2b9'; g.fillRect(cx - 28, h - 136, 56, 42);
@@ -529,6 +579,7 @@
           for (let y = h - 178; y < h - 158; y += 6) line(g, cx - 10 + (h - y) * 0.15, y, cx + 10 - (h - y) * 0.15, y, 1.1, '#e1bf8a');
           g.fillStyle = '#d9c1ad'; g.fillRect(cx - 3, h - 212, 6, 8); line(g, cx, h - 212, cx, h - 222, 1.2, P.accent);
           line(g, 18, h - 101, 132, h - 101, 1.5, P.accent);
+          depthGround(g, 16, h, 118, 4, '#4b374c', '#b5a099');
         }],
         sc_fr_provence: [240, 110, function (g, w, h, P) {
           const base = h - 4;
@@ -542,6 +593,8 @@
           }
           for (let x = 12; x < 235; x += 43) { g.fillStyle = '#342d48'; g.fillRect(x, h - 55 - (x % 3) * 2, 2, 27); ell(g, x + 1, h - 60 - (x % 3) * 2, 6, 8, '#465441'); }
           txt(g, 'PROVENCE', 88, h - 8, 0.62, '#fff0ba', '#372141');
+          poly(g, [[12, base], [104, h - 31], [116, h - 31], [43, base]], '#9f8c79');
+          depthGround(g, 0, h, w, 4, '#423a46', '#8e856b');
         }]
       });
   };

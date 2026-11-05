@@ -8,7 +8,7 @@
   AH.ArtModules.regions['francecentral'] = content;
 
   AH.ArtModules.stages['worlds.paris.art.78'] = function (C) {
-    const { FLAT, ell, glowRect, lg, line, lit, msLogo, poly, reg2, rng, rrect, shade, txt, txtW } = C;
+    const { FLAT, depthFace, ell, glowRect, lg, line, lit, msLogo, poly, reg2, rng, rrect, shade, txt, txtW } = C;
 
     Object.assign(C, { metroTiles, metroRoundel, metroPoster, metroBlock, metroDeck });
     function metroTiles(g, x, y, w, h, light, dark) {
@@ -60,6 +60,10 @@
         metroTiles(g, 0, 14.4, 128, 50, '#d9d1c2', '#8e8578');
         g.fillStyle = lg(g, 0, 14, 0, 64, [[0, 'rgba(10,12,30,0.1)'], [1, 'rgba(10,12,30,0.72)']]); g.fillRect(0, 14, 128, 50);
         g.fillStyle = '#1f3f8a'; g.fillRect(0, 22, 128, 3); g.fillStyle = '#e8c56d'; g.fillRect(0, 21.4, 128, 0.6);
+        for (let x = 0; x < 128; x += 32) {
+          poly(g, [[x, 0], [x + 26, 0], [x + 31, 10], [x + 5, 10]], 'rgba(226,215,193,0.3)');
+          line(g, x + 5, 10, x + 31, 10, 0.8, '#514f52');
+        }
       }, FLAT);
 
     reg2('challenge_sign_metro', 248, 36, function (g) {
@@ -77,6 +81,15 @@
           lit(g, x + 36, 38, 8, 2, '#ffd99a');
           line(g, x, 66, x + 80, 66, 1, 'rgba(160,150,170,0.25)');
         }
+        ell(g, 320, 190, 98, 119, '#0a101c');
+        for (const r of [140, 110, 82, 57, 35]) {
+          g.strokeStyle = '#3b3e50'; g.lineWidth = 3; g.beginPath(); g.ellipse(320, 190, r, r * 1.06, 0, Math.PI, Math.PI * 2); g.stroke();
+        }
+        for (const dx of [-1, 1]) line(g, 320 + dx * 9, 211, 320 + dx * 190, 360, 2, '#74757b');
+        for (const y of [230, 258, 304, 350]) {
+          const reach = (y - 211) * 1.28;
+          line(g, 320 - reach, y, 320 + reach, y, 2, '#3e3542');
+        }
       }, FLAT);
 
     const STATIONS = ['CHATELET', 'ABBESSES', 'BASTILLE'];
@@ -88,6 +101,12 @@
           g.fillStyle = lg(g, 0, 40, 0, 236, [[0, 'rgba(14,16,34,0.85)'], [0.22, 'rgba(14,16,34,0.35)'], [0.5, 'rgba(255,214,150,0.06)'], [1, 'rgba(30,24,40,0.35)']]); g.fillRect(0, 40, 640, 196);
           g.fillStyle = '#121426'; g.fillRect(0, 0, 640, 40);
           g.fillStyle = '#3a3448'; g.fillRect(0, 38, 640, 3);
+          for (let x = 0; x < 640; x += 212) {
+            poly(g, [[x, 41], [x + 17, 58], [x + 17, 236], [x, 236]], '#807984');
+            poly(g, [[x + 17, 58], [x + 196, 58], [x + 211, 41], [x, 41]], '#d8cfc0');
+            line(g, x + 17, 59, x + 196, 59, 1, '#f4e3bf');
+            line(g, x + 17, 60, x + 17, 235, 0.8, '#d7d0bc');
+          }
           for (let x = 20 + variant * 13; x < 640; x += 70) {
             g.fillStyle = '#2b2a38'; g.fillRect(x, 64, 34, 4);
             glowRect(g, '#ffe3a8', x - 6, 66, 46, 8); lit(g, x + 2, 67, 30, 2, '#fff2c8');
@@ -116,6 +135,10 @@
           });
           // track bed: platform edge across the rails, ballast and the third rail
           g.fillStyle = '#d9d2c2'; g.fillRect(0, 236, 640, 3);
+          for (let x = 0; x < 640; x += 32) {
+            poly(g, [[x, 231], [x + 25, 231], [x + 31, 236], [x + 6, 236]], '#b6b2a7');
+            line(g, x + 6, 236, x + 31, 236, 0.6, '#efe2c7');
+          }
           g.fillStyle = lg(g, 0, 239, 0, 300, [[0, '#191823'], [1, '#2a2632']]); g.fillRect(0, 239, 640, 61);
           const r = rng(2200 + variant);
           for (let n = 0; n < 260; n++) { g.fillStyle = 'rgba(150,140,140,' + (0.12 + r() * 0.2) + ')'; g.fillRect(r() * 640, 262 + r() * 36, 1.6, 1.2); }
@@ -188,6 +211,7 @@
         g.fillStyle = '#2d5d47'; g.fillRect(0, h - 4, w, 4);
         if (w >= 40 && h >= 40) metroRoundel(g, w / 2, h / 2 + 2, 8);
         else if (w >= 40) { g.fillStyle = ['#62259d', '#ffcd00', '#be418d', '#3c8f6a'][variant % 4]; g.fillRect(4, h / 2, w - 8, 3); }
+        depthFace(g, 0, 0, w, h, Math.min(7, h / 5), '#777b76', '#bbc7af');
       }
 
     function metroDeck(g, w, h, low) {
@@ -204,6 +228,7 @@
           for (let x = -6; x < w; x += 12) poly(g, [[x, h - 1], [x + 6, h - 7], [x + 12, h - 7], [x + 6, h - 1]], '#13306e');
           g.restore();
         }
+        depthFace(g, 0, 0, w, h, Math.min(4, h / 5), '#17382d', '#91b798');
       }
 
     Object.assign(C, { STATIONS });
@@ -308,6 +333,8 @@
         for (let x = 0; x < 32; x += 5) { ell(g, x + 2.5, 2.4, 2.2, 1.5, x % 2 ? '#8a7f90' : '#a99aac'); line(g, x + 1, 2, x + 3, 1.8, 0.5, 'rgba(255,245,219,0.65)'); }
         g.fillStyle = '#3e263d'; g.fillRect(0, 7, 32, 1);
         g.fillStyle = '#bfd19a'; g.globalAlpha = 0.48; g.fillRect(0, 0, 32, 0.8); g.globalAlpha = 1;
+        poly(g, [[0, 0], [27, 0], [32, 4], [5, 4]], 'rgba(227,212,190,0.25)');
+        for (const x of [8, 24]) line(g, x, 0.5, x + 5, 4, 0.6, '#837683');
       }, FLAT);
 
     reg2('quai_paris', 32, 32, function (g) {

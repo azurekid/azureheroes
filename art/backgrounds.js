@@ -4,7 +4,7 @@
   const AH = (window.AH = window.AH || {});
 
   AH.ArtModules.stages['art.backgrounds.8'] = function (C) {
-    const { FLAT, ell, glowRect, lerpCol, lg, poly, reg2, rng } = C;
+    const { FLAT, depthFace, depthGround, ell, glowRect, lerpCol, lg, line, poly, reg2, rng } = C;
 
     Object.assign(C, { skyline, mesas, makeSky });
     function skyline(w, h, seed, body, accent, minH, maxH, winChance, wcols) {
@@ -71,14 +71,28 @@
 
     reg2('bg_dc_near', 640, 120, function (g) {
         g.fillStyle = lg(g, 0, 80, 0, 120, [[0, '#1a0c4a'], [1, '#0a0526']]); g.fillRect(0, 80, 640, 40);
+        for (let x = -160; x <= 800; x += 80) line(g, 320 + (x - 320) * 0.6, 80, x, 120, 0.7, '#35225d');
+        for (const y of [86, 98, 116]) line(g, 0, y, 640, y, 0.7, '#35225d');
         for (let x = 0; x < 640; x += 160) {
           g.fillStyle = lg(g, x, 0, x + 12, 0, [[0, '#4a2aa8'], [1, '#1a0c4a']]); g.fillRect(x, 20, 12, 100);
+          depthFace(g, x, 20, 12, 120, 4, '#160e37', '#7954b2');
           g.fillStyle = '#ff7ad9'; g.fillRect(x, 20, 12, 1.4);
           glowRect(g, '#ff7ad9', x + 4, 30, 4, 4); g.fillStyle = '#ff7ad9'; g.fillRect(x + 4, 30, 4, 4);
           g.fillStyle = lg(g, 0, 40, 0, 50, [[0, '#5a3ac8'], [1, '#1a0c4a']]); g.fillRect(x, 40, 160, 10);
+          depthFace(g, x, 40, 160, 50, 3, '#20133e', '#76539a');
           g.fillStyle = 'rgba(39,224,255,0.6)'; g.fillRect(x + 20, 43, 30, 1);
           g.fillStyle = 'rgba(255,122,217,0.6)'; g.fillRect(x + 80, 46, 40, 1);
           for (let k = 0; k < 4; k++) { g.lineWidth = 1.6; g.strokeStyle = ['#27e0ff', '#ff7ad9', '#ffd23f', '#4dff7a'][k]; g.globalAlpha = 0.55; g.beginPath(); g.moveTo(x + 12, 52 + k * 5); g.quadraticCurveTo(x + 80, 66 + k * 5, x + 160, 52 + k * 5); g.stroke(); g.globalAlpha = 1; }
+          depthGround(g, x + 27, 119, 108, 8, '#100b2c', '#44345c');
+          g.fillStyle = '#24213f'; g.fillRect(x + 31, 65, 92, 48);
+          depthFace(g, x + 31, 65, 92, 113, 7, '#14112b', '#57436f');
+          for (let cx = x + 36; cx < x + 111; cx += 23) {
+            g.fillStyle = '#100f28'; g.fillRect(cx, 75, 18, 33);
+            for (let y = 79; y < 106; y += 6) {
+              line(g, cx + 2, y, cx + 15, y, 0.8, '#4f4068');
+              g.fillStyle = '#5c929b'; g.fillRect(cx + 2, y + 2, 1.5, 1);
+            }
+          }
         }
       }, FLAT);
 

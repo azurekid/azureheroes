@@ -47,6 +47,7 @@
       const spec = SPEC[def.type];
       this.scene = scene;
       this.type = def.type;
+      this.bossToken = def.bossToken || null;
       this.health = 2;
       this.spec = spec;
       this.homeX = def.x;
@@ -70,7 +71,8 @@
       if (spec.gravity) scene.physics.add.collider(this.sprite, scene.solids);
       this.sprite.enemy = this;
       const cat = CATS[spec.cat];
-      this.tag = new AH.PixelText(scene, def.x, def.y, spec.label, { scale: 1, color: cat.color, shadow: cat.dark, ox: 0.5, oy: 1 }).setDepth(41).setVisible(false);
+      this.tag = new AH.PixelText(scene, def.x, def.y, (this.bossToken ? 'TOKEN CARRIER - ' : '') + spec.label,
+        { scale: 1, color: this.bossToken ? '#4dff7a' : cat.color, shadow: cat.dark, ox: 0.5, oy: 1 }).setDepth(41).setVisible(false);
     }
 
     // nameplate above the sprite, shown when the hero gets close

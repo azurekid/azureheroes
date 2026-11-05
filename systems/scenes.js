@@ -78,7 +78,7 @@
   AH.Run = { score: 0, lives: 3, startScore: 0, startLives: 3 };
 
   /* Documented easter egg (README "Gold Mode"): typing the Konami code on the title screen arms a
-     session-only sandbox run with every world open, a golden suit and 30 lives. Gold runs never save or submit
+     session-only Hacker sandbox run with every world open, Cloud Hacker and 30 lives. Sandbox runs never save or submit
      run progress: no leaderboard submission, local bests, unlocks, resume or cloud progress. */
   AH.Gold = {
     codes: ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'KeyA'],
@@ -103,7 +103,7 @@
     },
     reset() { this.position = 0; },
     run() { return !!(AH.Run && AH.Run.gold); },
-    look(look) { return this.run() ? Object.assign({}, look, { suit: 'gold' }) : look; }
+    look(look) { return this.run() ? Object.assign({}, look, { suit: AH.Art.hero.hackerSuit, hat: 'none', gear: 'none' }) : look; }
   };
 
   function newRun(score, lives) {
@@ -143,7 +143,7 @@
       g.fillStyle(0xff7ad9, 1).fillRect(0, 332, 640, 2);
 
       const titleLook = AH.Art.lookOf(AH.Save.data);
-      if (AH.Gold.armed) titleLook.suit = 'gold';
+      if (AH.Gold.armed) Object.assign(titleLook, { suit: AH.Art.hero.hackerSuit, hat: 'none', gear: 'none' });
       this.hero = this.add.image(545, 238, AH.Art.buildHeroHD(this, titleLook)).setScale(4.5 / AH.Art.HD).setDepth(5);
       this.add.tween({ targets: this.hero, y: 232, yoyo: true, repeat: -1, duration: 1400, ease: 'Sine.easeInOut' });
       this.heroLabel = T(this, 470, 342, 'E: HERO LAB', { scale: 1, color: '#7fe8ff', ox: 0.5 }).setDepth(20);
@@ -203,9 +203,9 @@
       const armGold = () => {
         AH.Gold.armed = true;
         AH.Audio.play('unlock');
-        this.hero.setTexture(AH.Art.buildHeroHD(this, Object.assign(AH.Art.lookOf(AH.Save.data), { suit: 'gold' })));
-        this.cameras.main.flash(300, 255, 210, 60);
-        T(this, 320, 322, 'GOLD MODE: ALL WORLDS - 30 LIVES - SCORES NOT SAVED', { scale: 1, color: '#ffe14a', ox: 0.5, shadow: '#3a2400' }).setDepth(30);
+        this.hero.setTexture(AH.Art.buildHeroHD(this, Object.assign(AH.Art.lookOf(AH.Save.data), { suit: AH.Art.hero.hackerSuit, hat: 'none', gear: 'none' })));
+        this.cameras.main.flash(300, 120, 28, 64);
+        T(this, 320, 322, 'HACKER MODE: ALL WORLDS - 30 LIVES - SCORES NOT SAVED', { scale: 1, color: '#ff7a9a', ox: 0.5, shadow: '#3a1020' }).setDepth(30);
       };
       this.input.keyboard.on('keydown', (e) => {
         if (!this.help && !AH.Gold.armed) {
@@ -263,11 +263,11 @@
       this.rows = [
         { k: 'body', label: 'BODY', n: 2, get: () => (this.look.body === 'f' ? 1 : 0), set: (i) => { this.look.body = i ? 'f' : 'm'; }, name: (i) => (i ? 'HEROINE' : 'HERO') },
         { k: 'skin', label: 'SKIN TONE', n: A.skins.length, sw: A.skins, name: (i) => SKIN_NAMES[i] },
-        { k: 'hair', label: 'HAIR STYLE', n: A.styles.length, get: () => A.styles.indexOf(this.look.hair), set: (i) => { this.look.hair = A.styles[i]; }, name: (i) => A.hairNames[A.styles[i]], unlock: (i) => A.hairUnlock[i], locked: (i) => !A.wardrobeOpen('hair', A.styles[i], AH.Save.data.unlocked) },
+        { k: 'hair', label: 'HAIR STYLE', n: A.styles.length, get: () => A.styles.indexOf(this.look.hair), set: (i) => { this.look.hair = A.styles[i]; }, name: (i) => A.hairNames[A.styles[i]], unlock: (i) => A.hairUnlock[i], locked: (i) => !A.wardrobeOpen('hair', A.styles[i], AH.Save.data) },
         { k: 'hairCol', label: this.look.hat === 'hijab' ? 'SCARF COLOUR' : 'HAIR COLOUR', n: A.hairCols.length, sw: A.hairCols, name: (i) => HAIRCOL_NAMES[i] },
-        { k: 'suit', label: 'OUTFIT', n: A.suits.length, sw: A.suits, name: (i) => A.suitNames[i], unlock: (i) => A.suitUnlock[i], locked: (i) => !A.suitOpen(i, AH.Save.data.unlocked) },
-        { k: 'hat', label: 'LOCAL HEADWEAR', n: A.hats.length, list: A.hats },
-        { k: 'gear', label: 'ACCESSORY', n: A.gear.length, list: A.gear, unlock: (i) => A.gearUnlock[i], locked: (i) => !A.wardrobeOpen('gear', A.gear[i][0], AH.Save.data.unlocked) }
+        { k: 'suit', label: 'OUTFIT', n: A.suits.length, sw: A.suits, name: (i) => A.suitNames[i], unlock: (i) => A.suitUnlock[i], locked: (i) => !A.suitOpen(i, AH.Save.data) },
+        { k: 'hat', label: 'LOCAL HEADWEAR', n: A.hats.length, list: A.hats, unlock: (i) => A.hatUnlock[i], locked: (i) => !A.wardrobeOpen('hat', A.hats[i][0], AH.Save.data) },
+        { k: 'gear', label: 'ACCESSORY', n: A.gear.length, list: A.gear, unlock: (i) => A.gearUnlock[i], locked: (i) => !A.wardrobeOpen('gear', A.gear[i][0], AH.Save.data) }
       ];
       this.rows.forEach((r) => {
         if (!r.list) return;
@@ -315,7 +315,7 @@
     }
     random() {
       const A = AH.Art.hero, R = (n) => Math.floor(Math.random() * n);
-      const open = (k, xs) => xs.filter((x) => A.wardrobeOpen(k, x, AH.Save.data.unlocked));
+      const open = (k, xs) => xs.filter((x) => A.wardrobeOpen(k, x, AH.Save.data));
       const suits = open('suit', A.suits.map((c, i) => i)), hair = open('hair', A.styles);
       const hats = open('hat', A.hats.map((x) => x[0])), gear = open('gear', A.gear.map((x) => x[0]));
       this.look = { body: R(2) ? 'f' : 'm', skin: R(A.skins.length), hair: hair[R(hair.length)], hairCol: R(A.hairCols.length), suit: suits[R(suits.length)], hat: hats[R(hats.length)], gear: gear[R(gear.length)] };
@@ -326,7 +326,7 @@
       const P = AH.Art.buildHero(this, this.look), A = AH.Art.hero;
       this.big.setTexture(AH.Art.buildHeroHD(this, this.look)); this.flyer.setTexture(P + 'fly'); this.runner.play(P + 'run', true);
       const sw = this.sw.clear();
-      this.suitHint.setText('CLEAR REGIONS FOR WARDROBE').setColor('#4dff7a');
+      this.suitHint.setText('FIND LOCAL WARDROBE CACHES').setColor('#4dff7a');
       this.rows.forEach((r, i) => {
         const v = this.idx(r), on = i === this.sel;
         r.lab.setColor(on ? '#ffe14a' : '#c9a0ff');
@@ -337,7 +337,9 @@
         if (r.locked) {
           const u = r.unlock(v), w = u >= 0 && AH.Levels.worlds[u];
           r.from.setText(!w ? '' : lock ? 'LOCKED' : 'UNLOCKED').setColor(lock ? '#ff7a9a' : '#4dff7a');
-          if (on && w) this.suitHint.setText(lock ? 'CLEAR ' + w.city + ' TO WEAR' : w.city + ' REWARD').setColor(lock ? '#ff7a9a' : '#4dff7a');
+          const value = r.k === 'hat' ? A.hats[v][0] : r.k === 'gear' ? A.gear[v][0] : r.k === 'hair' ? A.styles[v] : v;
+          const shared = A.wardrobeRegions(r.k, value).length > 1;
+          if (on && w) this.suitHint.setText(lock ? shared ? 'FIND IN ANY MATCHING WORLD SECRET' : 'FIND IN ' + w.city + ' SECRETS' : w.city + ' REWARD').setColor(lock ? '#ff7a9a' : '#4dff7a');
         }
         if (on) sw.lineStyle(2, 0xffe14a, 1).strokeRoundedRect(242, r.y - 5, 372, 34, 6);
         if (r.sw) {
@@ -352,10 +354,10 @@
       });
     }
     done(save) {
-      if (save && !AH.Art.hero.lookOpen(this.look, AH.Save.data.unlocked)) {
+      if (save && !AH.Art.hero.lookOpen(this.look, AH.Save.data)) {
         // All locked wardrobe categories can be previewed, never saved.
         AH.Audio.play('block');
-        this.sel = this.rows.findIndex((r) => ['suit', 'hair', 'hat', 'gear'].includes(r.k) && !AH.Art.hero.wardrobeOpen(r.k, this.look[r.k], AH.Save.data.unlocked));
+        this.sel = this.rows.findIndex((r) => ['suit', 'hair', 'hat', 'gear'].includes(r.k) && !AH.Art.hero.wardrobeOpen(r.k, this.look[r.k], AH.Save.data));
         this.refresh();
         this.cameras.main.shake(120, 0.004);
         return;
@@ -428,7 +430,7 @@
         const m = AH.Levels.meta(id), map = m.map || [0, 0, 0, 0];
         const q = M.proj(map[0], map[1]);
         const tx = q[0], ty = q[1] + MAP_Y, x = Math.round(tx + map[2]), y = Math.round(ty + map[3]);
-        const locked = !AH.Gold.armed && i >= d.unlocked, done = i < d.unlocked - 1;
+        const locked = !AH.Gold.armed && !AH.Save.worldOpen(id), done = AH.Save.worldCleared(id);
         const num = T(this, x + 7, y - 3, String(id), { scale: 1, color: locked ? '#6a6a8a' : done ? '#4dff7a' : '#ffffff', shadow: '#0a0720' }).setDepth(8);
         const zone = this.add.zone(x - 11, y - 11, 22, 22).setOrigin(0).setInteractive({ useHandCursor: true }).setDepth(9);
         zone.on('pointerdown', () => { AH.Audio.init(); if (this.sel === i) this.deploy(); else this.select(i); });
@@ -480,7 +482,7 @@
       });
       this.t = 0;
       const r = d.resume, ri = r ? LEVEL_IDS.indexOf(r.id) : -1;
-      this.select(ri >= 0 ? ri : Math.min(d.unlocked, n) - 1, true);
+      this.select(ri >= 0 ? ri : Math.max(0, LEVEL_IDS.indexOf(AH.Save.route().start)), true);
     }
 
     refreshAccount() {
@@ -495,7 +497,7 @@
       this.info.title.setText('LEVEL ' + p.id + ' - ' + m.city);
       this.info.sub.setText(m.regionName + ' - ' + KIND[m.theme === 'rack' ? 'rack' : m.mode] + (m.boss && m.boss.name ? ' - BOSS: ' + String(m.boss.name).toUpperCase() : ''));
       const bs = AH.Save.data.bests[p.id] || 0;
-      this.info.best.setText(p.locked ? 'LOCKED - CLEAR LEVEL ' + LEVEL_IDS[i - 1] + ' TO FLY HERE' : (p.done ? 'CLEARED   ' : '') + (bs ? 'BEST ' + AH.UI.pad(bs, 6) : 'NOT PLAYED YET')).setColor(p.locked ? '#ff6a8a' : p.done ? '#4dff7a' : '#7fe8ff');
+      this.info.best.setText(p.locked ? 'LOCKED - CLEAR YOUR DESTINATION TO DISCOVER A RANDOM WORLD' : (p.done ? 'CLEARED   ' : '') + (bs ? 'BEST ' + AH.UI.pad(bs, 6) : 'NOT PLAYED YET')).setColor(p.locked ? '#ff6a8a' : p.done ? '#4dff7a' : '#7fe8ff');
       let land = String(m.landmarks || '').toUpperCase().replace(/[^A-Z0-9 .,'\-!/+:?]/g, '');
       if (land.length > 82) land = land.slice(0, 80).replace(/[ ,]+[^ ,]*$/, '') + '...';
       this.info.land.setText(land);
@@ -530,8 +532,12 @@
       const g = this.gfx, t = this.t / 1000, P = this.pins;
       g.clear();
       // flight routes: bright for cleared legs, faint for the legs still ahead
-      for (let i = 0; i < P.length - 1; i++) {
-        const done = P[i].done, f = this.arc(P[i], P[i + 1]);
+      const visited = AH.Save.route().cleared.map(id => P.find(p => p.id === id)).filter(Boolean);
+      const destination = P.find(p => p.id === AH.Save.data.resume?.id);
+      const legs = visited.slice(1).map((p, i) => [visited[i], p]);
+      if (destination && visited.length && destination !== visited[visited.length - 1]) legs.push([visited[visited.length - 1], destination]);
+      for (const [from, to] of legs) {
+        const done = to.done, f = this.arc(from, to);
         const steps = 48;
         for (let s = 0; s < steps; s++) {
           const on = done ? ((s + Math.floor(t * 12)) % 4) < 3 : s % 3 === 0;
@@ -542,9 +548,9 @@
         }
       }
       // plane flying the latest cleared leg
-      const last = P.reduce((a, p, i) => (p.done && i < P.length - 1 ? i : a), -1);
-      if (last >= 0) {
-        const f = this.arc(P[last], P[last + 1]), u = (t * 0.35) % 1;
+      this.plane.setVisible(false);
+      if (legs.length) {
+        const leg = legs[legs.length - 1], f = this.arc(leg[0], leg[1]), u = (t * 0.35) % 1;
         const a = f(u), b = f(Math.min(1, u + 0.01));
         this.plane.setVisible(true).setPosition(a[0], a[1]).setRotation(Math.atan2(b[1] - a[1], b[0] - a[0])).setFlipY(b[0] < a[0]);
       }
@@ -664,7 +670,7 @@
       const bg = ['bg_sky_' + L.region, this.textures.exists('bg_far_' + L.region) ? 'bg_far_' + L.region : 'bg_city_far', L.theme === 'rack' ? 'bg_dc_near' : 'bg_near_' + L.region];
       this.tod = pickTod(L);
       const skyKey = this.tod && this.tod !== 'sunset' && this.textures.exists('bg_sky_tod_' + this.tod) ? 'bg_sky_tod_' + this.tod : bg[0];
-      this.add.image(0, 0, skyKey).setOrigin(0).setScrollFactor(0).setDepth(-30);
+      this.sky = this.add.image(0, 0, skyKey).setOrigin(0).setScrollFactor(0).setDepth(-30);
       this.far = this.add.tileSprite(0, 360 - (L.mode === 'run' ? 54 : 0) - this.textures.get(bg[1]).getSourceImage().height / AH.Art.D, 640, this.textures.get(bg[1]).getSourceImage().height / AH.Art.D, bg[1]).setOrigin(0).setScrollFactor(0).setDepth(-20);
       this.near = this.add.tileSprite(0, 360 - this.textures.get(bg[2]).getSourceImage().height / AH.Art.D, 640, this.textures.get(bg[2]).getSourceImage().height / AH.Art.D, bg[2]).setOrigin(0).setScrollFactor(0).setDepth(-19);
 
@@ -682,6 +688,7 @@
       this.buildTerminals();
       this.mission = new AH.Mission(L);
       this.mission.build(this);
+      this.wardrobePickups = new AH.WardrobePickups(this);
 
       this.player = new AH.Player(this, L.spawn.x, L.spawn.y, this.mode);
       this.physics.add.collider(this.player.sprite, this.solids);
@@ -824,14 +831,7 @@
 
     /* ambient life: planes, birds, balloons, blimps, far-bank traffic, sports balls and weather particles */
     applyTod() {
-      const C = this.tod && TOD[this.tod];
-      if (!C || this.tod === 'sunset') return;
-      this.far.setTint(C.far); this.near.setTint(C.near);
-      this.children.list.forEach((o) => { if (o.depth === -18 && o.setTint) o.setTint(C.strip); });
-      if (this.road) this.road.setTint(C.near);
-      if (this.railLine) this.railLine.setTint(C.near);
-      if (C.wash) this.add.image(0, 110, 'tod_wash').setOrigin(0).setDisplaySize(640, 220).setScrollFactor(0).setDepth(-16.9).setTint(C.wash[0]).setAlpha(C.wash[1]).setBlendMode(Phaser.BlendModes.ADD);
-      if (C.dark) this.add.rectangle(0, 0, 640, 360, 0x06041c, C.dark).setOrigin(0).setScrollFactor(0).setDepth(900);
+      this.environment = new AH.Environment(this, TOD, TOD_ORDER);
     }
 
     buildAmbient() {
@@ -971,11 +971,13 @@
       this.secret = null;
       if (L.secret && L.bonus) {
         const S = L.secret, B = L.bonus;
-        const ent = this.textures.exists('secret_' + L.region) ? 'secret_' + L.region : 'booth', BT = BONUS_TXT[B.theme] || BONUS_TXT.cloud;
+        const ent = this.textures.exists('secret_' + L.region) ? 'secret_' + L.region : 'booth', BT = B.presentation || BONUS_TXT[B.theme] || BONUS_TXT.cloud;
         const booth = this.add.image(S.x, S.y, ent).setOrigin(0.5, 1).setDepth(13);
         const label = T(this, S.x, S.y - 74, '?', { scale: 2, color: '#ffe14a', ox: 0.5 }).setDepth(21);
         this.tweens.add({ targets: label.img, y: S.y - 80, yoyo: true, repeat: -1, duration: 500 });
-        this.add.image(B.x, 0, B.theme && B.theme !== 'cloud' ? 'bonus_bg_' + B.theme : 'bonus_bg').setOrigin(0).setDepth(-17);
+        for (let x = B.x; x < B.x + B.w; x += 640) {
+          this.add.image(x, 0, B.theme && B.theme !== 'cloud' ? 'bonus_bg_' + B.theme : 'bonus_bg').setOrigin(0).setDepth(-17);
+        }
         T(this, B.x + 320, BT.y, 'SECRET LEVEL: ' + BT.title, { scale: 2, color: '#ffffff', shadow: BT.shadow, ox: 0.5 }).setDepth(21);
         T(this, B.x + 320, BT.y + 20, 'GRAB EVERYTHING, THEN TAKE THE ' + S.name + ' HOME', { scale: 1, color: BT.sub, shadow: BT.subShadow, ox: 0.5 }).setDepth(21);
         this.addPlatform(B.floor);
@@ -1177,7 +1179,7 @@
       cam.fadeOut(260, 255, 255, 255);
       cam.once('camerafadeoutcomplete', () => {
         this.inBonus = true;
-        AH.Audio.music('bonus');
+        AH.Audio.music(B.music || 'bonus', this.L.region);
         this.physics.world.setBounds(B.x, -400, B.w, 1200);
         cam.setBounds(B.x, 0, B.w, 360);
         p.sprite.setPosition(B.x + 60, 250);
@@ -1295,7 +1297,7 @@
       this.flags = (L.checkpoints || []).map((c, i) => {
         const flag = { def: c, hit: false, spr: this.add.image(c.x, c.y, 'flag_off').setOrigin(0.5, 1).setDepth(15) };
         if (this.mode === 'run') {
-          flag.guide = this.add.image(c.x + 22, c.y, 'checkpoint_guide_' + i % 3).setOrigin(0.5, 1).setDepth(16);
+          flag.guide = this.add.image(c.x + 22, c.y, AH.Art.buildGuide(this, this.L.region, i % 3)).setOrigin(0.5, 1).setDepth(16);
           flag.label = T(this, c.x + 12, c.y - 58, 'CHECKPOINT', { scale: 1, color: '#ffe14a', ox: 0.5 }).setDepth(21);
           flag.lesson = CHECKPOINT_LESSONS[(Math.max(0, LEVEL_IDS.indexOf(this.levelId)) + i) % CHECKPOINT_LESSONS.length];
         }
@@ -1510,6 +1512,7 @@
       this.burst(e.x, e.y - (air ? 0 : 14), 'spark_y', 12, 160);
       this.spawnCoin(e.x, e.y - (air ? 4 : 18), true);
       if (e.spec.fix) this.toast(e.spec.fix);
+      if (e.bossToken) this.mission.releaseToken(e.bossToken.id, this);
     }
 
     snapshot() {
@@ -1544,7 +1547,7 @@
         this.tweens.pauseAll();
         this.showPanel('PAUSED', '#ffe14a', ['P: RESUME   R: RESTART', 'H: HELP   Q: QUIT TO TITLE'], [
           ['RESUME', () => this.setPaused(false)],
-          ['HELP', () => this.openHelp()],
+          ['MISSION', () => this.showBriefing(true)],
           ['WORLD MAP', () => this.scene.start('Select')],
           ['QUIT', () => this.quitGame()]
         ]);
@@ -1553,6 +1556,40 @@
         this.tweens.resumeAll();
         this.clearPanel();
       }
+    }
+
+    showBriefing(review = false) {
+      this.clearPanel();
+      this.state = 'briefing';
+      this.player.cancelCharge();
+      this.physics.world.pause();
+      this.tweens.pauseAll();
+      const add = item => { this.overlayItems.push(item); return item.setScrollFactor(0).setDepth(1600); };
+      add(this.add.image(320, 180, 'mission_briefing').setDisplaySize(604, 282).setInteractive());
+      add(this.add.image(83, 190, AH.Art.buildGuide(this, this.L.region, 0)).setOrigin(0.5, 1).setScale(2 / AH.Art.D));
+      add(T(this, 320, 55, 'MISSION BRIEFING', { scale: 3, color: '#ffe14a', ox: 0.5 }));
+      add(T(this, 320, 82, this.L.city + ' LOCAL GUIDE', { scale: 1, color: '#7fe8ff', ox: 0.5 }));
+      const relay = this.mode === 'fly' ? 'CACHE FIRST. BLAST THE RELAY WITH F / BLAST.'
+        : 'CACHE FIRST. HOLD E / SHIELD AT THE RELAY.';
+      const lines = [
+        '1. RECOVER THE DEPLOYMENT KEY.',
+        '2. ' + relay,
+        '3. FIND ANY TWO GLOWING AZURE GEMS.',
+        '4. DEFEAT THREE MARKED TOKEN CARRIERS.',
+        '   TOUCH THEIR DROPPED BOSS TOKENS.',
+        '5. ALL FOUR TASKS OPEN THE BOSS ARENA.',
+        'OPTIONAL: SECRET ROOMS HIDE LOCAL CLOTHES.'
+      ];
+      lines.forEach((line, i) => add(T(this, 137, 113 + i * 22, line, { scale: 1, color: i === 6 ? '#ffb8e3' : '#ffffff' })));
+      add(T(this, 320, 278, 'ENTER / SPACE OR TAP TO BEGIN - PAUSE: MISSION TO REVIEW', { scale: 1, color: '#c9a0ff', ox: 0.5 }));
+      this.briefingAction = () => {
+        this.clearPanel();
+        this.state = 'play';
+        this.physics.world.resume();
+        this.tweens.resumeAll();
+        if (review) this.setPaused(true);
+      };
+      add(AH.UI.button(this, 320, 302, review ? 'BACK TO PAUSE' : 'BEGIN MISSION', this.briefingAction, { scale: 2 }));
     }
 
     // help pauses the action; closing it returns to wherever the player was (playing or the pause menu)
@@ -1716,7 +1753,8 @@
       this.enemies.forEach((e) => { if (!e.dead) e.remove(); });
       this.enemies = [];
       this.L.enemies.forEach((d) => {
-        if (d.x < minX || Math.abs(d.x - px) < 200) return;
+        const needed = d.bossToken && this.mission.tokens.some((item) => item.def.id === d.bossToken.id && !item.released && !item.done);
+        if (!needed && (d.x < minX || Math.abs(d.x - px) < 200)) return;
         this.enemies.push(new AH.Enemy(this, d));
       });
     }
@@ -1739,7 +1777,7 @@
     }
 
     levelComplete() {
-      if (this.mission && !this.mission.ready) { this.toast('COMPLETE THE MISSION AND FIND 2 GEMS FIRST'); return; }
+      if (this.mission && !this.mission.ready) { this.toast('BOSS LOCKED - ' + this.mission.snapshot(this.player.x).next); return; }
       if (this.state !== 'play') return;
       this.state = 'complete';
       this.completeT = 0.8;
@@ -1747,30 +1785,31 @@
       AH.Audio.play('win');
       const bonus = Math.floor(this.timeLeft) * 10;
       AH.Run.score += bonus;
-      const idx = LEVEL_IDS.indexOf(this.levelId);
-      const A = AH.Art.hero, gold = AH.Gold.run();
-      const freshSuits = gold ? [] : A.suitsFor(idx).filter((k) => !A.suitOpen(k, AH.Save.data.unlocked));
-      const nextId = LEVEL_IDS[idx + 1];
+      const gold = AH.Gold.run();
+      let nextId;
+      if (gold) {
+        AH.Run.cleared = [...new Set([...(AH.Run.cleared || []), this.levelId])];
+        const remaining = LEVEL_IDS.filter(id => !AH.Run.cleared.includes(id));
+        nextId = remaining.length ? remaining[Math.floor(Math.random() * remaining.length)] : null;
+      } else nextId = AH.Save.completeWorld(this.levelId);
       if (!gold) {
-        // unlocked = n + 1 once the final level is cleared, so every pin shows as cleared on the map
-        AH.Save.unlock(Math.min(LEVEL_IDS.length + 1, idx + 2));
         AH.Save.recordScore(this.levelId, AH.Run.score);
         AH.Save.setResume(nextId || null, AH.Run.score, AH.Run.lives);
       }
       this.postScore();
       this.player.sprite.setVelocity(0, 0);
       this.physics.world.pause();
-      const next = LEVEL_IDS[idx + 1];
+      const next = nextId;
       const lines = [
         'SCORE ' + AH.UI.pad(AH.Run.score, 6) + '  TIME BONUS ' + bonus,
-        'HERO DEPLOYED TO ' + this.L.regionName.toUpperCase(),
+        next ? 'NEXT DESTINATION: ' + AH.Levels.meta(next).city : 'ALL REGIONS SECURED',
         'CREDITS ' + this.player.credits + '  MFA ' + this.stats.mfa + '  KO ' + this.stats.kills
       ];
       const buttons = [];
       if (next) {
         this.nextAction = () => {
           const lives = AH.Run.lives;
-          AH.Run = { score: AH.Run.score, lives: lives, startScore: AH.Run.score, startLives: lives, gold: AH.Run.gold };
+          AH.Run = { score: AH.Run.score, lives: lives, startScore: AH.Run.score, startLives: lives, gold: AH.Run.gold, cleared: AH.Run.cleared };
           this.scene.start('Level', { id: next });
         };
         buttons.push(['NEXT LEVEL', this.nextAction]);
@@ -1780,28 +1819,11 @@
       }
       buttons.push(['WORLD MAP', () => this.scene.start('Select')]);
       this.showPanel(next ? 'DEPLOYMENT SUCCEEDED' : 'ALL REGIONS SECURED', '#4dff7a', lines.slice(0, 3), buttons, 'azure');
-      if (freshSuits.length) this.showSuitUnlock(freshSuits[0]);
-    }
-
-    // The existing suit entry identifies the region's three wardrobe rewards.
-    showSuitUnlock(suit) {
-      const A = AH.Art.hero, reward = A.wardrobeFor(A.suitUnlock[suit]);
-      const add = (o) => { this.overlayItems.push(o); return o.setScrollFactor(0).setDepth(1460); };
-      const g = add(this.add.graphics());
-      g.fillStyle(0x0b0830, 1).fillRoundedRect(96, 212, 448, 36, 6);
-      g.lineStyle(2, 0x4dff7a, 1).strokeRoundedRect(96, 212, 448, 36, 6);
-      const look = Object.assign(AH.Art.lookOf(AH.Save.data), reward);
-      const im = add(this.add.image(520, 246, AH.Art.buildHeroHD(this, look)).setOrigin(0.5, 1).setScale(0.75 / AH.Art.HD));
-      this.tweens.add({ targets: im, y: 244, yoyo: true, repeat: -1, duration: 500, ease: 'Sine.easeInOut' });
-      add(T(this, 108, 216, 'NEW OUTFIT: ' + A.suitNames[suit], { scale: 1, color: '#4dff7a', shadow: '#0a3a14' }));
-      add(T(this, 108, 226, 'HAIR: ' + A.hairNames[reward.hair] + '  ACCESSORY: ' + A.gear.find((x) => x[0] === reward.gear)[1], { scale: 1, color: '#ffe14a' }));
-      add(T(this, 108, 238, 'HERO LAB ON TITLE - PRESS E TO WEAR YOUR REWARDS', { scale: 1, color: '#c9d4ff' }));
-      this.time.delayedCall(500, () => AH.Audio.play('unlock'));
     }
 
     postScore() {
       const O = AH.Online;
-      if (AH.Gold.run()) { this.time.delayedCall(900, () => this.scoreNote('GOLD MODE - SCORE NOT SAVED OR SUBMITTED', '#ffe14a')); return; }
+      if (AH.Gold.run()) { this.time.delayedCall(900, () => this.scoreNote('HACKER MODE - SCORE NOT SAVED OR SUBMITTED', '#ffe14a')); return; }
       if (!O.available) return;
       if (!O.profile) { this.time.delayedCall(900, () => this.scoreNote('LOG IN ON THE TITLE SCREEN TO JOIN THE GLOBAL HIGH SCORES', '#c9a0ff')); return; }
       O.submitScore(AH.Run.score, this.levelId, this.L.city).then((r) => { if (r && r.rank) this.scoreNote('WORLD RANK ' + r.rank + '  -  ' + O.profile.name + ' BEST ' + AH.UI.pad(r.best, 6), '#ffe14a'); });
@@ -1815,7 +1837,7 @@
 
     restart() {
       const lives = AH.Gold.run() ? AH.Gold.lives : 3;
-      AH.Run = { score: AH.Run.startScore, lives: lives, startScore: AH.Run.startScore, startLives: lives, gold: AH.Run.gold };
+      AH.Run = { score: AH.Run.startScore, lives: lives, startScore: AH.Run.startScore, startLives: lives, gold: AH.Run.gold, cleared: AH.Run.cleared };
       this.scene.restart({ id: this.levelId });
     }
 
@@ -1885,6 +1907,11 @@
       if (cmd.music) AH.UI.nextMusic(this);
       if (cmd.restart) { this.restart(); return; }
       if (cmd.quit && this.state !== 'dying') { this.quitGame(); return; }
+      if (this.state === 'briefing') {
+        if (cmd.confirm || cmd.esc) this.briefingAction();
+        this.hud.update(this.snapshot(), dt);
+        return;
+      }
       if (cmd.help && this.helpClosedAt !== this.game.loop.frame) { this.openHelp(); if (this.help) return; }
       if (cmd.esc && (this.state === 'play' || this.state === 'paused')) { this.setPaused(this.state === 'play'); return; }
       if (cmd.esc && this.state !== 'intro' && this.state !== 'dying') { this.scene.start('Select'); return; }
@@ -1894,6 +1921,7 @@
       if (cmd.pause && (this.state === 'play' || this.state === 'paused')) this.setPaused(this.state === 'play');
       if (this.state === 'paused') return;
       this.updateAmbient(dt);
+      if (this.environment) this.environment.update(dt);
 
       if (this.toastT > 0) {
         this.toastT -= dt;
@@ -1906,7 +1934,7 @@
         if (this.introT <= 0) {
           this.introItems.forEach((i) => i.destroy());
           this.state = 'play';
-          if (this.mission?.enabled) this.toast('FIND THE KEY, SECURE THE RELAY AND COLLECT 2 GEMS');
+          if (this.mission?.enabled) this.showBriefing();
           else if (this.mode === 'run') this.toast(this.L.theme === 'rack' ? 'FIND THE HACK TERMINALS' : 'REACH THE EXIT PORTAL');
         }
         this.hud.update(this.snapshot(), dt);
@@ -1944,6 +1972,7 @@
       }
       if (this.mode === 'run' && p.y > 430) { this.loseLife('fall'); return; }
       this.mission?.update(dt, p, this);
+      this.wardrobePickups?.update(p);
       if (L.boss && !this.boss && !this.bossDone && !this.inBonus && !this.inPipe && !this.warping && p.x > L.boss.trigger) {
         if (!this.mission || this.mission.ready) this.startBoss();
         else {

@@ -5,6 +5,11 @@ description: 'Build Azure Heroes movement, charged shots, duck/slide combat, clo
 
 - Read [game-contract](../game-contract/SKILL.md) and [game-security](../game-security/SKILL.md).
 - Runtime gameplay belongs in `systems/`; account hosting belongs in `server.js`. Related tests and docs are in scope. Coordinate art/layout/UI via [game-orchestrator](../game-orchestrator/SKILL.md).
+- Outdoor lighting/section composition belongs in `systems/environment.js`, not
+  city switches in scene code. Keep the 240-second clock independent of progress;
+  freeze during pause/help, warps and rooms, preserve room/HUD lighting and restore
+  the outdoor state on return. Reuse persistent display layers, never allocate
+  lighting objects every update. City section art/data follow game-contract.
 - Movement: Arrow/WASD, Space jump, double jump, Shift flight boost, F Azure Blast.
 - Wall slide / wall jump (`systems/player.js`): airborne + pushing into a solid side caps the fall at `WALL_SLIDE`;
   jump within the 0.14s `wallT` grace calls `wallJump()` (kick away, `wallLock` 0.12s, `jumps = 1`). Priority:
@@ -48,8 +53,25 @@ description: 'Build Azure Heroes movement, charged shots, duck/slide combat, clo
   Two objectives plus the gem quota gate boss entry and completion. Preserve
   completed tasks/gems after losing a life, reset on new runs, prevent score farming
   and rewind flight checkpoints when an unfinished requirement is behind them.
+- Three guaranteed marked enemy tokens also gate boss access. Track released and
+  collected tokens through death; respawn unfinished carriers even behind flight
+  checkpoints. Drops use safe anchors, never physics that can lose them in pits.
+- `systems/wardrobe-pickups.js` owns optional regional collection. Use full progress
+  objects for ownership; clears no longer grant clothes. Preserve fixed legacy
+  migration entitlements, always-open religious headwear and bounded online unions.
+  Hacker sandbox (`AH.Gold`) uses Cloud Hacker and must not persist collections.
+- Tap-shot cooldown is 0.16s plus 0.20s at full charge. Preserve the 1.2s hold,
+  release-to-fire, Boost costs and projectile speed on keyboard and touch.
 - Accounts and leaderboard: client in `systems/online.js`, server in `server.js` (zero dependencies, Node 18+). Any API change needs a test in `tests/server.test.js` and must keep guest mode (no server) working.
 - Resume and save rules are in the game-contract skill. Use `AH.Save.setResume`.
+- Regional routing uses individual `Save.route()` sets, not numeric prefix locks.
+  Complete via `completeWorld`, persist the chosen random uncleared destination,
+  and preserve old prefix migrations. Sign-up uses an explicitly selected,
+  validated represented region; no geolocation. Sandbox routes remain run-local.
+- Start briefings pause physics/timers until acknowledgment; pause-menu review
+  must preserve mission state. Keep keyboard/touch parity and account-form focus.
+- Textured base hair stays open. New York/cork/cowboy hats require collection
+  even on legacy saves; cowboy shares one ID across the three US worlds.
 - Audio playback lives in `systems/audio.js`, composition/shared music data in `audio/`,
   regional song data in `worlds/<city>/music.js`, and persistence in `systems/save.js`.
   Follow [music-producer](../music-producer/SKILL.md) for all composition,

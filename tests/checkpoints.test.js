@@ -17,6 +17,7 @@ function fixture(mode = 'run') {
   const AH = loadScripts(['systems/scenes.js'], {
     AH: {
       Levels: { ids: [1, 2, 3, 4] }, Audio: { play() {} },
+      Art: { buildGuide(scene, region, variant) { return 'checkpoint_local_' + region + '_' + variant; } },
       PixelText: function (scene, x, y, text) { return display(x, y).setText(text); }
     },
     globals: { Phaser: { Scene: class {} } }

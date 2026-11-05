@@ -8,6 +8,7 @@
   AH.ArtModules.regions['eastus'] = content;
 
   world.rewards = {
+    collectibleHats: [['cowboy', 'COWBOY HAT', 'TEXAS, USA', 9]],
     hair: ['coils', 'CROWN COILS', 'VIRGINIA', 9],
     suit: { name: 'GOLD DEFENDER', unlock: 9, suit: '#e8ecf8', suitD: '#7a80a8', suitM: '#b8c0dc', suitL: '#ffffff', cape: '#e0a010', capeL: '#ffe070', capeD: '#7a4a04', boots: '#3a3a6a', bootL: '#8a8ac8', cuff: '#ffd84a' },
     outfit: ['TRAIL COAT', 'trail'],

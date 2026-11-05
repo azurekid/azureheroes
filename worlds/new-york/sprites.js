@@ -40,7 +40,7 @@
   };
 
   content.parts['SKINS_eastus2'] = function (C) {
-    const { EYE, ell, eyeGlow, lg, limb, line, poly, rrect, txt } = C;
+    const { EYE, birdFrame, ell, eyeGlow, lg, limb, line, poly, rrect, txt } = C;
 
     return {
           robot: function (f) { return function (g) {
@@ -58,24 +58,16 @@
             ell(g, 3, 26, 2.4, 2.4, '#d7ded2'); ell(g, 29, 26, 2.4, 2.4, '#d7ded2');
             g.fillStyle = '#d73446'; g.fillRect(12, 21, 8, 1); txt(g, 'M', 14.3, 20.6, 0.55, '#f2eee0');
           }; },
-          drone: function (f) { return function (g) {
-            const wing = f ? -4 : 4;
-            poly(g, [[14, 14], [6, 7 + wing], [3, 5 + wing], [8, 13], [14, 17]], '#697783');
-            poly(g, [[18, 14], [25, 7 + wing], [30, 5 + wing], [24, 14], [18, 17]], '#89949a');
-            ell(g, 16, 13, 10, 6, lg(g, 7, 8, 25, 18, [[0, '#c8c8bf'], [0.45, '#818b91'], [1, '#445467']]));
-            ell(g, 16, 10.4, 7, 4.2, '#b8bec0'); ell(g, 23.8, 10.5, 4.4, 3.4, '#929b9d');
-            poly(g, [[27, 11], [32, 12], [27, 14]], '#dcae69');
-            ell(g, 23.2, 9.2, 0.8, 0.8, '#101925');
-            poly(g, [[11, 14], [16, 14], [18, 19], [13, 18]], '#4b657a');
-            line(g, 13, 18, 11, 21, 0.7, '#c69a62'); line(g, 17, 18, 19, 21, 0.7, '#c69a62');
-            line(g, 13, 10, 9, 8, 0.5, 'rgba(255,255,255,0.7)');
-          }; },
+          drone: birdFrame({
+            body: '#aeb8c2', bodyD: '#515d73', wing: '#b8c2ce', wingD: '#414c65',
+            head: '#527b79', beak: '#c4b8aa', tail: '#394157'
+          }),
           spider: function (f) { return function (g) {
             const bob = f ? 1 : 0;
-            for (let i = 0; i < 3; i++) {
-              const x = 8 + i * 5;
-              limb(g, x, 13, x - 5 + ((i + f) % 2) * 2, 18, 1.8, '#4b4050', '#8e7770', '#c4aa90');
-              limb(g, x + 7, 13, x + 12 - ((i + f) % 2) * 2, 18, 1.8, '#4b4050', '#8e7770', '#c4aa90');
+            for (const x of [10, 23]) {
+              const stride = f ? 2 : -1;
+              limb(g, x, 14, x - 2 - stride, 18, 1.6, '#4b4050', '#8e7770', '#c4aa90');
+              limb(g, x + 1, 14, x + 3 + stride, 19, 1.6, '#4b4050', '#8e7770', '#c4aa90');
             }
             g.strokeStyle = '#5c4c51'; g.lineWidth = 0.8; g.beginPath(); g.moveTo(5, 15); g.quadraticCurveTo(-3, 12, 1, 8); g.stroke();
             ell(g, 16, 12 - bob, 11.5, 6.4, lg(g, 4, 5, 27, 18, [[0, '#91806e'], [0.48, '#66575b'], [1, '#3e3746']]));

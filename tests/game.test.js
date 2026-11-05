@@ -27,10 +27,19 @@ test('seeded world generation preserves the pre-refactor output digest', () => {
   const hashes = [];
   for (const seed of [1, 7, 42, 8675309, 2027]) {
     const Levels = levels(seed);
+    // Keep the historical generator fixture; the new regional sewer is tested below.
+    Levels.meta(11).opt.secret = 'cloud';
+    Levels.meta(11).opt.secretName = 'SKYLINE CLOUD';
+    Levels.meta(9).landmarks = 'MICROSOFT CAMPUS - SPACE NEEDLE - MT RAINIER - SEATTLE';
+    Levels.meta(9).hint = 'RUN THE LAKEFRONT. AN XBOX-GREEN DOOR HIDES A BONUS.';
+    delete Levels.meta(9).ambient.rail;
+    delete Levels.meta(9).ambient.railY;
     for (const meta of Levels.worlds) {
       const key = `${seed}:${meta.id}:${meta.city}`;
       const generated = Levels.make(meta.id);
       delete generated.mission;
+      delete generated.wardrobeSpots;
+      generated.enemies.forEach((enemy) => { delete enemy.bossToken; });
       generated.time -= generated.mode === 'fly' ? 45 : 90;
       const output = JSON.stringify(generated);
       hashes.push([key, crypto.createHash('sha256').update(output).digest('hex')]);
@@ -41,6 +50,79 @@ test('seeded world generation preserves the pre-refactor output digest', () => {
     crypto.createHash('sha256').update(JSON.stringify(hashes)).digest('hex'),
     '5a20b5bdf5bd0a907cfb5daf7bb44c53d66b1ce58a12aaede96ed3e860766315'
   );
+});
+
+test('New York manhole leads to a disjoint sewer with rat patrols and regional music', () => {
+  for (const seed of [1, 7, 42, 2027, 8675309]) {
+    const L = levels(seed).make(11), B = L.bonus;
+    assert.equal(L.secret.name, 'MANHOLE');
+    assert.equal(B.theme, 'sewer');
+    assert.equal(B.music, 'pipe');
+    assert.equal(B.presentation.title, 'NEW YORK SEWERS');
+    assert.equal(B.w, 1280);
+    assert.equal(B.floor.bliss, 'sewer');
+    assert.equal(B.clouds.length, 8);
+    assert.ok(B.clouds.every((p) => p.cloud === 'sewer_plat' && p.x >= B.x && p.x + p.w < B.exit.x));
+    assert.equal(B.enemies.length, 5);
+    assert.ok(B.enemies.every((e) => e.type === 'spider' && e.skin === 'eastus2' && L.enemies.includes(e)));
+    assert.ok(B.enemies.every((e) => e.x - e.range > B.x + 150 && e.x + e.range < B.exit.x - 70));
+    assert.ok(B.coins.every((c) => c.x > B.x && c.x < B.x + B.w));
+    assert.ok(L.pipeZones.every((z) => z.x >= B.x + B.w + 160), 'sewer never overlaps cloud rooms');
+    assert.equal(B.exit.y, B.floor.y);
+    assert.ok(B.exit.x > B.enemies.at(-1).x + 80);
+  }
+});
+
+test('New York birds and neighborhood scenery retain local identity and registered art', () => {
+  const Art = artwork();
+  for (const key of ['en_eastus2_drone', 'amb_bird_pigeon']) {
+    const a = Art.textureCanvas(key + '_0'), b = Art.textureCanvas(key + '_1');
+    assert.ok(a && b);
+    assert.equal(a.width, b.width);
+    assert.notDeepEqual(a.ops, b.ops, 'two distinct wingbeat silhouettes');
+    assert.ok(a.ops.some((op) => op[0] === 'ellipse'), 'body and separate head');
+    if (key === 'amb_bird_pigeon') {
+      for (const canvas of [a, b]) for (const op of canvas.ops.filter((op) => ['moveTo', 'lineTo'].includes(op[0]))) {
+        assert.ok(op[1] >= 0 && op[1] <= 16 && op[2] >= 0 && op[2] <= 12, 'wing and tail stay inside texture');
+      }
+    }
+  }
+  for (const key of ['bonus_bg_sewer', 'secret_eastus2', 'sewer', 'sewer_top', 'sewer_plat']) {
+    assert.ok(Art.textureCanvas(key), key + ' registered in real module order');
+  }
+  const near = Art.textureCanvas('bg_near_eastus2');
+  assert.ok(near.ops.filter((op) => op[0] === 'lineTo').length > 150, 'brownstone fire escapes populate near layer');
+  const park = Art.textureCanvas('sc_ny_centralpark');
+  assert.ok(park.ops.filter((op) => op[0] === 'quadraticCurveTo').length >= 4, 'arched Bow Bridge and park paths');
+  for (const key of ['sc_ny_brownstones', 'sc_ny_centralpark']) {
+    assert.ok(Art.sceneryRoutes.eastus2.some((stop) => stop[1] === key), 'guaranteed stop: ' + key);
+  }
+});
+
+test('regional secret rooms route underground music and restore street music on return', () => {
+  const music = [], bounds = [], positions = [];
+  const AH = load('systems/scenes.js', {
+    Levels: { ids: [11] }, Audio: { play() {}, music(...args) { music.push(args); } }
+  }, 1, { Phaser: { Scene: class {} } });
+  const scene = new AH.Scenes[5](), L = levels(2027).make(11);
+  scene.L = L;
+  scene.player = {
+    cancelCharge() {},
+    sprite: { setPosition(...args) { positions.push(args); }, setVelocity() {} }
+  };
+  scene.secret = { used: false, ach: L.bonus.presentation.ach, booth: { setTint() {} }, label: { setVisible() {} } };
+  scene.cameras = { main: { fadeOut() {}, fadeIn() {}, once(event, callback) { callback(); }, setBounds(...args) { bounds.push(args); } } };
+  scene.physics = { world: { setBounds() {} } };
+  scene.toast = scene.achieve = () => {};
+  scene.enterBonus();
+  assert.equal(scene.inBonus, true);
+  assert.equal(scene.secret.used, true);
+  assert.deepEqual(music[0], ['pipe', 'eastus2']);
+  assert.deepEqual(bounds[0], [L.bonus.x, 0, 1280, 360]);
+  assert.equal(positions[0][0], L.bonus.x + 60);
+  scene.leaveBonus(false);
+  assert.equal(scene.inBonus, false);
+  assert.deepEqual(music[1], ['main', 'eastus2']);
 });
 
 test('city catalogue fixes world order, stable ids and per-world map coordinates', () => {
