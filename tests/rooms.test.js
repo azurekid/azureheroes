@@ -1,17 +1,10 @@
 'use strict';
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const fs = require('node:fs');
-const vm = require('node:vm');
-const path = require('node:path');
+const { levelScripts, loadScripts } = require('./helpers/load-game');
 
-const source = fs.readFileSync(path.join(__dirname, '../levels/worlds.js'), 'utf8');
 function levels(seed) {
-  const math = Object.create(Math);
-  math.random = () => { seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0; return seed / 4294967296; };
-  const context = vm.createContext({ window: {}, Math: math });
-  vm.runInContext(source, context);
-  return context.window.AH.Levels;
+  return loadScripts(levelScripts(), { seed }).Levels;
 }
 const intersects = (x, feet, h, p) => x + 7 > p.x && x - 7 < p.x + p.w && feet > p.y + 0.01 && feet - h < p.y + p.h - 0.01;
 const shape = (p, x) => [p.x - x, p.y, p.w, p.h];

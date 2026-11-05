@@ -25,7 +25,5 @@ jobs:
           node-version: ${{ matrix.node }}
       - name: Syntax checks
         run: |
-          for file in server.js art/*.js levels/*.js systems/*.js ui/*.js tests/*.js; do
-            node --check "$file" || exit 1
-          done
+          git ls-files -z -- '*.js' | xargs -0 -n 1 node --check
       - run: npm test

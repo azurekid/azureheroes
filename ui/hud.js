@@ -58,6 +58,8 @@
       this.bossLabel = mk(12, 52, 'HIGH-RISK CYBERGUARDIAN', '#ffffff').setVisible(false);
       this.risk = mk(630, 52, 'RISK LEVEL: HIGH', '#ff2a4a', { ox: 1 }).setVisible(false);
       this.stun = mk(320, 90, 'STUNNED! BLAST NOW!', '#ffe14a', { ox: 0.5 }).setVisible(false);
+      this.mission = mk(12, 88, '', '#ffe14a', { scale: 1 }).setVisible(false);
+      this.missionNext = mk(12, 99, '', '#7fe8ff', { scale: 1 }).setVisible(false);
       this.t = 0;
     }
 
@@ -100,6 +102,14 @@
         this.hackPct.setText(h + '%');
       }
       const bs = s.boss;
+      const mission = s.mission;
+      this.mission.setVisible(!!mission && !bs);
+      this.missionNext.setVisible(!!mission && !bs);
+      if (mission && !bs) {
+        this.mission.setText('MISSION ' + mission.done + '/' + mission.total + '  GEMS ' + mission.gems + ' NEED ' + mission.quota
+          + '  BONUS ' + mission.bonus).setColor(mission.ready ? '#4dff7a' : '#ffe14a');
+        this.missionNext.setText(mission.next);
+      }
       this.bossLabel.setVisible(!!bs);
       if (bs && bs.name !== this.bossName) { this.bossName = bs.name; this.bossLabel.setText(bs.name); }
       this.risk.setVisible(!!bs).setAlpha(1);
@@ -219,8 +229,8 @@
             'BOSS RED: ARMORED. GREEN + OPEN: DAMAGE WINDOW.',
             'BLOCK 2 SHOTS OR A CHARGE. DODGE AIR BOSS VOLLEYS.',
             'PIPE ROOMS: AKS, DOCKER, ACTIONS, PIPELINES, ENTRA, FUNCTIONS.',
-            'CLEAR REGIONS FOR OUTFITS, HAIR AND ACCESSORIES.',
-            'COLLECT 5 MFA TOKENS. SECURE ACCESS, IMAGES AND ENDPOINTS.'
+            'FIND KEY, THEN HOLD E SHIELD AT RELAY. FLIGHT: BLAST RELAY.',
+            'FIND 2 GEMS TO UNLOCK BOSS. EXTRA GEMS + DUCK SCANS: BONUS.'
           ].forEach((l, k) => btxt(44, 220 + k * 15, l, { color: k === 1 || k === 4 ? '#4dff7a' : '#ffffff' }));
         }
       }

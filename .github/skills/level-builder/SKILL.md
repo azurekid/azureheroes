@@ -4,19 +4,27 @@ description: 'Build Azure Heroes generated layouts, vertical streets, undergroun
 ---
 
 - Read [game-contract](../game-contract/SKILL.md) and [game-security](../game-security/SKILL.md).
+- Every new level or sub-level must use [music-producer](../music-producer/SKILL.md);
+  include its musical identity, context routing and audio/listening evidence.
 - Establish affected level IDs or shared generator scope from the request; ask only when unclear.
-- Runtime layout changes belong in `levels/worlds.js`; coordinate other surfaces through [game-orchestrator](../game-orchestrator/SKILL.md). Related tests and documentation are in scope.
+- Shared layout algorithms belong in `levels/`; city options and regional challenge
+  descriptors live in `worlds/<city>/world.js`. Start there for local tuning; change
+  shared generators only when existing options cannot express the mechanic.
+  Coordinate other surfaces through [game-orchestrator](../game-orchestrator/SKILL.md).
 - Use only the Level format from game-contract.
 - Verify reachability with actual jump/double-jump/boost physics, not platform spacing alone.
 - Scale rewards and enemies to route length; preserve safe spawn/checkpoint/pipe/boss areas.
 - Rooftop: lasers, double jump gaps, climb walls (wall jumps) and ledge stairs to high roofs. Sky Canyon: rings, drones. Data Center: hack terminal, sec gate, cables.
 - Return: level ID, length, collectible count, and how you tested it.
+- Preserve `levels/missions.js` tactical objectives/gem quota. Required pickups
+  must have reachable safe placements; flight missions must pause scrolling before
+  missed requirements. Never gate progress on every hidden/underground gem.
 
 ## Generated worlds
 - Levels are produced by `AH.Levels.make(id)` in `levels/worlds.js`; discover current worlds from `AH.Levels.worlds`, not a fixed count.
 - Output still follows the game-contract Level format, plus `region`, `city`, `landmarks`, `hint`, `tint`.
 - Keep gaps 100-195px, rise <=20 for gaps >140px, so every random layout stays completable.
-- Landmark art lives only in `art/sprites.js`.
+- Local landmark drawing lives in the city's art modules; reusable drawing lives in `art/`.
 
 ## Vertical streets and cloud challenges
 1. Preserve distinct steps, drops and upper routes; check at least 60px street-height spread.

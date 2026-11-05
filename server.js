@@ -204,7 +204,7 @@ async function api(req, res, url) {
 
 /* ------------------------------------------------------------------ static */
 const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css', '.png': 'image/png', '.md': 'text/markdown; charset=utf-8', '.json': 'application/json', '.ico': 'image/x-icon', '.svg': 'image/svg+xml' };
-const PUBLIC = ['index.html', 'art/', 'ui/', 'levels/', 'systems/', 'docs/screenshots/'];
+const PUBLIC = ['index.html', 'art/', 'audio/', 'worlds/', 'ui/', 'levels/', 'systems/', 'docs/screenshots/'];
 function serveStatic(req, res, url) {
   let rel = decodeURIComponent(url.pathname).replace(/^\/+/, '');
   if (rel === '') rel = 'index.html';

@@ -1,5 +1,131 @@
 # Playtest report - Microsoft Azure Heroes 2027
 
+## Grounded checkpoints, guides and Konami map access
+
+- Removed transparent glow padding from flags, terminals and the standard pipe.
+  Bottom anchors and pipe display bounds now match the drawn body, without
+  moving terrain or changing collision/warp geometry.
+- Ground checkpoints have non-solid friendly guides, CHECKPOINT / ACTIVE labels
+  and proximity lessons covering Azure managed identity, Entra MFA/least privilege,
+  Defender alerts/patching and Microsoft 365 sharing. Leaving hides the lesson.
+  Pipe/bonus visits cannot activate main-world checkpoints.
+- PASS assisted Amsterdam Chrome check: hero feet, guide feet and flag bottom
+  all meet the y=287 platform. Screenshot reviewed for readable lesson panel,
+  grounded guide/flag and retained canal-house detail. Teleports,
+  invulnerability and paused physics were used for this visual inspection.
+- PASS Chrome Konami sequence through real keyboard events after title readiness:
+  all 11 pins open, saved unlocked stays 1 and cleared count stays 0.
+  New York deployment is Gold Mode with 30 lives.
+- PASS New York pipe inspection: drawn bounds y=254..300 match the 46px solid
+  body and its supporting street. Normal progression, wardrobe locks and Gold
+  Mode's no-save/no-score-submission rules have automated regressions.
+- 90 integrated tests pass, including four new checkpoint tests and an all-world
+  Gold Mode deployment test. Real-device touch testing remains outstanding.
+
+## Electronic-only soundtrack
+
+- Supersedes the rejected band-style rework. Only trance, house and pop are
+  selectable; removed preferences warn and reset to trance without changing
+  game progress. Legacy dance migrates to trance.
+- All 11 cities supply original regional themes for main, pipe and boss
+  arrangements. Existing club compositions retain their baseline event data.
+  Hooks are recurring game themes, not copied commercial melodies or recordings.
+- The mandatory `music-producer` workflow now enforces this policy and requires
+  actual renders plus human listening approval for every new level.
+- Chrome OfflineAudioContext rendered all nine New York style/context combinations:
+  full loops plus returns and coin/blast/hit overlays, 22,050Hz.
+  Finite samples, peak 0.194-0.290 (below -10 dBFS), RMS 0.0140-0.0282,
+  absolute DC below 0.000290, maximum adjacent-sample delta below 0.265
+  and loop-boundary delta below 0.000327. All nine engineering gates pass.
+- Live Chrome AudioContext passes all nine London style/context routes,
+  mute/resume and stop. Automated tests cover cycling, preference migration,
+  local-only persistence, Gold Mode boundaries, regional hooks and node cleanup.
+- **Listening approval pending:** the assistant did not hear these previews.
+  Human headphone/speaker auditions must assess melody, groove, fatigue and
+  regional identity before approval. Mobile/Safari listening remains untested;
+  original composition is not a legal copyright-clearance guarantee.
+
+## Tactical missions and hidden gems
+
+- Two required ordered tasks (deployment cache then relay), two-of-six gem quota,
+  optional crouched security scan and extra gems for bonus score. State survives
+  life loss, never enters account/save data, and resets with a new run.
+- Generated objectives prefer existing upper routes without changing terrain or
+  random draws. 1,100 seeded layouts pass placement checks; over 100 seeds,
+  527/800 street caches use upper routes. Time allowances: +90s ground, +45s flight.
+  Normalizing only mission data/time reproduces the original terrain digest.
+- PASS Amsterdam assisted Chrome integration: incomplete boss approach blocks;
+  cache contact, actual held E relay and held S bonus scan work; gem quota opens
+  the arena; life loss preserves completions and score. Teleports and
+  invulnerability were used, not an unassisted difficulty assessment.
+- PASS Tokyo assisted Chrome integration: camera waits at a missed gem without
+  completing it. Cache contact and a real F press/release activate the relay;
+  two gem contacts release scrolling. A later-checkpoint death rewinds to the
+  pending gem, preserving completed tasks and allowing recovery.
+- PASS fresh Amsterdam layout: cache at y=85 collects through actual body
+  overlap. Using the existing room-warp API, a zone-0 gem at y=156 collects
+  through Arcade physics. Natural room entry/exit traversal was not established.
+- PASS Virginia assisted Chrome integration: the existing first terminal reaches
+  100% by standing nearby while mission progress remains incomplete.
+- `npm test`: 85 passing regressions, including ordered task gates, optional
+  zone pickups, one-time scoring, legacy levels and art registration.
+  Nested JavaScript syntax and whitespace checks pass.
+- Remaining manual checks: unassisted balance, complete underground pickup/return
+  traversal, touch mission interactions and real-device play. Seeded placement and
+  assisted tests do not prove every generated route is enjoyable.
+
+## Modular content migration (2026-11-05)
+
+- All 78 integrated tests pass using actual ordered modules, including world
+  generation, cloud rooms, map metadata, wardrobe rendering and account boundaries.
+- Shared audio composition/playback matches the pre-migration baseline: all 27
+  compiled songs and deterministic synthesis, routing, noise and random consumption.
+- Art verification compares the pre-migration snapshot with the extracted modules:
+  all 713 registered texture keys/order/drawing hashes and 1,758 dynamic
+  hero/HD/platform drawing hashes match.
+- Seeded layout regression preserves the exact pre-migration output digest across
+  all 11 worlds and five seeds (55 generated layouts).
+- Public script delivery is tested against the Node server; account data, server
+  source, tests and traversal paths remain inaccessible.
+- All 120 JavaScript files, including nested city modules and test helpers, pass
+  `node --check`. CI now checks nested tracked JavaScript instead of shallow globs.
+- Node-hosted isolated Chrome smoke: all 11 worlds reach `play` with no JavaScript
+  exceptions or missing-texture warnings; regional wardrobe HD previews render.
+  The map shows all 11 pins and the New York preview. Amsterdam, London, Paris
+  and New York entry screenshots were reviewed for retained architecture and skies.
+- The initial temporary Python host failed to deliver some city scripts, causing
+  downstream art-registration errors. The actual Node host loads the modules;
+  no drawing callbacks were changed to mask delivery failures.
+- This is a structure-only migration, not a new unassisted difficulty assessment.
+
+## New York world 11 integration (2026-11-05)
+
+- Seeded generation: 100 layouts are distinct, within 8,000–13,000px, include a hot
+  dog cart, two distinct shared cloud rooms, regional enemy skins and both weapons.
+  Existing world IDs and region mappings are unchanged.
+- Map: New York city coordinates are registered with an offset beside Virginia;
+  East US 2 is explicitly a hosting-region mapping, not a local datacenter claim.
+  Live map verification shows 11 pins, the New York panorama preview, correct
+  Virginia-clear unlock text and non-overlapping 22px pin hit areas.
+- Isolated headless Chrome: New York reaches `play` with no JavaScript exceptions.
+  Final reload finds all required regional textures, including the subway train.
+  Entry and map screenshots were reviewed: brownstone facades, Liberty, Empire
+  State, Chrysler and raised Brooklyn Bridge towers remain identifiable.
+- Assisted physics traversal: an 11,305px layout reached the arena approach in
+  79.7 seconds with zero deaths, 16 wall jumps and normal movement/jump commands.
+  Invulnerability and Boost refills were enabled; no route teleport was used.
+- Boss integration: Zero Day Boxer reached K.O. through natural vulnerability
+  windows in rounds 1–3. The test teleported to the arena, granted invulnerability
+  and refilled Boost; it did not force stuns. This is not an unassisted difficulty
+  assessment. The browser reported no JavaScript exceptions.
+- The shared browser tool crashed on entry; an isolated Chrome process loaded the
+  level successfully. Static guest hosting returns expected 404s for `/api/health`
+  and the favicon, distinct from game exceptions.
+- Not yet signed off: unassisted full-route difficulty, human listening feedback
+  for Hudson House, real-device touch and mobile Safari.
+- Regression suite: `npm test` passes all 68 tests, including all 11 wardrobe bundles
+  in every pose, 100 seeded New York layouts, scenery placement and audio routing.
+
 Method: headless Chrome (puppeteer) drove the game with a bot that sets the same input flags the keyboard sets. The bot ran each level start to finish and read the game state. Screenshots were reviewed by eye. No real phone or Safari was available.
 
 | Level | Result | Evidence |

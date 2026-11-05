@@ -46,6 +46,17 @@ test('accounts, progress, scores and leaderboard', async (t) => {
   assert.equal(st.status, 404, 'server source and data are not served');
   assert.equal((await fetch(base + '/data/heroes.json')).status, 404);
   assert.equal((await fetch(base + '/')).status, 200);
+  const { localScripts } = require('./helpers/load-game');
+  for (const script of localScripts()) {
+    const response = await fetch(base + '/' + script);
+    assert.equal(response.status, 200, script + ' is served');
+    assert.match(response.headers.get('content-type'), /javascript/);
+    assert.equal(response.headers.get('x-content-type-options'), 'nosniff');
+  }
+  for (const privatePath of ['.github/skills/game-contract/SKILL.md', 'tests/helpers/load-game.js',
+    'worlds/%2e%2e%2fserver.js', 'audio/%2e%2e%2fdata/heroes.json']) {
+    assert.equal((await fetch(base + '/' + privatePath)).status, 404, privatePath + ' stays private');
+  }
   flush();
   assert.ok(fs.existsSync(path.join(process.env.DATA_DIR, 'heroes.json')));
 });

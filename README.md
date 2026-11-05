@@ -48,7 +48,29 @@ Levels are generated at random each time a level starts, so platforms, lasers, e
 
 Every region also has cyber-threat enemies: **Phishing hoppers** leap at you, **Ransomware chargers** wind up and dash, and **DDoS botnet clouds** follow you and drop bombs. Street and data-center levels also feature pipeline bugs, vulnerable container images, overprivileged RBAC robots, exposed-endpoint turrets, stale guest-account crawlers and **Rogue Hackers** who fire from handheld terminals. Their bolts can be blocked with the MFA Shield. Defeating them reveals tips about GitHub Actions, Defender for Cloud, Entra MFA and access reviews, least privilege and Azure Private Link.
 
+### Missions and hidden Azure gems
+
+Running to the finish is no longer enough. Each world has two required tasks:
+recover its **deployment key**, then **secure the relay**. On ground, stay near the
+relay and hold **E / SHIELD** for 1.5 seconds; in flight, hit it with a blast
+after recovering the key. Collect **any two of six gems** to unlock the boss.
+The HUD shows counts and the next task's direction; the arena entrance shows
+whether access is locked. Extra gems and optional **duck-to-scan** caches award
+bonus score. Watch for glints on side routes and in underground rooms.
+
+Completed tasks and collected gems survive losing a life, but restart/new layouts
+reset them. They are run-local and do not change accounts or saved unlocks.
+Flight scrolling waits before missed required objectives and needed gems; you
+still need to steer, fight and finish before the timer expires. Underground
+bonus gems are never the only way to satisfy the quota.
+
 ### Streets, water and secrets
+
+**Checkpoints:** look for a flag and a friendly city guide standing on the path.
+The marker turns green with **CHECKPOINT ACTIVE** when reached. Stand nearby to
+read short Azure, Entra, Defender or Microsoft 365 tips; walk away to dismiss them.
+Guides are non-solid and require no extra button. Checkpoints restore your
+position after life loss, not an online save.
 
 Run levels are not just rooftops. The ground matches the city: canal quays and brick bridges in Amsterdam, the Thames embankment promenade in London and harbour piers in Sydney. Fall in the water and you lose a life. Canal boats and ferries carry you across. Amsterdam's pull-up bridges lift on a timer, so watch for the flashing warning before you cross.
 
@@ -104,7 +126,9 @@ Hacker has the normal abilities; choose `NONE` on the headwear row for its hood,
 which hides the selected hair, or choose a hat or hijab to wear that instead.
 
 **Gold Mode (easter egg).** On the title screen type Up, Up, Down, Down, Left,
-Right, Left, Right, A. You get a golden suit and 30 lives for that browser session.
+Right, Left, Right, A. You get access to every world, a golden suit and 30 lives
+for that browser session. Worlds are not marked cleared and wardrobe rewards
+are not unlocked.
 Gold runs are a sandbox: their scores are never submitted to the leaderboard and
 run progress is not saved (no bests, unlocks or continue point). General device
 preferences, such as music style, remain separate. Reload the page to leave Gold Mode.
@@ -121,6 +145,7 @@ preferences, such as music style, remain separate. Reload the page to leave Gold
 | Mexico City | Charro Jacket | Ribbon Braid | Silver Bow |
 | Redmond | Campus Hoodie | Campus Undercut | Campus Satchel |
 | Virginia | Trail Coat | Crown Coils | Trail Compass |
+| New York | City Varsity | Borough Waves | Messenger Bag |
 
 **Know your threat.** Every enemy carries a nameplate coloured by category: red = malware, orange = network, pink = identity, yellow = DevOps. Press **H** for the Hero Handbook, which lists every threat and how to beat it.
 
@@ -169,6 +194,11 @@ const active = AHGame.scene.getScenes(true)[0];
 active.scene.start('Level', { id: 1 }); // Amsterdam; replace 1 with any world ID
 ```
 
+New York is world **11**: use `{ id: 11 }` in the snippet above. In normal
+progression it unlocks after Virginia. Check the skyline at entry, Times Square
+and brownstones farther along the route, both pipe rooms, hot dog carts and the
+Zero Day Boxer arena. Press R for a fresh layout; N switches the music style.
+
 Once the level appears, inspect its two randomly selected pipe destinations:
 
 ```js
@@ -202,16 +232,17 @@ positions vary.
 
 To hear a specific track, run `AH.Audio.music('metro')` (see Music below).
 
-To jump straight to a world's boss fight, start the world as above, then run
+To inspect a world's boss approach, start the world as above, then run
 `const L = AHGame.scene.getScene('Level'); L.player.sprite.body.reset(L.L.boss.trigger + 30, 200);`
-(flight worlds: `L.startBoss()`). Step back from a combo, move away from a jump kick
+(flight worlds: `L.startBoss()`). Boss access still requires both mission objectives
+and two gems; teleporting does not complete them. Once unlocked, step back from a combo, move away from a jump kick
 or stay on the ground under an uppercut: the boss should show WHIFF / OPEN and take hits.
 
 Collect 5 MFA tokens for an extra life. Every enemy takes 2 hits and drops an Azure Credit. Best score, unlocked levels and the resume point are stored in `localStorage`, and synced to your account when you are logged in.
 
 ## Music
 
-Choose **dance, jazz, country, blues or rock** by pressing **N** or tapping the
+Choose **trance, house or pop** by pressing **N** or tapping the
 **MUSIC** button on the title screen, world map, Hero Lab, leaderboard, or during a
 level (including pause). The button shows the current style and cycles through the
 choices. The selection is saved on this device only, separately from game progress;
@@ -219,27 +250,60 @@ it is not synced to an online account. If browser storage is unavailable, the
 selection lasts for the current session.
 
 The original soundtrack is synthesised locally with Web Audio; no audio files are
-downloaded. **Dance** is the default, with house and melodic trance at 126-138 BPM,
-offbeat bass, filtered synths, short breakdowns and drops. **Jazz** has swung piano
-and walking bass; **country** has twangy guitar and alternating bass; **blues** has
-swung guitar, organ and 12-bar progressions; **rock** has electric-style guitars,
-power chords and a driving backbeat. Each style has distinct title, world, challenge
-and boss arrangements. Kick-ducking applies only to dance; a filtered echo and
-compressor help keep music below sound effects.
+downloaded. **Trance** is the default: melodic arpeggios, builds and drops.
+**House** uses warm keys, four-on-the-floor grooves and offbeat bass. **Pop** uses
+original repeated hooks, verse/chorus contrast and a straight backbeat.
+All 11 cities retain local motifs through streets, underground rooms and boss
+fights. We no longer offer simulated rock, jazz, blues or country.
+Previously saved removed styles reset safely to trance; game progress is unchanged.
+Hooks are recognizable as recurring themes within the game, not copies of
+commercial songs or recordings.
 
 | Track | Where |
 |-------|-------|
 | `title` | Title screen and world map |
-| `main` | Worlds. Dance has regional tracks for Paris, London, Amsterdam and Tokyo. |
+| `main` | World-specific electronic arrangements and original local motifs |
 | `pipe` | Cloud challenge rooms |
-| `metro` | Paris Metro and London Underground (the challenge arrangement outside dance) |
-| `bonus` | Secret bonus rooms (the title arrangement outside dance) |
+| `metro` | Paris Metro and London Underground |
+| `bonus` | Secret bonus rooms |
 | `boss` | Boss arenas |
 
 `AH.Audio.music(kind, region)` starts the selected style's track; calling it again
 with the same track does not restart it, and `music(null)` stops. For debugging,
-`AH.Audio.setStyle('jazz')` switches styles without changing the current context.
+`AH.Audio.setStyle('pop')` switches styles without changing the current context.
 M mutes both music and effects.
+
+To compare a city's music without unlocking its level, use the browser console:
+
+```js
+AH.Audio.init();
+AH.Audio.setStyle('pop'); // also trance, house
+AH.Audio.music('main', 'francecentral'); // Paris; use pipe or boss for its other arrangements
+```
+
+### Audio quality checks and previews
+
+Every new level follows [music-producer](.github/skills/music-producer/SKILL.md).
+The workflow requires real audio rendering and human listening approval; automated
+measurements alone do not certify artistic quality.
+
+With `npm start` running, the optional dependency-free Chrome renderer produces
+WAV previews of a full loop plus its return, with coin/blast/hit cues mixed in:
+
+```bash
+# Requires Node 22+ and Chrome, not required for normal play or npm test.
+node tests/render-audio.js /tmp/azureheroes-audio
+# Optional individual style/city/context:
+node tests/render-audio.js /tmp/azureheroes-audio pop_new-york_main
+```
+
+Set `CHROME_BIN` if Chrome is not at its usual macOS path or available as
+`google-chrome`; set `PORT` to match your local server. Output contains WAV files
+and a measurement report (peak, RMS, DC, continuity and finite samples).
+The default renders all nine New York style/context combinations. Keys use
+`{trance|house|pop}_{city-slug}_{main|pipe|boss}`.
+Audition on headphones and speakers before approving a score; mobile/browser
+listening and musical taste remain human checks.
 
 ## Controls
 
@@ -270,14 +334,40 @@ The layout follows the project skills in `.github/skills/`.
 
 ```
 index.html          entry point, Phaser config, account form, script order
-art/sprites.js      every sprite, tile, background, the world map and the pixel font
+worlds/catalogue.js stable city order (world IDs and saved progression)
+worlds/<city>/     metadata/map, scenery, local sprites, wardrobe rewards and music
+art/               shared canvas tools, hero/fighter rigs, common assets and font
+audio/             music composition, shared arrangements and synth tools
 ui/hud.js           read-only HUD
-levels/worlds.js    Azure region worlds and random level generators (see the game-contract skill)
-systems/            audio and save, online accounts, input, player, enemies, boss, scenes
+levels/             shared run/flight/data-center and challenge generators
+levels/worlds.js    small AH.Levels facade over city definitions
+systems/            playback, save, online accounts, input, player, enemies, boss, scenes
 server.js           optional Node.js server: static files + accounts + leaderboard API
 tests/              API and gameplay regression tests (npm test), plus the QA report
 docs/               article and screenshots
 ```
+
+For city-only changes, start in its folder (for example
+[New York](worlds/new-york/)) and read shared APIs only as needed. City content
+registers through an explicit, ordered script list; there is no runtime directory
+scan, code download, bundler or build step. Drawing stays outside gameplay scenes.
+Texture names, world IDs, saved wardrobe indexes and generation behavior remain stable.
+
+Each city folder uses the same filenames:
+
+| File | Owns |
+|---|---|
+| `world.js` | identity, Azure region, map position, generator options |
+| `scenery.js` | panorama, landmarks, street architecture |
+| `sprites.js` | local enemies and fighter appearance |
+| `art.js` | local props, transit, stands and regional room drawing |
+| `rewards.js` | local wardrobe reward data/drawing |
+| `music.js` | regional electronic descriptor, original theme, palette and groove |
+
+Empty city-specific extensions stay small; do not copy shared implementations just
+to fill a file. Rendering helpers, hero/fighter rigs and room generators stay reusable.
+The larger scene coordinator remains in `systems/scenes.js`; city content should not
+be added there.
 
 ## Community development
 

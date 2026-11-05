@@ -5,13 +5,27 @@ description: Add or change an Azure region world, landmarks, transit, scenic rou
 
 Design goal: every world must feel like its own place at a glance, the way each Subway Surfers city does. Change the setting, not just the colours.
 
+Every new world must also use [music-producer](../music-producer/SKILL.md).
+Derive its musical identity alongside its visual brief; city-owned music must
+affect the selected trance/house/pop genre, not disappear into a generic worldwide loop.
+
+Start at `worlds/catalogue.js`, then read only the affected `worlds/<city>/` folder
+and the necessary shared helper API. City metadata/map, local drawing, rewards and
+regional music belong together there. Shared rigs stay in `art/`, algorithms in
+`levels/`, composition in `audio/`, and behavior in `systems/`. Do not add a city
+switch to a shared engine or copy shared code into a city.
+For concrete stage/context APIs and stable reward registration, follow the
+[sprite-artist city registration recipe](../sprite-artist/SKILL.md#city-registration-recipe).
+Local route/landmark parts are collected automatically; new drawing factories
+still need explicit dependency-ordered stage calls in the art facade.
+
 ## From a one-line request ("add a New York level")
 Contributors may only name a city. Do not ask them to list landmarks; build an identity brief
 from well-known facts, show it in your plan or PR, then implement it. Fill every row:
 
 | Brief row | Where it lands | New York example |
 |---|---|---|
-| Azure region | world row `region`; nearest real, unused id (never invent one; one world per id) | `eastus2` (East US 2), hint names the mapping |
+| Azure region | city `world.js` field `region`; suitable real, unused id (never invent one; one world per id) | New York world 11 uses `eastus2` (East US 2); hint explicitly calls it hosting, not a local datacenter |
 | Skyline (3-4 icons) | painted `bg_far_<region>` + `panoramaLandmarks` | Statue of Liberty, Empire State, Chrysler, Brooklyn Bridge |
 | Street-strip pieces (6+) | `sc_<prefix>_*`, signature ones in `sceneryRoutes` | Times Square billboards, brownstones with fire escapes, yellow-cab street, subway entrance, Central Park, skyscraper row |
 | Food/market stand | `stand` + `regOb` art | hot dog / pretzel cart |
@@ -19,8 +33,9 @@ from well-known facts, show it in your plan or PR, then implement it. Fill every
 | Traffic and transit | `ambient.road/rail/water/sky` (calm budget) | yellow cabs, MTA bus, elevated subway, Staten Island ferry, helicopter |
 | Local creatures as enemy skins | `en_<region>_robot/drone/spider` | rat (crawler), pigeon (flyer), rogue street robot (walker) |
 | Boss | new `fighterReg` kind + `bolt_<kind>` art and a `boss` row; `systems/boss.js` needs no change | a new boxer, not the existing `enforcer` |
-| Currency, music, ground | `coin_<region>`, a dance-style track in `REGION_SONG` (other styles stay shared), `ground`/`water` | $ coin, funky house groove, sidewalk + Hudson piers |
+| Currency, music, ground | city coin art, `music.js` original regional motifs for trance/house/pop, `world.js` ground/water | $ coin, funky house groove, sidewalk + Hudson piers |
 | Microsoft touch | billboards via `billKeys` | Azure ad on a Times Square screen |
+| Map and rewards | `world.js` map tuple, separated pin hit areas; local reward data at the new world index | New York pin beside Virginia; a varsity outfit reward bundle |
 
 Rules for the brief:
 - Prefer icons a visitor would recognise at a glance; mix landmarks, everyday architecture,
@@ -32,15 +47,17 @@ Rules for the brief:
   unless the city is the real location (and then move it, do not copy it).
 - Ask the contributor only when the region choice is genuinely ambiguous, the city overlaps
   an existing world, or a detail could be culturally sensitive. Otherwise state assumptions and proceed.
+- Check the current world list before treating an example as a new region. New York already
+  exists as world 11; improve it rather than appending another New York or reusing its region.
 
 ## Region identity checklist (all required for a new world)
-1. **Azure region**: real region id, e.g. `westeurope`, plus a city. One row in the `WORLDS` table in `levels/worlds.js` (`id, region, regionName, city, name, mode, theme, tint, landmarks, hint, opt, boss`).
-2. **Landmarks**: recognisable pieces in the scenery strip, plus a tinted sky, a painted far panorama (`bg_far_<region>`, also the map thumbnail) and a near layers (`SKIES`, `PAL`, `bg_farp_<region>`, `bg_near_<region>` in `art/sprites.js`).
+1. **Azure region**: real region id, e.g. `westeurope`, plus a city. Set `AH.Worlds[slug].world` in its `world.js` (`id, region, regionName, city, name, mode, theme, tint, landmarks, hint, opt, boss, map`). Append the slug to the explicit catalogue and scripts to `index.html`; preserve IDs.
+2. **Landmarks**: recognisable pieces in the scenery strip, plus a tinted sky, a painted far panorama (`bg_far_<region>`, also the map thumbnail) and near layers in the city's art modules. Reuse shared drawing helpers.
 2b. **Scenery strip**: 6+ local landmark pieces `sc_<prefix>_<name>` plus Microsoft billboards, listed in `sceneryKeys`. Levels use the painted panorama `bg_far_<region>` (the map thumbnail) as the far layer, so the signature skyline is always visible. List every strip key that duplicates a painted landmark in `AH.Art.panoramaLandmarks[region]`; the strip skips those. Local architecture (canal houses, zinc roofs) stays full size and near-continuous; every 3-4 pieces a 110-190px sky window shows the sun and panorama. Never thin or shrink the strip to calm a level; reduce moving traffic instead. The strip never shows the same key twice on screen. Give run levels a matching `ground`/`water` style (quays, promenades, piers) instead of plain rooftops.
 3. **Local enemies**: a skin for each enemy type the level uses (`robot` = walker, `drone` = flyer, `spider` = crawler). Textures `en_<region>_<type>_0/1`. Behaviour and stats never change, only the look. Every enemy still takes 2 hits and drops 1 Azure Credit.
 4. **Local pickups**: regional currency glyph on the Azure Credit (`coin_<region>0..3`).
 5. **Local props**: 2 decorative objects per world (`prop_<name>`), placed at random along the level, never solid.
-6. **Local boss**: an adult street-fighter villain with a local fighting style and a cyber-threat role (e.g. Muay Thai access broker, savate spoofer, luchador zero-day), drawn with the shared `fighterReg(kind, {...})` rig in art/sprites.js (all eight fighter frames, see game-contract), a thrown projectile `bolt_<kind>`, and a `boss` entry `{ kind, name, proj, air }` in the world row. Flight worlds use `air: true`. No mascots, animals or cartoon objects as bosses; keep them respectful, not national caricatures.
+6. **Local boss**: an adult street-fighter villain with a local fighting style and a cyber-threat role (e.g. Muay Thai access broker, savate spoofer, luchador zero-day), configured in city art using the shared fighter rig in `art/` (all eight fighter frames, see game-contract), a thrown projectile `bolt_<kind>`, and a `boss` entry `{ kind, name, proj, air }` in city `world.js`. Flight worlds use `air: true`. No mascots, animals or cartoon objects as bosses; keep them respectful, not national caricatures.
 7. **Hint text**: intro line `AZURE REGION: <name>` and a one-line `hint` with local flavour.
 
 ## Generation rules
@@ -64,21 +81,28 @@ Rules for the brief:
 - Output must still follow the game-contract Level format.
 
 ## Rules
-- All sprites live in `art/sprites.js` only (see sprite-artist).
-- Boss and enemy logic stays in `systems/` (see gameplay-systems); only data goes in `levels/worlds.js`.
+- Local drawing lives in city art modules, shared tools/rigs in `art/` (see sprite-artist).
+- Boss and enemy logic stays in `systems/` (see gameplay-systems); city data in `world.js`,
+  regional songs in `music.js`, shared generation in `levels/`.
 - Verify with a headless bot on the new level several times: it must be completable, show no console errors, and the boss must be beatable.
 - Return: world id, region, length range, enemy skins, boss name, and how you tested it.
 
 ## World map and save data
-- Add the region id with `[lon, lat, dx, dy]` (dx/dy nudge the pin in crowded areas) to `GEO` in `systems/scenes.js`, so its pin appears on the world map.
+- Set `map: [lon, lat, dx, dy]` in the city's `world.js` (dx/dy nudge crowded pins).
+  The shared map UI reads this metadata; never maintain a second coordinate table.
+- Pin the depicted city, not a guessed datacenter location. Explicitly label hosting-region
+  mappings when the city has no local Azure region, and verify adjacent pins stay tappable.
 - Appending a world keeps existing players' `unlocked` counts valid. Inserting one in the middle shifts level ids.
+- Append one suit, hairstyle and accessory reward for the new world index. Preserve all old
+  wardrobe indexes and test locks, old saves and every pose, including HD.
 - Landmarks can come from the whole country (e.g. Colosseum and Pisa for Italy), not only the region's city.
 - Optional: `ambient` moving objects, `opt.secret` theme, and `opt.pipes` warp pipes (see game-contract).
 - Optional local flavour (see game-contract "Regional rooms"): `stand` (a street stall such as
   `herring` or `bakery`), `pipeTheme` (a regional cloud room such as the Paris `metro`, with
   `pipe_<theme>`, `challenge_*_<theme>` and optional `challenge_train_<theme>` art),
   `ambient.water: ['region']` river boats, `AH.Art.sceneryStars` signature landmarks and a
-  regional `main` music theme in `AH.Audio.REGION_SONG`. Add a test for each.
+  regional `main` music theme in city `music.js`, consumed by shared audio routing.
+  Add a test for each.
 - Preserve the shared cloud challenge pool, meaningful height variation, local street objects
   and accessible low combat routes. New country content must be welcoming, not stereotypes
   that demean people. Teach Microsoft/Azure secure practices through configuration threats.

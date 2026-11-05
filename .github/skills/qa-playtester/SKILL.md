@@ -27,14 +27,16 @@ and Australian 4x4 sizes.
   stops in desktop and forced-touch layouts. Roads, rail decks and land traffic
   must stay behind landmark facades and signs; compare with transit hidden where
   possible rather than treating texture registration as visual verification.
-- Music checks: select dance, jazz, country, blues and rock by keyboard and touch,
-  verify the choice persists locally across reloads, all scene contexts follow it,
+- Music checks: follow [music-producer](../music-producer/SKILL.md)'s actual-render and human
+  listening gates; do not approve timbre from fake Web Audio nodes.
+  Select trance, house and pop by keyboard and touch; check migration of old styles.
+  Verify the choice persists locally across reloads, all scene contexts follow it,
   old/invalid preferences fall back safely, and selecting music or muting in Gold
   Mode never pushes progress.
-  Preserve house/trance beat timing and synth-only ducking; test swing, genre-specific
+  Preserve house/trance beat timing and synth-only ducking; test genre-specific
   rhythms/voices, mute/resume and node cleanup. Offline waveform/headroom checks do
   not substitute for listening feedback.
-- Verify all ten wardrobe bundles in every pose, locked hair/accessories as well
+- Verify every world's wardrobe bundle in every pose, locked hair/accessories as well
   as outfits, old-save fallback and unlocked-only randomization.
 - Test Down/S duck versus E shield (ground, air and crouch guard), low shots, once-per-slide damage, ceiling clearance,
   actual touch actions, all cloud-room themes, time grants, disjoint bounds and pipe returns.
@@ -48,5 +50,16 @@ and Australian 4x4 sizes.
   the boss turning to face you on both sides, and the K.O. topple.
   Those checks prove integration/reachability, not unassisted combat balance.
 - Run `npm test` for gameplay, framework, security-boundary and server regressions.
+  Load real modules using `tests/helpers/load-game.js` and browser script order,
+  never extract/evaluate source fragments. Verify catalogue completeness, unique
+  world IDs/regions, local ownership, saved indexes and static script delivery.
   Verify skill discovery metadata, relative links and pinned CI/CDN integrity.
 - Do not call browser emulation a real-device test or claim skills alone prevent backdoors.
+- Missions: verify key-before-relay, held ground shield versus flight blast,
+  optional duck scan, hidden gem quota, inaccessible boss/exit while incomplete,
+  no duplicate scoring and unchanged saved progress. Die before/after objectives;
+  verify flight camera recovery and underground bonus gems with actual collisions.
+- Check grounded flag/guide/terminal feet and pipe bases against platform tops,
+  active checkpoint labels and readable Azure/Entra/Defender/Microsoft 365 lessons.
+  Rooms must not activate main-world checkpoints. Konami Gold Mode opens all map
+  worlds without marking them cleared or persisting unlocks.

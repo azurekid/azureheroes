@@ -1,9 +1,11 @@
 'use strict';
 const test = require('node:test');
 const assert = require('node:assert/strict');
+const crypto = require('node:crypto');
 const fs = require('node:fs');
 const vm = require('node:vm');
 const path = require('node:path');
+const { artScripts, levelScripts, loadScripts, recordingDocument } = require('./helpers/load-game');
 
 function load(file, AH = {}, seed = 1, globals = {}) {
   const math = Object.create(Math);
@@ -12,6 +14,50 @@ function load(file, AH = {}, seed = 1, globals = {}) {
   vm.runInContext(fs.readFileSync(path.join(__dirname, '..', file), 'utf8'), context);
   return context.window.AH;
 }
+
+function levels(seed = 1) {
+  return loadScripts(levelScripts(), { seed }).Levels;
+}
+
+function artwork() {
+  return loadScripts(artScripts(), { globals: { document: recordingDocument() } }).Art;
+}
+
+test('seeded world generation preserves the pre-refactor output digest', () => {
+  const hashes = [];
+  for (const seed of [1, 7, 42, 8675309, 2027]) {
+    const Levels = levels(seed);
+    for (const meta of Levels.worlds) {
+      const key = `${seed}:${meta.id}:${meta.city}`;
+      const generated = Levels.make(meta.id);
+      delete generated.mission;
+      generated.time -= generated.mode === 'fly' ? 45 : 90;
+      const output = JSON.stringify(generated);
+      hashes.push([key, crypto.createHash('sha256').update(output).digest('hex')]);
+    }
+  }
+  assert.equal(hashes.length, 55);
+  assert.equal(
+    crypto.createHash('sha256').update(JSON.stringify(hashes)).digest('hex'),
+    '5a20b5bdf5bd0a907cfb5daf7bb44c53d66b1ce58a12aaede96ed3e860766315'
+  );
+});
+
+test('city catalogue fixes world order, stable ids and per-world map coordinates', () => {
+  const AH = loadScripts(levelScripts());
+  const slugs = ['amsterdam', 'london', 'paris', 'tokyo', 'sydney', 'venice', 'rio', 'mexico-city', 'redmond', 'virginia', 'new-york'];
+  assert.deepEqual(Array.from(AH.WorldOrder), slugs);
+  assert.deepEqual(Object.keys(AH.Worlds), slugs);
+  const worlds = slugs.map((slug, index) => {
+    const world = AH.Worlds[slug]?.world;
+    assert.ok(world, slug + ' has world metadata');
+    assert.equal(world.id, index + 1);
+    assert.equal(world.map.length, 4);
+    assert.ok(world.map.every(Number.isFinite));
+    return world;
+  });
+  assert.deepEqual(Array.from(AH.Levels.ids), worlds.map((world) => world.id));
+});
 
 test('challenge platforms use finite exact-size art without changing collision geometry', () => {
   const calls = [], zones = [];
@@ -89,7 +135,7 @@ test('room scenery variants cover street ambience and parallax is isolated and d
 });
 
 test('street walkways start low, return to street level after climbs and Amsterdam keeps its signature landmarks', () => {
-  const { Levels } = load('levels/worlds.js');
+  const Levels = levels();
   for (const meta of Levels.worlds.filter((w) => w.mode === 'run' && w.theme !== 'rack')) {
     let street = 0, total = 0;
     for (let run = 0; run < 30; run++) {
@@ -103,15 +149,13 @@ test('street walkways start low, return to street level after climbs and Amsterd
     }
     assert.ok(street / total >= 0.45, meta.name + ' keeps most walkway low');
   }
-  const source = fs.readFileSync(path.join(__dirname, '../art/sprites.js'), 'utf8');
-  const route = source.match(/westeurope: \[\[0, '(\w+)'.*\]\],/);
-  assert.ok(route && route[1] === 'sc_we_centraal', 'Amsterdam opens with the detailed Centraal station');
-  assert.match(route[0], /sc_we_schiphol/);
-  assert.doesNotMatch(source, /'AMSTERDAM CENTRAAL', 75/, 'only one Centraal design exists');
+  const route = artwork().sceneryRoutes.westeurope;
+  assert.equal(route[0][1], 'sc_we_centraal', 'Amsterdam opens with the detailed Centraal station');
+  assert.ok(route.some((stop) => stop[1] === 'sc_we_schiphol'));
 });
 
 test('random worlds have distinct, disjoint, substantial cloud challenges and vertical routes', () => {
-  const { Levels } = load('levels/worlds.js');
+  const Levels = levels();
   const themes = new Set();
   let walls = 0, stairs = 0;
   for (const meta of Levels.worlds) {
@@ -264,17 +308,16 @@ test('duck body preserves feet, cannot stand under beams, and blasts fire low', 
 });
 
 test('regional scenic routes place every requested highlight and preserve landmark spacing', () => {
-  const source = fs.readFileSync(path.join(__dirname, '../art/sprites.js'), 'utf8');
-  const start = source.indexOf('  const sceneryRoutes = ');
-  assert.ok(start >= 0);
-  const routes = vm.runInNewContext(source.slice(start, source.indexOf('  Object.keys(SC).forEach', start)) + '\nsceneryRoutes;');
-  const sizes = Object.fromEntries([...source.matchAll(/(sc_\w+): \[(\d+), (\d+),/g)].map((m) => [m[1], [Number(m[2]), Number(m[3])]]));
-  const { Levels } = load('levels/worlds.js');
-  for (const id of [1, 4, 5]) {
+  const registeredArt = artwork(), routes = registeredArt.sceneryRoutes;
+  const textureKeys = new Set(registeredArt.textureKeys);
+  const Levels = levels();
+  for (const id of [1, 4, 5, 11]) {
     const region = Levels.worlds.find((w) => w.id === id).region, route = routes[region];
     assert.ok(route.length >= 3);
     for (let i = 0; i < route.length; i++) {
-      assert.ok(route[i][0] >= 0 && route[i][0] <= 0.85 && sizes[route[i][1]]);
+      const key = route[i][1];
+      assert.ok(route[i][0] >= 0 && route[i][0] <= 0.85 && registeredArt.scenerySizes[key]);
+      assert.ok(textureKeys.has(key) && registeredArt.textureCanvas(key), key + ' is a registered city texture');
       if (i) assert.ok(route[i][0] > route[i - 1][0]);
     }
     for (let seed = 1; seed <= 30; seed++) {
@@ -286,9 +329,9 @@ test('regional scenic routes place every requested highlight and preserve landma
       const AH = load('systems/scenes.js', { Levels: { ids: [1] }, Art: art }, seed, { Phaser: { Scene: class {} } });
       const s = new AH.Scenes[5](), placed = [];
       s.L = Levels.make(id);
-      s.textures = { exists: () => true, get: (k) => ({ getSourceImage: () => ({ width: (sizes[k] ? sizes[k][0] : 140) * 2 }) }) };
+      s.textures = { exists: (key) => key !== 'painted', get: (key) => ({ getSourceImage: () => ({ width: (registeredArt.scenerySizes[key]?.[0] || 140) * 2 }) }) };
       s.add = { image(x, y, key) {
-        const o = { x, y, key, displayWidth: sizes[key] ? sizes[key][0] : 140,
+        const o = { x, y, key, displayWidth: registeredArt.scenerySizes[key]?.[0] || 140,
           scaleX: 0.5, setOrigin() { return this; }, setScrollFactor() { return this; }, setDepth() { return this; },
           setScale(v) { this.displayWidth *= v / this.scaleX; this.scaleX = v; return this; } };
         placed.push(o); return o;
@@ -316,8 +359,8 @@ test('regional scenic routes place every requested highlight and preserve landma
 });
 
 test('regional transit moves behind landmarks with slim infrastructure and preserves Tokyo flight', () => {
-  const { Levels } = load('levels/worlds.js');
-  for (const id of [1, 2, 3, 4, 5, 6, 9]) {
+  const Levels = levels();
+  for (const id of [1, 2, 3, 4, 5, 6, 9, 11]) {
     const AH = load('systems/scenes.js', { Levels: { ids: [1] }, Art: { D: 2 } }, id, {
       Phaser: { Scene: class {}, Utils: { Array: { GetRandom: (xs) => xs[0] } } }
     });
@@ -537,29 +580,73 @@ test('rogue hacker patrols, shoots toward the player and drops one credit with a
 });
 
 test('every region has exactly one unlockable hero suit and locked suits are enforced', () => {
-  const { Levels } = load('levels/worlds.js');
-  const src = fs.readFileSync(path.join(__dirname, '..', 'art/sprites.js'), 'utf8');
-  const unlocks = [...src.matchAll(/\{ name: '([A-Z ]+)', unlock: (\d+), suit:/g)].map((m) => +m[2]);
-  assert.deepEqual(unlocks, [...Levels.ids].map((id, i) => i), 'one suit per level, in world order');
-  assert.match(src, /suitOpen = \(i, unlocked\) => .*unlock \+ 2/, 'a suit opens once its level index is cleared');
-  assert.match(src, /if \(!suitOpen\(out\.suit, data && data\.unlocked\)\) out\.suit = /, 'lookOf never returns a locked suit');
+  const Levels = levels(), hero = artwork().hero;
+  const suitUnlock = Array.from(hero.suitUnlock);
+  assert.deepEqual(suitUnlock.filter((unlock) => unlock >= 0), Array.from(Levels.ids, (_, i) => i), 'one suit per level, in world order');
+  const firstRegional = suitUnlock.indexOf(0);
+  assert.equal(hero.suitOpen(firstRegional, 1), false);
+  assert.equal(hero.suitOpen(firstRegional, 2), true, 'a suit opens once its level index is cleared');
 });
 
-test('every regional boss is a fully animated street fighter with its own bolt and readable name', () => {
-  const { Levels } = load('levels/worlds.js');
-  const src = fs.readFileSync(path.join(__dirname, '..', 'art/sprites.js'), 'utf8');
-  const frames = src.match(/const FIGHT_FRAMES = (\[.*\]);/);
-  assert.ok(frames, 'the shared fighter rig lists its frames');
-  for (const f of ['_0', '_1', '_walk', '_attack', '_kick', '_jump', '_upper', '_stun']) assert.ok(frames[1].includes("'" + f + "'"));
+test('every regional boss has registered fighter textures, a bolt and readable metadata', () => {
+  const Levels = levels(), art = artwork();
   const kinds = new Set();
+  const textureKeys = new Set(art.textureKeys);
   for (const meta of Levels.worlds) {
     const B = Levels.make(meta.id).boss;
     assert.match(B.name, /^[A-Z0-9 \-.!':\/+,?]+$/, 'boss names use the pixel font charset');
     if (B.kind === 'guardian') continue;
     kinds.add(B.kind);
-    assert.ok(src.includes("fighterReg('" + B.kind + "'"), B.kind + ' uses the fighter rig');
-    assert.ok(src.includes("reg2('bolt_" + B.proj + "'"), B.kind + ' has its own projectile');
+    for (const pose of ['0', '1', 'walk', 'attack', 'kick', 'jump', 'upper', 'stun']) {
+      assert.ok(textureKeys.has('boss_' + B.kind + '_' + pose), B.kind + ' has ' + pose + ' fighter art');
+    }
+    assert.ok(textureKeys.has('bolt_' + B.proj), B.kind + ' has its own projectile art');
   }
   assert.ok(kinds.size >= 9, 'each region has a distinct fighter');
-  assert.doesNotMatch(src, /boss_molen|windmill boss|boss_sumo|boss_roo\b/i, 'the old mascot bosses are gone');
+});
+
+test('New York appends a complete varied waterfront world without changing existing IDs', () => {
+  const Levels = levels();
+  assert.deepEqual(Array.from(Levels.worlds.slice(0, 10), (w) => w.region),
+    ['westeurope', 'uksouth', 'francecentral', 'japaneast', 'australiaeast', 'italynorth',
+      'brazilsouth', 'mexicocentral', 'westus2', 'eastus']);
+  const meta = Levels.meta(11);
+  assert.equal(meta.region, 'eastus2');
+  assert.equal(meta.city, 'NEW YORK');
+  assert.equal(meta.mode, 'run');
+  assert.match(meta.hint, /HOSTED IN AZURE EAST US 2/);
+  assert.equal(new Set(Levels.worlds.map((w) => w.region)).size, Levels.ids.length);
+  const layouts = new Set(), creatures = new Set(), props = new Set(), themes = new Set();
+  for (let seed = 1; seed <= 100; seed++) {
+    const L = levels(seed).make(11);
+    assert.ok(L.width >= 8000 && L.width <= 13000, 'challenging world length');
+    layouts.add(JSON.stringify(L.platforms));
+    assert.equal(L.water, true);
+    assert.equal(L.boss.kind, 'broker');
+    assert.equal(L.boss.proj, 'broker');
+    assert.ok(L.platforms.some((p) => p.x === L.boss.left && p.w === 760 && p.y === L.boss.floor));
+    assert.ok(L.obstacles.some((o) => o.kind === 'hotdog' && o.w === 64 && o.h === 52), 'local stand appears every run');
+    assert.equal(L.pipeZones.length, 2);
+    assert.notEqual(L.pipeZones[0].theme, L.pipeZones[1].theme);
+    L.pipeZones.forEach((z) => themes.add(z.theme));
+    L.enemies.filter((e) => e.x < L.width).forEach((e) => {
+      assert.equal(e.skin, 'eastus2');
+      creatures.add(e.type);
+    });
+    L.props.forEach((p) => props.add(p.kind));
+    assert.ok(L.powerups.some((p) => p.kind === 'spread'));
+    assert.ok(L.powerups.some((p) => p.kind === 'pierce'));
+  }
+  assert.equal(layouts.size, 100);
+  for (const type of ['robot', 'spider', 'drone', 'hacker']) assert.ok(creatures.has(type));
+  assert.deepEqual([...props].sort(), ['hydrant', 'newsbox']);
+  for (const theme of ['pipelines', 'aks', 'actions', 'docker', 'entra', 'functions']) assert.ok(themes.has(theme));
+});
+
+test('New York map pin uses city coordinates with space beside Virginia', () => {
+  const Levels = levels(), map = Levels.meta(11).map;
+  assert.equal(map[0], -74.006);
+  assert.equal(map[1], 40.7128);
+  assert.ok(map[2] >= 16 && map[3] <= -12, 'offset keeps neighboring pins tappable');
+  assert.ok(Levels.worlds.every((world) => Array.isArray(world.map) && world.map.length === 4));
 });

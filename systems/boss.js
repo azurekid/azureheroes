@@ -56,7 +56,7 @@
       this.marker = scene.add.image(this.x, this.y - 38, 'boss_target').setDepth(44).setVisible(false);
       this.status = new AH.PixelText(scene, this.x, this.y - 94, '', { scale: 1, color: '#ffb060', ox: 0.5 }).setDepth(60);
       AH.Audio.play('boss');
-      AH.Audio.music('boss');
+      AH.Audio.music('boss', this.scene.L?.region);
     }
 
     get x() { return this.sprite.x; }

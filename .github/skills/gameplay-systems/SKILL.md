@@ -44,11 +44,20 @@ description: 'Build Azure Heroes movement, charged shots, duck/slide combat, clo
   (fly mode: only ahead of the camera). Never respawn the hero into an empty level.
 - 5 MFA tokens = +1 life. Azure Blast uses Boost meter.
 - No level layout changes, use placeholder platforms for testing.
+- Mission state lives in `systems/mission.js`; do not duplicate it in scenes/HUD.
+  Two objectives plus the gem quota gate boss entry and completion. Preserve
+  completed tasks/gems after losing a life, reset on new runs, prevent score farming
+  and rewind flight checkpoints when an unfinished requirement is behind them.
 - Accounts and leaderboard: client in `systems/online.js`, server in `server.js` (zero dependencies, Node 18+). Any API change needs a test in `tests/server.test.js` and must keep guest mode (no server) working.
 - Resume and save rules are in the game-contract skill. Use `AH.Save.setResume`.
-- Audio lives in `systems/audio.js`: dance keeps the original house/trance tracks;
-  selectable jazz, country, blues and rock have distinct original rhythms, voices
-  and lounge/world/challenge/boss arrangements. Keep dance kick-ducking off other
+- Audio playback lives in `systems/audio.js`, composition/shared music data in `audio/`,
+  regional song data in `worlds/<city>/music.js`, and persistence in `systems/save.js`.
+  Follow [music-producer](../music-producer/SKILL.md) for all composition,
+  instrument/SFX changes and new levels.
+  For a regional song change read its city module and composition API only, not the
+  whole synth. Keep city content out of playback and saves out of audio.
+  Selectable trance, house and pop have distinct original rhythms, voices
+  and lounge/world/challenge/boss arrangements. Keep house/trance kick-ducking off pop
   styles, preserve context routing and store the validated choice locally without
   changing game progress. N and the MUSIC button cycle styles. Preserve mute,
   suspended-context resume, SFX and node cleanup; muting during Gold Mode may

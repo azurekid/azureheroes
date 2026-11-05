@@ -28,6 +28,9 @@ real player accounts or live secrets in examples.
   `pull_request_target` to check out and run contributor code.
 - Deployment is separate from PR validation. Never put production credentials in a
   fork, PR workflow, game asset, skill, screenshot or test fixture.
+- `art/`, `audio/` and `worlds/` contain public browser code only. Keep accounts,
+  local tooling, scratch scripts and private configuration outside these directories.
+  Module loading uses explicit local scripts, never downloaded executable manifests.
 
 ## Maintainer setup required on GitHub
 

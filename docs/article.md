@@ -1,7 +1,7 @@
 # Building Microsoft Azure Heroes 2027 with no runtime assets or build step
 
 Microsoft Azure Heroes 2027 is a retro side-scroller about a security hero travelling
-through ten Azure regions, from the canals of Amsterdam to the Virginia data center.
+through eleven Azure-backed worlds, from the canals of Amsterdam to New York's Hudson waterfront.
 Players can customize their hero, explore regional streets and transit, and face
 cloud-themed threats and a local boss in each world.
 
@@ -13,13 +13,14 @@ needs no game server, but an internet connection is needed to load Phaser.
 
 ## Everything is drawn in code
 
-There are no sprite sheets. [art/sprites.js](../art/sprites.js) draws sprites and
-backgrounds on canvases and hands them to Phaser as textures. Pixel shapes are
+There are no sprite sheets. Shared [art modules](../art/) and
+[city art modules](../worlds/) draw sprites and backgrounds on canvases and hand
+them to Phaser as textures. Pixel shapes are
 upscaled and lit with outlines, rim light, shading, dithering and glows. Parallax
 skylines, landmarks, moving traffic and a custom bitmap font complete the scene.
 The game renders at 1280x720 while retaining 640x360 logical coordinates.
 
-## Ten regions, three play styles
+## Eleven worlds, three play styles
 
 - **Street runs** mix canal quays, promenades and piers with gaps, steps, higher
   paths, moving boats, hazards and wall-jump opportunities.
@@ -32,13 +33,20 @@ Amsterdam has trams, yellow trains,
 canal cruises and herring stands. London has a Thames promenade and Underground;
 Paris has rooftops, bakeries, Seine boats and the Metro. Tokyo combines flight,
 billboards, trains and cherry blossoms, while Sydney features a beach and outback.
+New York adds the Statue of Liberty, an Art Deco skyline, Brooklyn Bridge,
+brownstones, Times Square, yellow cabs and hot dog carts. Rat and pigeon skins retain
+their cloud-threat labels and shared combat rules. Its East US 2 hosting-region
+mapping is explicit; the map pin marks New York, not a purported local datacenter.
 Landmarks may come from across each country, not just its region's city.
 
 ![Amsterdam Canal Run](screenshots/world1.png)
 ![Tokyo Skyway Pursuit](screenshots/world4.png)
 ![Sydney Harbour Run](screenshots/world5.png)
 
-The world definitions and generators live in [levels/worlds.js](../levels/worlds.js).
+World definitions, map coordinates, local art, wardrobe rewards and regional music
+live together in [city folders](../worlds/), with stable order in
+[the catalogue](../worlds/catalogue.js). Reusable generators live in
+[levels/](../levels/); [levels/worlds.js](../levels/worlds.js) provides the public facade.
 Adding a region involves its configuration, generated routes, original art, boss,
 map/progression wiring and tests, not just a single level file. The shared
 [contribution workflow](../CONTRIBUTING.md) explains the contract and skill framework.
@@ -97,8 +105,10 @@ a JSON store; the static site remains playable without an account.
 
 ## Sound without files
 
-[systems/audio.js](../systems/audio.js) synthesises effects and music with Web Audio.
-Players choose **dance, jazz, country, blues or rock** with N or the MUSIC button.
+[systems/audio.js](../systems/audio.js) schedules effects and music with Web Audio,
+using shared [composition and synth tools](../audio/) and city song data.
+[systems/save.js](../systems/save.js) owns persistence independently of playback.
+Players choose **trance, house or pop** with N or the MUSIC button.
 Each style has title, world, challenge and boss arrangements; the choice is stored
 on the device independently of online progress. M mutes music and effects.
 

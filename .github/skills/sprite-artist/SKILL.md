@@ -4,7 +4,40 @@ description: 'Create Azure Heroes code-drawn pixel art, duck/slide poses, cloud 
 ---
 
 - Read [game-contract](../game-contract/SKILL.md) and [game-security](../game-security/SKILL.md).
-- Runtime art belongs only in `art/sprites.js` and read-only UI in `ui/hud.js`. Related tests/docs are in scope; coordinate consumers via [game-orchestrator](../game-orchestrator/SKILL.md).
+- City art/rewards live in `worlds/<city>/`; reusable tools, hero/fighter rigs and common
+  assets live in `art/`. Read only the affected city and needed helper API first.
+  No drawing in scene/gameplay code. Read-only UI stays in `ui/hud.js`. Related
+  tests/docs are in scope; coordinate consumers via [game-orchestrator](../game-orchestrator/SKILL.md).
+- Preserve registration stages, texture keys, random order and saved wardrobe indexes.
+  Add explicit script entries for new modules. Test the real modules; never slice
+  hero declarations from another file or duplicate a shared rig inside a city.
+
+## City registration recipe
+
+- Load `art/core.js` before city drawing declarations and `art/sprites.js` after
+  them. Declare factories in `AH.ArtModules.stages` under
+  `worlds.<slug>.<topic>.<phase>`; do not draw while scripts are being loaded.
+  Add explicit calls to the facade's stage sequence after their shared dependencies
+  and before the final `art.sprites.130` scenery registrar. Stage names are not an
+  automatic numeric scheduler.
+- City callbacks live in `AH.Worlds[slug].art.parts[name]` and receive shared context
+  `C`. Reuse `C.reg2(key,w,h,draw,opt)`, `C.regOb(kind,w,h,draw)`,
+  `C.regSkins(region)`, `C.regCoins(region)`, `C.makeSky(style)` and
+  `C.fighterReg(kind,appearance)`, plus the existing canvas helpers. `regOb`
+  publishes the rendered obstacle dimensions; keep generator dimensions aligned.
+- Populate `C.SKIES[region]` / `C.PAL[region]` for backgrounds,
+  `C.SKINS[region]` for enemies and `C.SC[region]` for the scenery registrar.
+  Preserve the existing `bg_sky_`, `bg_far_`, `bg_near_` and regional enemy keys.
+- Optional city parts `sceneryStars`, `panoramaLandmarks` and `sceneryRoutes`
+  are collected automatically in catalogue order using the city's region.
+  `city.art.registryOrder[name]` exists only to preserve historical insertion order;
+  new content normally uses catalogue order, not a shared city switch.
+- Set `city.rewards` to `{suit,hair,gear,outfit?,classicHat?,classicGear?}`.
+  Append references in `art/wardrobe.js`'s stable saved arrays, never insert or
+  reindex. The suit's `unlock` and hair/gear unlock fields use the world index.
+
+## Art invariants
+
 - Hero: blue suit, blue cape, glowing A, sunglasses, 32x48px, frames: idle, run0-3, jump, fly, attack, shield, duck, slide. Preserve wardrobe in every pose and register frames in `HERO_FRAMES`; Cloud Hacker is capeless.
 - Enemies: patrol robot, drone, spider bot, boss CyberGuardian, all in same neon sunset palette.
 - Draw with code / pixel arrays, no external image files.
@@ -68,3 +101,6 @@ description: 'Create Azure Heroes code-drawn pixel art, duck/slide poses, cloud 
   Preserve collision geometry, low-duct clearance, font legibility and exit visibility.
 - Register text-bearing sprites only after the font/glyph cache is initialized.
 - Honor `AH.Art.D` texture density; keep physical obstacle sizes in `obSize` aligned with rendered dimensions. Check vehicles against the hero and local stands against the street.
+- Keep bottom-anchored flags, terminals and solid pipe textures free of transparent
+  glow padding; visible feet/bases must meet the collision surface. Friendly
+  checkpoint guides are non-solid, visually distinct from enemies and grounded.

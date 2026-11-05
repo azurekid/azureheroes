@@ -4,36 +4,14 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
 const path = require('node:path');
+const { artScripts, levelScripts, loadScripts, recordingDocument } = require('./helpers/load-game');
 
-const source = fs.readFileSync(path.join(__dirname, '../art/sprites.js'), 'utf8');
 const scenes = fs.readFileSync(path.join(__dirname, '../systems/scenes.js'), 'utf8');
+const regionCount = loadScripts(levelScripts()).Levels.ids.length;
 const frames = ['idle', 'run0', 'run1', 'run2', 'run3', 'jump', 'fly', 'duck', 'slide', 'shield', 'attack'];
 
 function art() {
-  const document = { createElement() {
-    const canvas = { width: 0, height: 0, ops: [] };
-    const gradient = () => ({ addColorStop(...args) { canvas.ops.push(['stop', ...args]); } });
-    const ctx = new Proxy({
-      createLinearGradient: gradient, createRadialGradient: gradient,
-      getImageData() { return { data: new Uint8ClampedArray(canvas.width * canvas.height * 4) }; },
-      putImageData() {}
-    }, {
-      get(target, key) { return key in target ? target[key] : (...args) => canvas.ops.push([key, ...args]); },
-      set(target, key, value) { target[key] = value; canvas.ops.push([key, value]); return true; }
-    });
-    canvas.getContext = () => ctx;
-    return canvas;
-  } };
-  // Isolate the actual hero rig and rogue hacker reference, avoiding unrelated world art.
-  const prefix = source.slice(0, source.indexOf("  reg2('shield_fx'"));
-  const enemyStart = source.indexOf('  function hackerFrame(step)');
-  const enemyEnd = source.indexOf('  /* climb walls:', enemyStart);
-  assert.ok(enemyStart >= 0 && enemyEnd > enemyStart, 'rogue hacker art exists');
-  const enemy = source.slice(enemyStart, enemyEnd);
-  const exports = source.slice(source.lastIndexOf('    hero: {'), source.lastIndexOf('    generate: function'));
-  const context = vm.createContext({ window: {}, document });
-  vm.runInContext(prefix + '\n' + enemy + '\nAH.Art = {D: D, rogue: defs.hacker_0,\n' + exports + '};})();', context);
-  return context.window.AH.Art;
+  return loadScripts(artScripts(), { globals: { document: recordingDocument() } }).Art;
 }
 const A = art(), H = A.hero;
 function scene() {
@@ -96,10 +74,10 @@ function lab(unlocked = 1) {
 }
 
 test('every region grants exactly one outfit, hair and accessory at its clear threshold', () => {
-  assert.equal(H.suits.length, 18);
-  assert.equal(H.styles.length, 17);
-  assert.equal(H.gear.length, 16);
-  for (let region = 0; region < 10; region++) {
+  assert.equal(H.suits.length, regionCount + 8);
+  assert.equal(H.styles.length, regionCount + 7);
+  assert.equal(H.gear.length, regionCount + 6);
+  for (let region = 0; region < regionCount; region++) {
     const reward = H.wardrobeFor(region);
     for (const category of ['suit', 'hair', 'gear']) {
       assert.equal(H.wardrobeOpen(category, reward[category], region + 1), false, `${region} locked ${category}`);
@@ -117,7 +95,7 @@ test('every region grants exactly one outfit, hair and accessory at its clear th
 });
 
 test('saved locked or invalid wardrobe falls back without changing old saves', () => {
-  for (const body of ['m', 'f']) for (let region = 0; region < 10; region++) {
+  for (const body of ['m', 'f']) for (let region = 0; region < regionCount; region++) {
     const reward = H.wardrobeFor(region), original = { ...H.def[body], ...reward };
     const data = { unlocked: region + 1, look: original };
     const clean = A.lookOf(data);
@@ -165,7 +143,8 @@ test('Cloud Hacker is appended, open, and leaves existing saved suit indexes int
 
 test('Cloud Hacker renders every pose and explicit headwear replaces its built-in hood', () => {
   const S = scene();
-  const enemyHood = hackerHoodOps(A.rogue), enemyTerminal = hackerTerminalOps(A.rogue);
+  const rogue = A.textureCanvas('hacker_0');
+  const enemyHood = hackerHoodOps(rogue), enemyTerminal = hackerTerminalOps(rogue);
   for (const body of ['m', 'f']) for (const hair of ['swoop', 'afro', 'long', 'pony', 'braids']) for (const hat of ['none', 'bowler', 'cap', 'hijab', 'hachimaki']) {
     const look = { ...H.def[body], suit: 17, hair, hat };
     const prefix = A.buildHero(S, look);
@@ -260,7 +239,7 @@ test('bowler crown reaches its brim and covers hair in every hero pose', () => {
 });
 
 test('Hero Lab rejects every locked category and randomizes only unlocked selections', () => {
-  for (let region = 0; region < 10; region++) {
+  for (let region = 0; region < regionCount; region++) {
     const reward = H.wardrobeFor(region);
     for (const category of ['suit', 'hair', 'gear']) {
       const { lab: L, AH } = lab(region + 1);
@@ -285,7 +264,7 @@ test('Hero Lab rejects every locked category and randomizes only unlocked select
 
 test('all regional garments, hairstyles and accessories render in every pose and HD', () => {
   const S = scene(), signatures = new Set();
-  for (const body of ['m', 'f']) for (let region = 0; region < 10; region++) {
+  for (const body of ['m', 'f']) for (let region = 0; region < regionCount; region++) {
     const look = { ...H.def[body], ...H.wardrobeFor(region) };
     const prefix = A.buildHero(S, look);
     for (const frame of frames) {
@@ -304,34 +283,86 @@ test('all regional garments, hairstyles and accessories render in every pose and
       for (const frame of frames) assert.notEqual(JSON.stringify(S.textures.get(prefix + frame).ops), JSON.stringify(S.textures.get(p + frame).ops), `${region} ${key} visible in ${frame}`);
     }
   }
-  assert.equal(signatures.size, 20);
-  assert.match(source, /H\.outfit === 'kimono'/);
-  assert.match(source, /heroOutfit\(g, 'stand'\)/);
-  assert.match(source, /heroOutfit\(g, 'fly'\)/);
+  assert.equal(signatures.size, regionCount * 2);
+  assert.equal(H.suitNames[H.wardrobeFor(3).suit], 'KIMONO', 'Tokyo retains its structured garment');
 });
 
 test('regional outfit structures differ even without their palettes or accessories', () => {
   const S = scene(), geometry = new Set();
-  for (let region = 0; region < 10; region++) {
+  for (let region = 0; region < regionCount; region++) {
     const look = { ...H.def.m, suit: H.wardrobeFor(region).suit };
     const p = A.buildHero(S, look);
     const commands = S.textures.get(p + 'idle').ops.filter((op) =>
       ['moveTo', 'lineTo', 'ellipse', 'fillRect', 'arc', 'roundRect'].includes(op[0]));
     geometry.add(JSON.stringify(commands));
   }
-  assert.equal(geometry.size, 10, 'every outfit changes its garment structure');
+  assert.equal(geometry.size, regionCount, 'every outfit changes its garment structure');
 });
 
 test('wardrobe labels and reward messages fit the pixel-font charset', () => {
   const charset = /^[A-Z0-9 .!':/+,?-]+$/;
   const labels = [...H.suitNames, ...Object.values(H.hairNames), ...H.hats.flatMap((x) => x.slice(1, 3)), ...H.gear.flatMap((x) => x.slice(1, 3))];
   for (const label of labels) assert.match(label, charset);
-  for (let i = 0; i < 10; i++) {
+  for (let i = 0; i < regionCount; i++) {
     const r = H.wardrobeFor(i);
     const line = 'HAIR: ' + H.hairNames[r.hair] + '  ACCESSORY: ' + H.gear.find((x) => x[0] === r.gear)[1];
     assert.match(line, charset);
     assert.ok(line.length * 6 <= 396, 'banner leaves room for hero preview');
   }
+});
+
+test('Gold Mode opens all map worlds for sandbox deployment without changing saved progression', () => {
+  const starts = [], calls = [];
+  function display() {
+    const object = { width: 60 };
+    for (const method of ['setOrigin', 'setDepth', 'setScale', 'setInteractive', 'on', 'setVisible',
+      'fillStyle', 'fillRect', 'lineStyle', 'lineBetween', 'strokeRect', 'setText', 'setColor',
+      'setCrop', 'setTintFill', 'setPosition', 'clear', 'fillTriangle', 'destroy']) {
+      object[method] = () => object;
+    }
+    return object;
+  }
+  const AH = loadScripts(levelScripts());
+  AH.Art = { D: 1, MAP: { proj: () => [100, 100] } };
+  AH.Audio = { music() {}, play() {}, init() {} };
+  AH.PixelText = function () { return display(); };
+  AH.UI = { soundButton() {}, musicButton() {}, button: display, pad: String };
+  AH.Online = { available: false };
+  AH.Save = { data: { unlocked: 1, bests: {}, resume: null },
+    unlock() { calls.push('unlock'); }, save() { calls.push('save'); }, setResume() { calls.push('resume'); } };
+  vm.runInNewContext(scenes, { window: { AH }, Phaser: { Scene: class {} } });
+  const saved = JSON.stringify(AH.Save.data);
+  function map() {
+    const selection = new AH.Scenes[3]();
+    selection.add = Object.fromEntries(['rectangle', 'image', 'zone', 'graphics'].map((key) => [key, display]));
+    selection.input = { keyboard: { on() {} } };
+    selection.textures = { exists: () => false };
+    selection.cameras = { main: { shake() {} } };
+    selection.scene = { start(key, data) { starts.push({ key, data }); } };
+    selection.create();
+    return selection;
+  }
+  const normal = map();
+  assert.equal(normal.pins.filter((pin) => !pin.locked).length, 1);
+  normal.select(regionCount - 1, true);
+  normal.deploy();
+  assert.equal(starts.length, 0);
+
+  AH.Gold.armed = true;
+  const gold = map();
+  for (let i = 0; i < regionCount; i++) {
+    assert.equal(gold.pins[i].locked, false);
+    assert.equal(gold.pins[i].done, false, 'access is not a recorded clear');
+    gold.select(i, true);
+    gold.deploy();
+    assert.equal(starts.at(-1).data.id, AH.Levels.ids[i]);
+    assert.equal(AH.Run.gold, true);
+    assert.equal(AH.Run.lives, 30);
+  }
+  assert.equal(JSON.stringify(AH.Save.data), saved);
+  assert.deepEqual(calls, []);
+  AH.Gold.armed = false;
+  assert.equal(map().pins.filter((pin) => !pin.locked).length, 1);
 });
 
 test('Gold Mode easter egg is a sandbox: 30 lives, gold suit, no run progress saved or submitted', () => {

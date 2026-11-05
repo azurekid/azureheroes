@@ -182,22 +182,27 @@ test('losing a life restores defeated enemies away from the respawn point', () =
 });
 
 function bossFixture(air = false) {
+  const music = [];
   class Rectangle {
     constructor(x, y, width, height) { Object.assign(this, { x, y, width, height }); }
   }
-  const AH = load('systems/boss.js', { Audio: { play() {}, music() {} },
+  const AH = load('systems/boss.js', { Audio: { play() {}, music(...args) { music.push(args); } },
     PixelText: class { constructor(x, y) { return display(x, y); } } }, { Phaser: {
     Math: { Clamp: (n, lo, hi) => Math.max(lo, Math.min(hi, n)) },
     Geom: { Rectangle, Intersects: { RectangleToRectangle: (a, b) =>
       a.x < b.x + b.width && a.x + a.width > b.x && a.y < b.y + b.height && a.y + a.height > b.y } }
   } });
-  const scene = { add: { sprite: display, image: display }, burst() {}, toast() {}, addScore() {},
+  const scene = { L: { region: 'uksouth' }, add: { sprite: display, image: display }, burst() {}, toast() {}, addScore() {},
     time: { now: 1, delayedCall() {} }, cameras: { main: { shake() {} } } };
   const boss = new AH.Boss(scene, { left: 0, right: 640, floor: 300, kind: 'guardian', name: 'TEST', air });
   const player = { x: 60, y: 270, facing: 1, health: 100, invuln: 0,
     body: { x: 53, y: 250, width: 14, height: 40 }, hurt() {} };
-  return { boss, player, scene };
+  return { boss, player, scene, music };
 }
+
+test('boss music receives the hosting world region', () => {
+  assert.deepEqual(bossFixture().music, [['boss', 'uksouth']]);
+});
 
 test('boss damage check, green marker, cue and countdown share one vulnerability state', () => {
   const { boss, player } = bossFixture();

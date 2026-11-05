@@ -78,7 +78,7 @@
   AH.Run = { score: 0, lives: 3, startScore: 0, startLives: 3 };
 
   /* Documented easter egg (README "Gold Mode"): typing the Konami code on the title screen arms a
-     session-only sandbox run with a golden suit and 30 lives. Gold runs never save or submit
+     session-only sandbox run with every world open, a golden suit and 30 lives. Gold runs never save or submit
      run progress: no leaderboard submission, local bests, unlocks, resume or cloud progress. */
   AH.Gold = {
     codes: ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'KeyA'],
@@ -205,7 +205,7 @@
         AH.Audio.play('unlock');
         this.hero.setTexture(AH.Art.buildHeroHD(this, Object.assign(AH.Art.lookOf(AH.Save.data), { suit: 'gold' })));
         this.cameras.main.flash(300, 255, 210, 60);
-        T(this, 320, 322, 'GOLD MODE: 30 LIVES - SCORES ARE NOT SAVED OR SUBMITTED', { scale: 1, color: '#ffe14a', ox: 0.5, shadow: '#3a2400' }).setDepth(30);
+        T(this, 320, 322, 'GOLD MODE: ALL WORLDS - 30 LIVES - SCORES NOT SAVED', { scale: 1, color: '#ffe14a', ox: 0.5, shadow: '#3a2400' }).setDepth(30);
       };
       this.input.keyboard.on('keydown', (e) => {
         if (!this.help && !AH.Gold.armed) {
@@ -378,15 +378,14 @@
     pierce: { time: 25, msg: 'COSMOS BEAM! PIERCE THREATS. HOLD TO CHARGE' }
   };
   const KIND = { run: 'RUN AND JUMP', fly: 'FLIGHT PURSUIT', rack: 'HACK + BOSS FIGHT' };
+  const CHECKPOINT_LESSONS = [
+    ['AZURE', 'USE MANAGED IDENTITIES FOR APPS.', 'KEEP SECRETS OUT OF YOUR CODE.'],
+    ['ENTRA', 'TURN ON MFA TO PROTECT SIGN-INS.', 'GRANT ONLY THE ACCESS PEOPLE NEED.'],
+    ['DEFENDER', 'REVIEW SECURITY ALERTS AND PATCH DEVICES.', 'INVESTIGATE WARNINGS BEFORE THEY SPREAD.'],
+    ['MICROSOFT 365', 'CHECK WHO CAN OPEN YOUR SHARED FILES.', 'USE NAMED RECIPIENTS FOR PRIVATE DOCUMENTS.']
+  ];
   
   /* ---------------------------------------------------------------- WORLD MAP (level select) */
-  // real coordinates of each Azure region's city; the European cluster is spread a little so pins stay tappable
-  const GEO = {
-    westeurope: [4.9, 52.4, 7, -9], uksouth: [-0.1, 51.5, -10, -4], francecentral: [2.35, 48.86, -7, 8], italynorth: [12.3, 45.4, 10, 6],
-    japaneast: [139.7, 35.7, 0, 0], australiaeast: [151.2, -33.9, 0, 0], brazilsouth: [-43.2, -22.9, 0, 0],
-    mexicocentral: [-99.1, 19.4, 0, 0], westus2: [-122.1, 47.7, 0, 0], eastus: [-78, 37.5, 0, 0],
-    eastus2: [-74.006, 40.7128, 16, -12]
-  };
   const MAP_Y = 30;
 
   function startRun(scene, id, score, lives) {
@@ -426,10 +425,10 @@
       AH.UI.musicButton(this, 632, 31);
 
       this.pins = LEVEL_IDS.map((id, i) => {
-        const m = AH.Levels.meta(id), geo = GEO[m.region] || [0, 0, 0, 0];
-        const q = M.proj(geo[0], geo[1]);
-        const tx = q[0], ty = q[1] + MAP_Y, x = Math.round(tx + geo[2]), y = Math.round(ty + geo[3]);
-        const locked = i >= d.unlocked, done = i < d.unlocked - 1;
+        const m = AH.Levels.meta(id), map = m.map || [0, 0, 0, 0];
+        const q = M.proj(map[0], map[1]);
+        const tx = q[0], ty = q[1] + MAP_Y, x = Math.round(tx + map[2]), y = Math.round(ty + map[3]);
+        const locked = !AH.Gold.armed && i >= d.unlocked, done = i < d.unlocked - 1;
         const num = T(this, x + 7, y - 3, String(id), { scale: 1, color: locked ? '#6a6a8a' : done ? '#4dff7a' : '#ffffff', shadow: '#0a0720' }).setDepth(8);
         const zone = this.add.zone(x - 11, y - 11, 22, 22).setOrigin(0).setInteractive({ useHandCursor: true }).setDepth(9);
         zone.on('pointerdown', () => { AH.Audio.init(); if (this.sel === i) this.deploy(); else this.select(i); });
@@ -655,6 +654,7 @@
       this.climbs = [];
       this.climbTip = false;
       this.warping = false;
+      this.missionNoticeAt = 0;
 
       this.physics.world.gravity.y = 1100;
       this.physics.world.setBounds(0, -400, L.width, 1200);
@@ -680,6 +680,8 @@
       this.buildHazards();
       this.buildPickups();
       this.buildTerminals();
+      this.mission = new AH.Mission(L);
+      this.mission.build(this);
 
       this.player = new AH.Player(this, L.spawn.x, L.spawn.y, this.mode);
       this.physics.add.collider(this.player.sprite, this.solids);
@@ -1046,7 +1048,7 @@
           p.sprite.setVelocity(0, zone ? 0 : -420);
           cam.fadeIn(260, 0, 10, 40);
           this.warping = false;
-          if (zone) AH.Audio.music(zone.music || 'pipe');
+          if (zone) AH.Audio.music(zone.music || 'pipe', this.L.region);
           else this.levelMusic();
           if (zone) {
             if (!zone.timeGranted) { this.timeLeft += zone.timeBonus; zone.timeGranted = true; }
@@ -1285,9 +1287,47 @@
         this.tweens.add({ targets: ps, y: B.power.y - 6, yoyo: true, repeat: -1, duration: 700, ease: 'Sine.easeInOut' });
         this.pups.push({ spr: ps, def: B.power, taken: false });
       }
-      this.flags = (L.checkpoints || []).map((c) => ({
-        def: c, hit: false, spr: this.add.image(c.x, c.y, 'flag_off').setOrigin(0.5, 1).setDepth(15)
-      }));
+      this.buildCheckpoints();
+    }
+
+    buildCheckpoints() {
+      const L = this.L;
+      this.flags = (L.checkpoints || []).map((c, i) => {
+        const flag = { def: c, hit: false, spr: this.add.image(c.x, c.y, 'flag_off').setOrigin(0.5, 1).setDepth(15) };
+        if (this.mode === 'run') {
+          flag.guide = this.add.image(c.x + 22, c.y, 'checkpoint_guide_' + i % 3).setOrigin(0.5, 1).setDepth(16);
+          flag.label = T(this, c.x + 12, c.y - 58, 'CHECKPOINT', { scale: 1, color: '#ffe14a', ox: 0.5 }).setDepth(21);
+          flag.lesson = CHECKPOINT_LESSONS[(Math.max(0, LEVEL_IDS.indexOf(this.levelId)) + i) % CHECKPOINT_LESSONS.length];
+        }
+        return flag;
+      });
+      this.guidePanel = this.add.image(320, 154, 'checkpoint_lesson').setOrigin(0.5, 0)
+        .setDisplaySize(380, 44).setScrollFactor(0).setDepth(951).setVisible(false);
+      this.guideText = [160, 174, 186].map((y) => T(this, 320, y, '',
+        { scale: 1, color: '#e8fbff', ox: 0.5, shadow: '#0a0720' })
+        .setScrollFactor(0).setDepth(952).setVisible(false));
+    }
+
+    updateCheckpoints() {
+      const p = this.player;
+      const mainWorld = !this.inPipe && !this.inBonus && !this.warping && this.state === 'play';
+      const friendly = mainWorld && this.mode === 'run' ? this.flags.find((f) =>
+        Math.abs(p.x - f.def.x) < 115 && Math.abs(p.body.bottom - f.def.y) < 55) : null;
+      this.guidePanel.setVisible(!!friendly);
+      this.guideText.forEach((text, i) => {
+        text.setVisible(!!friendly);
+        if (friendly) text.setText(i === 0 ? this.L.city.toUpperCase() + ' GUIDE - ' + friendly.lesson[0] : friendly.lesson[i]);
+      });
+      this.flags.forEach((f) => {
+        if (!f.hit && mainWorld && p.x >= f.def.x) {
+          f.hit = true;
+          f.spr.setTexture('flag_on');
+          if (f.label) f.label.setText('CHECKPOINT ACTIVE').setColor('#4dff7a');
+          this.checkpoint = { x: f.def.x, y: f.def.y };
+          AH.Audio.play('checkpoint');
+          this.toast('CHECKPOINT!');
+        }
+      });
     }
 
     buildTerminals() {
@@ -1353,6 +1393,7 @@
         if (!kill) for (const r of this.rects) {
           if (r.active && ov(br, r)) { kill = true; this.burst(b.s.x, b.s.y, 'spark_c', 4, 80, 0.25); break; }
         }
+        if (!kill && this.mission?.hit(br, this)) kill = !b.pierce;
         if (!kill) for (const e of this.enemies) {
           if (e.dead || b.hits.has(e)) continue;
           if (ov(br, rectOf(e.sprite.body))) {
@@ -1487,7 +1528,8 @@
         levelId: this.levelId, levelName: this.L.name, health: p.health, score: AH.Run.score, mfa: p.mfa, credits: p.credits,
         lives: AH.Run.lives, time: this.timeLeft, powers: this.powers, boost: p.boost,
         blastCost: AH.Weapons[p.weapon].cost, weapon: p.weapon, weaponTime: p.weaponTime, charge: p.charge, hack: hack,
-        boss: this.boss && !this.boss.dead ? this.boss.snapshot() : null, mode: this.mode
+        boss: this.boss && !this.boss.dead ? this.boss.snapshot() : null, mode: this.mode,
+        mission: this.mission?.snapshot(p.x)
       };
     }
 
@@ -1654,7 +1696,8 @@
       p.sprite.body.enable = true;
       p.sprite.setVisible(true);
       if (this.mode === 'fly') {
-        cam.scrollX = Math.max(0, this.checkpoint.x - 120);
+        cam.stopFollow();
+        cam.scrollX = this.mission ? this.mission.scrollLimit(Math.max(0, this.checkpoint.x - 120)) : Math.max(0, this.checkpoint.x - 120);
         p.respawn(cam.scrollX + 120, this.checkpoint.y);
       } else {
         p.respawn(this.checkpoint.x, this.checkpoint.y - 30);
@@ -1696,6 +1739,7 @@
     }
 
     levelComplete() {
+      if (this.mission && !this.mission.ready) { this.toast('COMPLETE THE MISSION AND FIND 2 GEMS FIRST'); return; }
       if (this.state !== 'play') return;
       this.state = 'complete';
       this.completeT = 0.8;
@@ -1776,6 +1820,7 @@
     }
 
     startBoss() {
+      if (this.mission && !this.mission.ready) { this.toast('BOSS ACCESS LOCKED - CHECK MISSION'); return; }
       const B = this.L.boss, cam = this.cameras.main;
       this.arenaLocked = true;
       cam.stopFollow();
@@ -1827,6 +1872,10 @@
       const dt = Math.min(delta / 1000, 0.05);
       const cmd = this.input2.read();
       this.cmd = cmd;
+      if (this.state !== 'play') {
+        this.guidePanel.setVisible(false);
+        this.guideText.forEach((text) => text.setVisible(false));
+      }
       if (cmd.mute) { AH.Audio.toggle(); this.events.emit('audio-changed'); }
       if (this.state === 'help') {
         if (cmd.nav) this.help.page(cmd.nav);
@@ -1857,7 +1906,8 @@
         if (this.introT <= 0) {
           this.introItems.forEach((i) => i.destroy());
           this.state = 'play';
-          if (this.mode === 'run') this.toast(this.L.theme === 'rack' ? 'FIND THE HACK TERMINALS' : 'REACH THE EXIT PORTAL');
+          if (this.mission?.enabled) this.toast('FIND THE KEY, SECURE THE RELAY AND COLLECT 2 GEMS');
+          else if (this.mode === 'run') this.toast(this.L.theme === 'rack' ? 'FIND THE HACK TERMINALS' : 'REACH THE EXIT PORTAL');
         }
         this.hud.update(this.snapshot(), dt);
         return;
@@ -1866,8 +1916,9 @@
       const cam = this.cameras.main, L = this.L, p = this.player;
       if (this.mode === 'fly') {
         const maxS = L.width - 640;
-        this.scrollSpeed = cam.scrollX >= maxS ? 0 : L.scroll;
-        if (this.state === 'play') cam.scrollX = Math.min(maxS, cam.scrollX + this.scrollSpeed * dt);
+        const limit = this.mission ? this.mission.scrollLimit(maxS) : maxS;
+        this.scrollSpeed = cam.scrollX >= limit ? 0 : L.scroll;
+        if (this.state === 'play') cam.scrollX = Math.min(limit, cam.scrollX + this.scrollSpeed * dt);
       }
       this.far.tilePositionX = cam.scrollX * 0.15 * AH.Art.D;
       this.near.tilePositionX = cam.scrollX * 0.35 * AH.Art.D;
@@ -1892,7 +1943,18 @@
         return;
       }
       if (this.mode === 'run' && p.y > 430) { this.loseLife('fall'); return; }
-      if (L.boss && !this.boss && !this.bossDone && !this.inBonus && !this.inPipe && !this.warping && p.x > L.boss.trigger) this.startBoss();
+      this.mission?.update(dt, p, this);
+      if (L.boss && !this.boss && !this.bossDone && !this.inBonus && !this.inPipe && !this.warping && p.x > L.boss.trigger) {
+        if (!this.mission || this.mission.ready) this.startBoss();
+        else {
+          p.sprite.x = L.boss.trigger - 16;
+          p.sprite.body.setVelocityX(Math.min(0, p.sprite.body.velocity.x));
+          if (!this.missionNoticeAt || this.time.now >= this.missionNoticeAt) {
+            this.toast('BOSS LOCKED - ' + this.mission.snapshot(p.x).next);
+            this.missionNoticeAt = this.time.now + 4000;
+          }
+        }
+      }
 
       this.updateDraws(p);
       this.updateStreet(dt, p);
@@ -1960,15 +2022,7 @@
           AH.Audio.play('ring');
         }
       });
-      this.flags.forEach((f) => {
-        if (!f.hit && p.x >= f.def.x) {
-          f.hit = true;
-          f.spr.setTexture('flag_on');
-          this.checkpoint = { x: f.def.x, y: f.def.y };
-          AH.Audio.play('checkpoint');
-          this.toast('CHECKPOINT!');
-        }
-      });
+      this.updateCheckpoints();
 
       // hazards
       this.lasers.forEach((l) => {
@@ -2069,7 +2123,7 @@
 
       // exit
       const ex = this.L.exit;
-      if (this.exitActive && ov(pr, { x: ex.x, y: ex.y, w: ex.w, h: ex.h })) this.levelComplete();
+      if (this.exitActive && (!this.mission || this.mission.ready) && ov(pr, { x: ex.x, y: ex.y, w: ex.w, h: ex.h })) this.levelComplete();
     }
 
     /* boats, bike pickup + riding, phone box secret */
