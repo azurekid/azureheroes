@@ -5,13 +5,16 @@
   const T = (scene, x, y, s, o) => new AH.PixelText(scene, x, y, s, o);
   const LEVEL_IDS = AH.Levels.ids;
   const AMB_ROAD_Y = 256;
+  const AMB_ROAD_RATE = 5.5;
+  // calm budget: at most this many land vehicles on screen, so landmarks and sky stay the focus
+  const AMB_ROAD_MAX = 2;
   const BIKE_SPEED = 1.9;
   /* time of day: regional sky art is the sunset look; other times swap the sky, tint the city and add light */
   const TOD = {
     night: { label: 'NIGHT', time: '23:40', far: 0x7a78c0, near: 0x8a86c8, strip: 0x8c8ad0, wash: null, dark: 0.26 },
     sunrise: { label: 'SUNRISE', time: '06:15', far: 0xffc0c8, near: 0xe8c0d8, strip: 0xffd0d0, wash: [0xff9a70, 0.1], dark: 0 },
-    morning: { label: 'MORNING', time: '09:30', far: 0xd8e8ff, near: 0xd0dcf8, strip: 0xe8f0ff, wash: [0x7aa8ff, 0.2], dark: 0 },
-    day: { label: 'DAYTIME', time: '12:45', far: 0xe0f0ff, near: 0xd8e8ff, strip: 0xf0f8ff, wash: [0x8ab8ff, 0.26], dark: 0 },
+    morning: { label: 'MORNING', time: '09:30', far: 0xd8e8ff, near: 0xd0dcf8, strip: 0xe8f0ff, wash: [0x7aa8ff, 0.12], dark: 0 },
+    day: { label: 'DAYTIME', time: '12:45', far: 0xe0f0ff, near: 0xd8e8ff, strip: 0xf0f8ff, wash: [0x8ab8ff, 0.14], dark: 0 },
     afternoon: { label: 'AFTERNOON', time: '16:20', far: 0xffe8c8, near: 0xf0dcc8, strip: 0xfff0d8, wash: [0xffb060, 0.16], dark: 0 },
     sunset: { label: 'SUNSET', time: '19:50', far: 0xffffff, near: 0xffffff, strip: 0xffffff, wash: null, dark: 0 }
   };
@@ -75,8 +78,8 @@
   AH.Run = { score: 0, lives: 3, startScore: 0, startLives: 3 };
 
   /* Documented easter egg (README "Gold Mode"): typing the Konami code on the title screen arms a
-     session-only sandbox run with a golden suit and 30 lives. Gold runs never write anything: no
-     leaderboard submission, no local bests, unlocks, resume or cloud progress. It is never saved. */
+     session-only sandbox run with a golden suit and 30 lives. Gold runs never save or submit
+     run progress: no leaderboard submission, local bests, unlocks, resume or cloud progress. */
   AH.Gold = {
     codes: ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'KeyA'],
     lives: 30,
@@ -115,6 +118,7 @@
       AH.Art.generate(this);
       AH.Save.load();
       AH.Audio.muted = !!AH.Save.data.muted;
+      AH.Audio.loadStyle();
       AH.Online.ready = AH.Online.init();
       this.scene.start('Title');
     }
@@ -172,6 +176,7 @@
       const best = AH.Save.data.best;
       T(this, 630, 340, best > 0 ? 'BEST SCORE ' + AH.UI.pad(best, 6) : 'AZURE HEROES 2027', { scale: 1, color: '#9a8cff', ox: 1 });
       AH.UI.soundButton(this, 630, 328);
+      AH.UI.musicButton(this, 630, 40);
       // continue where the last run stopped, high scores and the player account
       this.extra = [];
       const menu = () => {
@@ -216,6 +221,7 @@
           return;
         }
         if (e.code === 'KeyM') { AH.Audio.toggle(); this.events.emit('audio-changed'); return; }
+        if (e.code === 'KeyN') { if (!e.repeat) AH.UI.nextMusic(this); return; }
         if (e.code === 'KeyH') { help(); return; }
         if (e.code === 'KeyE') { lab(); return; }
         if (e.code === 'KeyB') { this.scene.start('Leaderboard'); return; }
@@ -247,6 +253,7 @@
       g.lineStyle(2, 0x7fe8ff, 0.8).strokeRoundedRect(14, 40, 612, 300, 10);
       g.fillStyle(0x1a0a48, 0.9).fillRoundedRect(28, 54, 196, 272, 8);
       T(this, 320, 10, 'HERO LAB', { scale: 3, color: '#ffe14a', ox: 0.5, shadow: '#b02a08' });
+      AH.UI.musicButton(this, 630, 12);
       T(this, 126, 60, 'EVERY HERO WELCOME', { scale: 1, color: '#7fe8ff', ox: 0.5 });
       this.suitHint = T(this, 126, 74, '', { scale: 1, color: '#4dff7a', ox: 0.5 }).setDepth(6);
       this.big = this.add.image(126, 214, AH.Art.buildHeroHD(this, this.look)).setScale(4 / AH.Art.HD).setDepth(5);
@@ -292,6 +299,7 @@
         else if (e.code === 'ArrowLeft' || e.code === 'KeyA') this.change(-1);
         else if (e.code === 'ArrowRight' || e.code === 'KeyD') this.change(1);
         else if (e.code === 'KeyX') this.random();
+        else if (e.code === 'KeyN') { if (!e.repeat) AH.UI.nextMusic(this); }
         else if (e.code === 'Enter' || e.code === 'Space') this.done(true);
         else if (e.code === 'Escape' || e.code === 'KeyH') this.done(false);
       });
@@ -414,6 +422,7 @@
       this.acct = T(this, 632, 4, '', { scale: 1, color: '#ffe14a', ox: 1 });
       this.acct.setInteractive({ useHandCursor: true }).on('pointerdown', () => accountAction(this, () => this.scene.restart()));
       AH.UI.soundButton(this, 632, 16);
+      AH.UI.musicButton(this, 632, 31);
 
       this.pins = LEVEL_IDS.map((id, i) => {
         const m = AH.Levels.meta(id), geo = GEO[m.region] || [0, 0, 0, 0];
@@ -467,6 +476,7 @@
         else if (e.code === 'KeyL') accountAction(this, () => this.scene.restart());
         else if (e.code === 'Escape') this.scene.start('Title');
         else if (e.code === 'KeyM') { AH.Audio.toggle(); this.events.emit('audio-changed'); }
+        else if (e.code === 'KeyN') { if (!e.repeat) AH.UI.nextMusic(this); }
       });
       this.t = 0;
       const r = d.resume, ri = r ? LEVEL_IDS.indexOf(r.id) : -1;
@@ -567,9 +577,11 @@
       const O = AH.Online;
       if (O.available) AH.UI.button(this, 150, 346, O.profile ? 'L: LOG OUT ' + O.profile.name : 'L: LOG IN / REGISTER', () => accountAction(this, () => this.scene.restart()), { scale: 1, ox: 0 });
       AH.UI.soundButton(this, 630, 346);
+      AH.UI.musicButton(this, 630, 12);
       this.input.keyboard.on('keydown', (e) => {
         if (e.code === 'KeyL') accountAction(this, () => this.scene.restart());
         else if (e.code === 'KeyM') { AH.Audio.toggle(); this.events.emit('audio-changed'); }
+        else if (e.code === 'KeyN') { if (!e.repeat) AH.UI.nextMusic(this); }
         else if (e.code === 'Escape' || e.code === 'Enter' || e.code === 'Space' || e.code === 'KeyB') back();
       });
       const g = this.add.graphics();
@@ -647,7 +659,8 @@
       this.physics.world.setBounds(0, -400, L.width, 1200);
       this.physics.world.setBoundsCollision(true, true, false, false);
 
-      const bg = ['bg_sky_' + L.region, this.textures.exists('bg_farp_' + L.region) ? 'bg_farp_' + L.region : 'bg_far_' + L.region, L.theme === 'rack' ? 'bg_dc_near' : 'bg_near_' + L.region];
+      // The painted regional panorama (also the map thumbnail) carries the signature skyline in every level.
+      const bg = ['bg_sky_' + L.region, this.textures.exists('bg_far_' + L.region) ? 'bg_far_' + L.region : 'bg_city_far', L.theme === 'rack' ? 'bg_dc_near' : 'bg_near_' + L.region];
       this.tod = pickTod(L);
       const skyKey = this.tod && this.tod !== 'sunset' && this.textures.exists('bg_sky_tod_' + this.tod) ? 'bg_sky_tod_' + this.tod : bg[0];
       this.add.image(0, 0, skyKey).setOrigin(0).setScrollFactor(0).setDepth(-30);
@@ -699,6 +712,7 @@
       this.input2 = new AH.Input(this, { fly: this.mode === 'fly', shield: this.mode === 'run' });
       this.hud = new AH.HUD(this, this.levelId, L.name);
       this.soundBtn = AH.UI.soundButton(this, 630, 98);
+      AH.UI.musicButton(this, 630, 144, true);
       this.toastText = T(this, 320, 110, '', { scale: 2, color: '#ffffff', ox: 0.5 }).setScrollFactor(0).setDepth(950).setVisible(false);
       this.toastT = 0;
       this.powers = {};
@@ -773,8 +787,11 @@
 
     /* parallax strip of regional landmarks and Microsoft billboards (scroll factor 0.5) */
     buildScenery() {
-      const L = this.L, stars = ((AH.Art.sceneryStars || {})[L.region] || []).filter((k) => this.textures.exists(k));
-      const keys = (AH.Art.sceneryKeys[L.region] || []).concat(stars), bills = AH.Art.billKeys;
+      const L = this.L, painted = new Set((AH.Art.panoramaLandmarks || {})[L.region] || []);
+      const stars = ((AH.Art.sceneryStars || {})[L.region] || []).filter((k) => this.textures.exists(k) && !painted.has(k));
+      const route = (AH.Art.sceneryRoutes || {})[L.region] || [];
+      const reserved = new Set(route.map((stop) => stop[1]));
+      const keys = (AH.Art.sceneryKeys[L.region] || []).concat(stars).filter((k) => !reserved.has(k) && !painted.has(k)), bills = AH.Art.billKeys;
       if (L.theme === 'rack') return;
       const sf = 0.5, end = Math.max(0, L.width - 640) * sf + 700;
       const base = L.mode === 'fly' ? 362 : 336;
@@ -784,15 +801,21 @@
         const ok = list.filter((k) => lastAt[k] === undefined || x - lastAt[k] > 680 + wOf(k));
         return ok.length ? ok[Math.floor(Math.random() * ok.length)] : null;
       };
-      let x = -40, sinceBill = 0, nextBill = 2 + Math.floor(Math.random() * 2);
+      let x = -40, stop = 0, sinceBill = 0, nextBill = 2 + Math.floor(Math.random() * 2), sinceSky = 0, nextSky = 3 + Math.floor(Math.random() * 2);
       while (x < end) {
-        let key;
-        if (!keys.length || sinceBill >= nextBill) { key = choose(bills, x); sinceBill = 0; nextBill = 2 + Math.floor(Math.random() * 2); }
+        let key, y = base;
+        if (stop < route.length && x >= end * route[stop][0] - 40) {
+          key = choose([route[stop][1]], x);
+          if (key) { if (route[stop][2] !== undefined) y = route[stop][2]; stop++; }
+        } else if (!keys.length || sinceBill >= nextBill) { key = choose(bills, x); sinceBill = 0; nextBill = 2 + Math.floor(Math.random() * 2); }
         else { key = choose(x < 0 && stars.length ? stars : keys, x); sinceBill++; }
         if (!key) { x += 40; continue; }
         lastAt[key] = x;
-        const img = this.add.image(x, base - (key.indexOf('bb_') === 0 ? 4 : 0), key).setOrigin(0, 1).setScrollFactor(sf).setDepth(-18);
-        x += img.displayWidth + 6 + Math.floor(Math.random() * 34);
+        const img = this.add.image(x, y - (key.indexOf('bb_') === 0 ? 4 : 0), key).setOrigin(0, 1).setScrollFactor(sf).setDepth(-18);
+        // a near-continuous townscape keeps local detail (canal houses, zinc roofs); every few pieces
+        // a wider sky window lets the sun, the painted panorama and passing traffic show through
+        if (++sinceSky >= nextSky) { sinceSky = 0; nextSky = 3 + Math.floor(Math.random() * 2); x += img.displayWidth + 110 + Math.floor(Math.random() * 80); }
+        else x += img.displayWidth + 8 + Math.floor(Math.random() * 30);
       }
     }
 
@@ -803,26 +826,31 @@
       this.far.setTint(C.far); this.near.setTint(C.near);
       this.children.list.forEach((o) => { if (o.depth === -18 && o.setTint) o.setTint(C.strip); });
       if (this.road) this.road.setTint(C.near);
+      if (this.railLine) this.railLine.setTint(C.near);
       if (C.wash) this.add.image(0, 110, 'tod_wash').setOrigin(0).setDisplaySize(640, 220).setScrollFactor(0).setDepth(-16.9).setTint(C.wash[0]).setAlpha(C.wash[1]).setBlendMode(Phaser.BlendModes.ADD);
       if (C.dark) this.add.rectangle(0, 0, 640, 360, 0x06041c, C.dark).setOrigin(0).setScrollFactor(0).setDepth(900);
     }
 
     buildAmbient() {
       const A = this.L.ambient;
-      this.amb = []; this.ambT = {}; this.ambCfg = null; this.road = null;
+      this.amb = []; this.ambT = {}; this.ambCfg = null; this.road = null; this.railLine = null;
       if (!A || this.L.theme === 'rack') return;
       this.ambCfg = A;
-      if (A.road && this.mode === 'run') this.road = this.add.tileSprite(0, AMB_ROAD_Y, 640, 14, 'amb_road').setOrigin(0).setScrollFactor(0).setDepth(-17.6);
+      if (A.road) this.road = this.add.tileSprite(0, A.roadY === undefined ? AMB_ROAD_Y : A.roadY, 640, 8, 'amb_road').setOrigin(0).setScrollFactor(0).setDepth(-18.6).setAlpha(0.55);
+      if (A.rail) this.railLine = this.add.tileSprite(0, A.railY === undefined ? 218 : A.railY, 640, 22, 'amb_rail').setOrigin(0).setScrollFactor(0).setDepth(-18.9).setAlpha(0.7);
       if (A.fx) {
         const key = { petals: 'amb_petal', leaves: 'amb_leaf', confetti: 'amb_confetti' }[A.fx];
-        const conf = { x: { min: -40, max: 700 }, y: -8, lifespan: 12000, speedX: { min: -36, max: -8 }, speedY: { min: 16, max: 36 }, rotate: { min: 0, max: 360 }, frequency: A.fx === 'confetti' ? 170 : 300, scale: { min: 0.3, max: 0.5 }, alpha: { start: 0.95, end: 0.6 } };
+        const conf = { x: { min: -40, max: 700 }, y: -8, lifespan: 12000, speedX: { min: -36, max: -8 }, speedY: { min: 16, max: 36 }, rotate: { min: 0, max: 360 }, frequency: A.fx === 'confetti' ? 380 : 520, scale: { min: 0.3, max: 0.5 }, alpha: { start: 0.95, end: 0.6 } };
         if (A.fx === 'confetti') { conf.tint = [0xff2a6a, 0xffd23f, 0x27e0ff, 0x7dff7a, 0xc04bff, 0xff7a2a]; conf.scale = { min: 0.5, max: 0.9 }; }
         this.fx = this.add.particles(0, 0, key, conf).setScrollFactor(0).setDepth(-6);
         this.fx.fastForward(8000);
       }
       // a first wave so the sky is alive from the start
-      if (A.sky) { this.ambSky(Phaser.Utils.Array.GetRandom(A.sky), 120 + Math.random() * 400); if (A.sky.indexOf('balloon') >= 0) for (let i = 0; i < 3; i++) this.ambSky('balloon', Math.random() * 640); }
+      if (A.sky) { this.ambSky(Phaser.Utils.Array.GetRandom(A.sky), 120 + Math.random() * 400); if (A.sky.indexOf('balloon') >= 0) for (let i = 0; i < 2; i++) this.ambSky('balloon', Math.random() * 640); }
       if (A.birds) this.ambBirds(A.birds, 300 + Math.random() * 300);
+      if (A.road) this.ambCar(A.road[0], 420);
+      if (A.rail) { this.ambRail(A.rail[0], 320); this.ambT.rail = 22; }
+      if (A.water) this.ambBoat(A.water[0], 400);
     }
     ambAdd(img, o) { o.img = img; o.t = 0; o.y0 = img.y; this.amb.push(o); return o; }
     ambSky(kind, atX) {
@@ -852,17 +880,25 @@
         this.ambAdd(img, { vx: vx, life: 20, wob: 3 + Math.random(), amp: 2 });
       }
     }
-    ambCar(kind) {
+    ambCar(kind, atX) {
       const dir = Math.random() < 0.5 ? -1 : 1, cam = this.cameras.main, sf = 0.5;
-      const x = cam.scrollX * sf + (dir < 0 ? 720 : -80);
-      const img = this.add.image(x, AMB_ROAD_Y + 7 - (dir < 0 ? 0 : 2), 'amb_car_' + kind).setOrigin(0.5, 1).setScrollFactor(sf).setDepth(dir < 0 ? -17.4 : -17.5).setFlipX(dir > 0).setScale(0.95 / AH.Art.D);
-      this.ambAdd(img, { vx: dir * (kind === 'cyclist' ? 30 : kind === 'tram' || kind.indexOf('bus') >= 0 ? 45 : 70 + Math.random() * 30), life: 40 });
+      const x = cam.scrollX * sf + (atX === undefined ? (dir < 0 ? 760 : -120) : atX);
+      const y = this.ambCfg.roadY === undefined ? AMB_ROAD_Y : this.ambCfg.roadY;
+      const img = this.add.image(x, y + 7 - (dir < 0 ? 0 : 2), 'amb_car_' + kind).setOrigin(0.5, 1).setScrollFactor(sf).setDepth(dir < 0 ? -18.4 : -18.5).setFlipX(dir > 0).setScale((kind === 'tram' ? 0.72 : 0.95) / AH.Art.D);
+      this.ambAdd(img, { car: true, vx: dir * (kind === 'cyclist' ? 30 : kind === 'tram' || kind.indexOf('bus') >= 0 ? 45 : 70 + Math.random() * 30), life: 40 });
+    }
+    ambRail(kind, atX) {
+      const dir = Math.random() < 0.5 ? -1 : 1, sf = 0.5, cam = this.cameras.main;
+      const x = cam.scrollX * sf + (atX === undefined ? (dir < 0 ? 900 : -260) : atX);
+      const y = this.ambCfg.railY === undefined ? 218 : this.ambCfg.railY;
+      const img = this.add.image(x, y, 'amb_train_' + kind).setOrigin(0.5, 1).setScrollFactor(sf).setDepth(-18.8).setFlipX(dir > 0).setScale(0.65 / AH.Art.D);
+      this.ambAdd(img, { vx: dir * 95, life: 22 });
     }
     // Tour boats cruising the river behind the quays (decorative only, never solid).
-    ambBoat(kind) {
+    ambBoat(kind, atX) {
       const dir = Math.random() < 0.5 ? -1 : 1, sf = 0.8, cam = this.cameras.main, key = kind === 'region' ? 'boat_' + this.L.region : 'amb_' + kind;
       if (!this.textures.exists(key)) return;
-      const img = this.add.image(cam.scrollX * sf + (dir < 0 ? 760 : -120), 322, key).setOrigin(0.5, 1).setScrollFactor(sf).setDepth(8.2)
+      const img = this.add.image(cam.scrollX * sf + (atX === undefined ? (dir < 0 ? 760 : -120) : atX), 322, key).setOrigin(0.5, 1).setScrollFactor(sf).setDepth(8.2)
         .setFlipX(dir > 0).setScale(0.78 / AH.Art.D).setTint(0xd8d0e0);
       this.ambAdd(img, { vx: dir * (22 + Math.random() * 14), life: 60, wob: 1.4, amp: 1 });
     }
@@ -875,13 +911,17 @@
       const A = this.ambCfg;
       if (!A) return;
       if (this.road) this.road.tilePositionX = this.cameras.main.scrollX * 0.5 * AH.Art.D;
+      if (this.railLine) this.railLine.tilePositionX = this.cameras.main.scrollX * 0.5 * AH.Art.D;
       const T = this.ambT, pick = Phaser.Utils.Array.GetRandom;
       const due = (k, a, b) => { if (T[k] === undefined) T[k] = a * 0.5; T[k] -= dt; if (T[k] > 0) return false; T[k] = a + Math.random() * (b - a); return true; };
-      if (A.sky && due('sky', 6, 12)) this.ambSky(pick(A.sky));
-      if (A.birds && due('birds', 5, 10)) this.ambBirds(A.birds);
-      if (this.road && due('road', 1.2, 3.4)) this.ambCar(pick(A.road));
-      if (A.balls && due('balls', 2.5, 5)) this.ambBall(pick(A.balls));
-      if (A.water && this.water && due('water', 7, 14)) this.ambBoat(pick(A.water));
+      if (A.sky && due('sky', 11, 20)) this.ambSky(pick(A.sky));
+      if (A.birds && due('birds', 9, 16)) this.ambBirds(A.birds);
+      const roadRate = A.roadRate || AMB_ROAD_RATE;
+      const cars = this.amb.filter((o) => o.car).length;
+      if (this.road && due('road', roadRate, roadRate * 2) && cars < (A.roadMax || AMB_ROAD_MAX)) this.ambCar(pick(A.road));
+      if (this.railLine && due('rail', 22, 34)) this.ambRail(pick(A.rail));
+      if (A.balls && due('balls', 5, 9)) this.ambBall(pick(A.balls));
+      if (A.water && this.water && due('water', 12, 20)) this.ambBoat(pick(A.water));
       for (let i = this.amb.length - 1; i >= 0; i--) {
         const o = this.amb[i], im = o.img;
         o.t += dt;
@@ -1005,7 +1045,7 @@
           p.sprite.setVelocity(0, zone ? 0 : -420);
           cam.fadeIn(260, 0, 10, 40);
           this.warping = false;
-          if (zone) AH.Audio.music(zone.theme === 'metro' ? 'metro' : 'pipe');
+          if (zone) AH.Audio.music(zone.music || 'pipe');
           else this.levelMusic();
           if (zone) {
             if (!zone.timeGranted) { this.timeLeft += zone.timeBonus; zone.timeGranted = true; }
@@ -1792,6 +1832,7 @@
         if (cmd.help || cmd.esc || cmd.confirm || cmd.pause) this.help.close();
         return;
       }
+      if (cmd.music) AH.UI.nextMusic(this);
       if (cmd.restart) { this.restart(); return; }
       if (cmd.quit && this.state !== 'dying') { this.quitGame(); return; }
       if (cmd.help && this.helpClosedAt !== this.game.loop.frame) { this.openHelp(); if (this.help) return; }

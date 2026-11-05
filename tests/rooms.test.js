@@ -57,8 +57,8 @@ function canLand(from, target, solids) {
 test('seeded rooms have exact distinct shapes, shuffled lessons, safe bounds and reachable rewards', () => {
   const themes = new Map(), layouts = new Set(), widths = new Set();
   for (let seed = 1; seed <= 80; seed++) {
-    const L = levels(seed).make(1);
-    assert.equal(JSON.stringify(L), JSON.stringify(levels(seed).make(1)), 'same seed is reproducible');
+    const id = 1 + seed % 3, L = levels(seed).make(id);
+    assert.equal(JSON.stringify(L), JSON.stringify(levels(seed).make(id)), 'same seed is reproducible');
     assert.equal(L.pipeZones[1].x - L.pipeZones[0].x, 4400);
     assert.ok(L.pipeZones[0].x + L.pipeZones[0].w < L.pipeZones[1].x);
     for (const Z of L.pipeZones) {
@@ -123,7 +123,7 @@ test('seeded rooms have exact distinct shapes, shuffled lessons, safe bounds and
       for (const kind of ['spread', 'pierce']) assert.equal(Z.powerups.filter(p => p.kind === kind).length, 1);
     }
   }
-  assert.deepEqual([...themes.keys()].sort(), ['actions', 'aks', 'docker', 'entra', 'functions', 'pipelines']);
+  assert.deepEqual([...themes.keys()].sort(), ['actions', 'aks', 'docker', 'entra', 'functions', 'metro', 'pipelines', 'tube']);
   assert.equal(layouts.size, 7);
   assert.ok(widths.size > 80);
   for (const seen of themes.values()) {

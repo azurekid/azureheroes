@@ -8,7 +8,7 @@
       this.scene = scene;
       this.opts = opts; // { fly, shield }
       const kb = scene.input.keyboard;
-      this.k = kb.addKeys('LEFT,RIGHT,UP,DOWN,A,D,W,S,SPACE,F,SHIFT,E,P,R,M,ENTER,ESC,H,Q');
+      this.k = kb.addKeys('LEFT,RIGHT,UP,DOWN,A,D,W,S,SPACE,F,SHIFT,E,P,R,M,N,ENTER,ESC,H,Q');
       kb.addCapture('SPACE,UP,DOWN,LEFT,RIGHT');
       this.t = { left: false, right: false, up: false, down: false, attack: false, boost: false, shield: false };
       this.tJump = false;
@@ -93,6 +93,7 @@
         restart: J(k.R),
         esc: J(k.ESC),
         mute: J(k.M),
+        music: J(k.N),
         confirm: J(k.ENTER) || space
       };
       this.tJump = false;

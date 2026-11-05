@@ -110,7 +110,7 @@ test('input reports held fire for keyboard and touch and consumes SPACE only onc
     JustDown(k) { const v = k.just; k.just = false; return v; }
   } } } });
   const i = Object.create(AH.Input.prototype);
-  i.k = Object.fromEntries('LEFT RIGHT UP DOWN A D W S SPACE F SHIFT E P R M ENTER ESC H Q'.split(' ').map(k => [k, { isDown: false, just: false }]));
+  i.k = Object.fromEntries('LEFT RIGHT UP DOWN A D W S SPACE F SHIFT E P R M N ENTER ESC H Q'.split(' ').map(k => [k, { isDown: false, just: false }]));
   i.t = {};
   i.opts = {};
   i.k.F.isDown = true;
@@ -125,6 +125,9 @@ test('input reports held fire for keyboard and touch and consumes SPACE only onc
   const cmd = i.read();
   assert.equal(cmd.confirm, true);
   assert.equal(cmd.jumpPressed, true);
+  i.k.N.just = true;
+  assert.equal(i.read().music, true);
+  assert.equal(i.read().music, false);
 });
 
 test('spread fans out, charged shots hurt more, beams hit each target once and stop at walls', () => {
@@ -265,4 +268,80 @@ test('lower boss health increases fire cadence without removing telegraph time',
   assert.ok(cooldowns[0] < 1.7, 'first phase is faster than the previous 1.7s cooldown');
   assert.ok(cooldowns[2] < cooldowns[1] && cooldowns[1] < cooldowns[0]);
   assert.ok(windups.every(t => t >= 0.49), 'late phases still telegraph shots for half a second');
+});
+
+function runBoss(boss, player, scene, until, max = 6) {
+  let t = 0;
+  while (!until() && t < max) { scene.time.now += 1000 / 60; boss.update(1 / 60, player); t += 1 / 60; }
+  return t;
+}
+
+test('fighter bosses face the player and walk into striking range', () => {
+  const { boss, player, scene } = bossFixture();
+  const flips = [];
+  boss.sprite.setFlipX = function (v) { flips.push(v); return this; };
+  boss.state = 'idle';
+  boss.cd = 99;
+  const start = boss.x;
+  runBoss(boss, player, scene, () => false, 1);
+  assert.equal(flips.at(-1), false, 'player on the left: art keeps facing left');
+  assert.ok(boss.x < start, 'the boss closes in instead of standing still');
+  player.x = 600; player.body.x = 593;
+  boss.sprite.x = 300;
+  runBoss(boss, player, scene, () => false, 0.1);
+  assert.equal(flips.at(-1), true, 'player on the right: the art is mirrored');
+  assert.equal(boss.facing, 1);
+});
+
+test('a whiffed combo, jump kick or uppercut opens a marked punish window', () => {
+  for (const atk of ['combo', 'leap', 'upper']) {
+    const { boss, player, scene } = bossFixture();
+    player.invuln = 99;
+    boss.state = 'idle';
+    boss.cd = 0;
+    boss.pickAttack = () => atk;
+    runBoss(boss, player, scene, () => boss.vulnerable);
+    assert.equal(boss.state, 'recover', atk + ' that misses ends in recovery');
+    assert.equal(boss.snapshot().vulnerable, true);
+    assert.match(boss.cue, /WHIFF.*OPEN/);
+    assert.equal(boss.y, 300, atk + ' lands back on the arena floor');
+    assert.equal(boss.hitByBlast(10), true);
+  }
+});
+
+test('combo strikes hurt an open player and two shield blocks parry the combo', () => {
+  const { boss, player, scene } = bossFixture();
+  let hurt = 0;
+  player.hurt = (n) => { hurt += n; player.invuln = 0.3; };
+  player.x = 300; player.body.x = 293;
+  boss.sprite.x = 420;
+  boss.state = 'idle'; boss.cd = 0;
+  boss.pickAttack = () => 'combo';
+  runBoss(boss, player, scene, () => hurt > 0 || boss.vulnerable, 3);
+  assert.ok(hurt >= 12, 'a landed strike deals melee damage');
+  const f = bossFixture();
+  Object.assign(f.player, { x: 300, facing: 1, shielding: true, sprite: { body: { setVelocityX() {} } } });
+  f.player.body.x = 293;
+  f.boss.sprite.x = 420;
+  f.boss.state = 'idle'; f.boss.cd = 0;
+  f.boss.pickAttack = () => 'combo';
+  runBoss(f.boss, f.player, f.scene, () => f.boss.stunned, 3);
+  assert.equal(f.boss.stunned, true, 'blocking the combo staggers the boss');
+  assert.match(f.boss.cue, /OPEN/);
+});
+
+test('bosses announce rounds and report the round to the HUD', () => {
+  const { boss, player, scene } = bossFixture();
+  const toasts = [];
+  scene.toast = (m) => toasts.push(m);
+  assert.match(boss.cue, /ROUND 1/);
+  runBoss(boss, player, scene, () => boss.state !== 'intro', 3);
+  assert.ok(toasts.includes('ROUND 1 - FIGHT!'));
+  boss.stun();
+  boss.hitByBlast(40);
+  boss.update(1 / 60, player);
+  assert.equal(boss.snapshot().round, 2);
+  assert.ok(toasts.includes('ROUND 2 - FIGHT!'));
+  boss.hitByBlast(60);
+  assert.ok(toasts.some(m => /^K\.O\.!/.test(m)));
 });

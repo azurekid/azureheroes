@@ -105,7 +105,7 @@
       this.risk.setVisible(!!bs).setAlpha(1);
       this.stun.setVisible(!!bs);
       if (bs) {
-        this.risk.setText(bs.vulnerable ? 'OPEN ' + Math.ceil(bs.window) + 'S' : 'ARMORED')
+        this.risk.setText('ROUND ' + (bs.round || bs.phase || 1) + '  ' + (bs.vulnerable ? 'OPEN ' + Math.ceil(bs.window) + 'S' : 'ARMORED'))
           .setColor(bs.vulnerable ? '#4dff7a' : '#ffb060');
         this.stun.setText(bs.cue).setColor(bs.vulnerable ? '#4dff7a' : '#ffb060');
         const w = 616;
@@ -134,6 +134,21 @@
       t.setInteractive({ useHandCursor: true });
       t.on('pointerdown', () => { AH.Audio.toggle(); refresh(); });
       scene.events.on('audio-changed', refresh);
+      return t;
+    },
+    nextMusic(scene) {
+      AH.Audio.init();
+      AH.Audio.nextStyle();
+      scene.events.emit('music-changed');
+    },
+    musicButton(scene, x, y, compact) {
+      const t = T(scene, x, y, '', { scale: 1, color: '#ffe14a', ox: 1 }).setScrollFactor(0).setDepth(1501);
+      const refresh = () => t.setText((compact ? 'MUSIC ' : 'N: MUSIC ') + AH.Audio.style.toUpperCase());
+      const hit = scene.add.zone(x - 64, y + 16, 128, 44).setScrollFactor(0).setDepth(1500).setInteractive({ useHandCursor: true });
+      hit.on('pointerdown', () => { if (!scene.help) AH.UI.nextMusic(scene); });
+      scene.events.on('music-changed', refresh);
+      scene.events.once('shutdown', () => scene.events.off('music-changed', refresh));
+      refresh();
       return t;
     },
     // paged help overlay (controls, threat guide, tips); the caller routes keys to page() / close()
@@ -168,7 +183,7 @@
             ['F - TAP / HOLD', 'RELEASE TO FIRE / HOLD FOR A CHARGED SHOT'], ['E', 'MFA SHIELD - BLOCKS SHOTS AND HITS FROM THE FRONT'],
             ['DOWN / S', 'DUCK - STANDING STILL IT IS A LOW SHIELD GUARD'], ['DOWN + LEFT / RIGHT', 'SLIDE ATTACK UNDER LOW THREATS'],
             ['SHIFT', 'BOOST JETS - FLY UP FOR A MOMENT'], ['DOWN ON A PIPE', 'WARP INTO A CLOUD CHALLENGE'],
-            ['P / ESC', 'PAUSE MENU'], ['Q', 'QUIT TO THE TITLE SCREEN'], ['R', 'RESTART THE LEVEL'], ['H   M', 'THIS HELP   SOUND ON / OFF']
+            ['P / ESC', 'PAUSE MENU'], ['Q', 'QUIT TO THE TITLE SCREEN'], ['R', 'RESTART THE LEVEL'], ['H   M   N', 'HELP   MUTE   CHANGE MUSIC STYLE']
           ].forEach((r, k) => { btxt(44, 90 + k * 18, r[0], { color: '#ffe14a' }); btxt(232, 90 + k * 18, r[1]); });
           btxt(320, 314, 'FLIGHT LEVELS: ARROWS OR WASD FLY IN ALL DIRECTIONS, F BLASTS', { color: '#7fe8ff', ox: 0.5 });
         } else if (page === 1) {

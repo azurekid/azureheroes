@@ -1,6 +1,6 @@
 ---
 name: gameplay-systems
-description: 'Build Azure Heroes movement, charged shots, temporary weapon pickups, duck/slide combat, cloud-threat AI, shield, readable aggressive bosses and saves.'
+description: 'Build Azure Heroes movement, charged shots, duck/slide combat, cloud-threat AI, bosses, wardrobe/save compatibility, Gold Mode, local preferences, mute and selectable Web Audio music styles.'
 ---
 
 - Read [game-contract](../game-contract/SKILL.md) and [game-security](../game-security/SKILL.md).
@@ -33,9 +33,25 @@ description: 'Build Azure Heroes movement, charged shots, temporary weapon picku
   projectiles on exposure. `boss.vulnerable` drives damage, HUD OPEN countdown and
   overhead target marker together; test locked and open states, not forced stuns only.
   Every ground charge ends in a stun: blocked by the shield, or a wall BONK when dodged.
+- Regional bosses are street fighters (`systems/boss.js`): they always face the hero
+  (`setFlipX`, except mid-commit), walk in and out of range, and mix projectiles with a
+  3-hit combo (jab high, kick low, jab high), a jump kick, a round-2+ anti-air uppercut
+  and a round-3 super. Air fighters hover, volley, dash and fan. Every melee move that
+  misses ends in `recover` (WHIFF, about 1.5s open); two shield blocks of a combo parry
+  it into a stun. Each move has a readable windup and per-attack cue. Phases are
+  announced as ROUND 1-3, defeat is a K.O.; snapshot `round` feeds the HUD.
 - Respawn calls `respawnEnemies()`: rebuild all `L.enemies` except within 200px of the hero
   (fly mode: only ahead of the camera). Never respawn the hero into an empty level.
 - 5 MFA tokens = +1 life. Azure Blast uses Boost meter.
 - No level layout changes, use placeholder platforms for testing.
 - Accounts and leaderboard: client in `systems/online.js`, server in `server.js` (zero dependencies, Node 18+). Any API change needs a test in `tests/server.test.js` and must keep guest mode (no server) working.
 - Resume and save rules are in the game-contract skill. Use `AH.Save.setResume`.
+- Audio lives in `systems/audio.js`: dance keeps the original house/trance tracks;
+  selectable jazz, country, blues and rock have distinct original rhythms, voices
+  and lounge/world/challenge/boss arrangements. Keep dance kick-ducking off other
+  styles, preserve context routing and store the validated choice locally without
+  changing game progress. N and the MUSIC button cycle styles. Preserve mute,
+  suspended-context resume, SFX and node cleanup; muting during Gold Mode may
+  persist the preference locally but must never push run progress online.
+  Add no downloaded tracks, dependencies or outbound services. Validate timing,
+  released nodes and offline waveform headroom; distinguish that from human listening.

@@ -13,7 +13,7 @@ function load(file, AH = {}, seed = 1, globals = {}) {
   return context.window.AH;
 }
 
-test('cloud platforms use finite cargo art without changing collision geometry', () => {
+test('challenge platforms use finite exact-size art without changing collision geometry', () => {
   const calls = [], zones = [];
   const display = { setOrigin() { return this; }, setDepth() { return this; } };
   const AH = load('systems/scenes.js', {
@@ -30,16 +30,16 @@ test('cloud platforms use finite cargo art without changing collision geometry',
     zone(...args) { zones.push(args); return {}; }
   };
   scene.solids = { add() {} };
-  for (const theme of ['docker', 'aks', 'actions', 'pipelines', 'entra', 'functions']) {
+  for (const theme of ['docker', 'aks', 'actions', 'pipelines', 'entra', 'functions', 'metro', 'tube']) {
     scene.addPlatform({ x: 100, y: 200, w: 110, h: 100, cloudKind: theme });
     scene.addPlatform({ x: 0, y: 300, w: 3500, h: 100, cloudKind: theme, pipeFloor: true });
     assert.ok(calls.some(c => c[0] === 'tile' && c[5] === 'cloud_floor_' + theme));
   }
-  assert.equal(calls.filter(c => c[0] === 'cargo').length, 6);
-  assert.equal(calls.filter(c => c[0] === 'image' && c[3] === 'cargo').length, 6);
+  assert.equal(calls.filter(c => c[0] === 'cargo').length, 8);
+  assert.equal(calls.filter(c => c[0] === 'image' && c[3] === 'cargo').length, 8);
   assert.deepEqual(zones[0], [155, 250, 110, 100]);
   assert.deepEqual(zones[1], [1750, 350, 3500, 100]);
-  assert.equal(scene.rects.length, 12);
+  assert.equal(scene.rects.length, 16);
 });
 
 test('room scenery variants cover street ambience and parallax is isolated and density-aware', () => {
@@ -86,6 +86,28 @@ test('room scenery variants cover street ambience and parallax is isolated and d
   assert.equal(scene.fx.visible, true);
   scene.updatePipes(0, null);
   assert.equal(sky.visible, false);
+});
+
+test('street walkways start low, return to street level after climbs and Amsterdam keeps its signature landmarks', () => {
+  const { Levels } = load('levels/worlds.js');
+  for (const meta of Levels.worlds.filter((w) => w.mode === 'run' && w.theme !== 'rack')) {
+    let street = 0, total = 0;
+    for (let run = 0; run < 30; run++) {
+      const L = Levels.make(meta.id), ground = L.platforms.filter((p) => !p.float && !p.bridge && p.h > 60);
+      assert.equal(ground[0].y, 300, 'the first walkway is a low street, not a raised block');
+      assert.ok(ground[1].y >= 270, 'the opening segment stays near street level');
+      ground.forEach((p, i) => {
+        total += p.w; if (p.y >= 270) street += p.w;
+        if (i && ground[i - 1].climb && !p.climb && p.x - (ground[i - 1].x + ground[i - 1].w) < 120) assert.ok(p.y > ground[i - 1].y, 'routes drop again after a climb');
+      });
+    }
+    assert.ok(street / total >= 0.45, meta.name + ' keeps most walkway low');
+  }
+  const source = fs.readFileSync(path.join(__dirname, '../art/sprites.js'), 'utf8');
+  const route = source.match(/westeurope: \[\[0, '(\w+)'.*\]\],/);
+  assert.ok(route && route[1] === 'sc_we_centraal', 'Amsterdam opens with the detailed Centraal station');
+  assert.match(route[0], /sc_we_schiphol/);
+  assert.doesNotMatch(source, /'AMSTERDAM CENTRAAL', 75/, 'only one Centraal design exists');
 });
 
 test('random worlds have distinct, disjoint, substantial cloud challenges and vertical routes', () => {
@@ -136,7 +158,10 @@ test('random worlds have distinct, disjoint, substantial cloud challenges and ve
       assert.notEqual(L.pipeZones[0].theme, L.pipeZones[1].theme);
       assert.ok(L.pipeZones[0].x + L.pipeZones[0].w < L.pipeZones[1].x);
       const ground = L.platforms.filter((p) => p.x < L.width && p.h >= 100 && !p.pipe);
-      assert.ok(Math.max(...ground.map((p) => p.y)) - Math.min(...ground.map((p) => p.y)) >= 60);
+      // the street stays low; height comes from climb towers and Azure cloud stairways
+      const sky = L.platforms.filter((p) => p.sky && p.x < L.width);
+      assert.ok(sky.length >= 6 && Math.min(...sky.map((p) => p.y)) <= 180, meta.city + ' has cloud stairways into the sky');
+      assert.ok(ground.filter((p) => !p.tower && p.y < 250).length === 0, 'no raised solid walkway blocks');
       for (let i = 1; i < ground.length; i++) {
         const a = ground[i - 1], b = ground[i], gap = b.x - a.x - a.w;
         const spanned = L.platforms.some((p) => p.bridge && p.x === a.x + a.w) ||
@@ -171,9 +196,12 @@ test('random worlds have distinct, disjoint, substantial cloud challenges and ve
       }
       if (meta.id === 1) assert.ok(L.obstacles.some((o) => o.kind === 'herring'));
       if (meta.id === 3) assert.ok(L.obstacles.some((o) => o.kind === 'bakery'), 'Paris has a bakery stall');
-      // Regional rooms stay home: only Paris opens the Metro, always behind its first pipe.
+      // Regional rooms stay home, always behind their first pipe.
       assert.equal(L.pipeZones[0].theme === 'metro', meta.region === 'francecentral');
       assert.equal(L.pipeZones[1].theme === 'metro', false);
+      assert.equal(L.pipeZones[0].theme === 'tube', meta.region === 'uksouth');
+      assert.equal(L.pipeZones[1].theme === 'tube', false);
+      if (meta.id === 5) assert.ok(L.obstacles.some((o) => o.kind === 'outback4x4'), 'Australia guarantees an expedition vehicle');
       for (const q of L.platforms.filter((p) => p.pipe)) assert.ok(q.theme, 'pipes carry their room theme');
       for (const Z of L.pipeZones) {
         themes.add(Z.theme);
@@ -198,7 +226,7 @@ test('random worlds have distinct, disjoint, substantial cloud challenges and ve
       }
     }
   }
-  assert.deepEqual([...themes].sort(), ['actions', 'aks', 'docker', 'entra', 'functions', 'metro', 'pipelines']);
+  assert.deepEqual([...themes].sort(), ['actions', 'aks', 'docker', 'entra', 'functions', 'metro', 'pipelines', 'tube']);
   assert.ok(walls > 50 && stairs > 50, 'run worlds regularly mix climb walls and ledge stairs');
 });
 
@@ -233,6 +261,114 @@ test('duck body preserves feet, cannot stand under beams, and blasts fire low', 
   player.setDucking(false);
   assert.equal(body.height, 40);
   assert.equal(body.bottom, 300);
+});
+
+test('regional scenic routes place every requested highlight and preserve landmark spacing', () => {
+  const source = fs.readFileSync(path.join(__dirname, '../art/sprites.js'), 'utf8');
+  const start = source.indexOf('  const sceneryRoutes = ');
+  assert.ok(start >= 0);
+  const routes = vm.runInNewContext(source.slice(start, source.indexOf('  Object.keys(SC).forEach', start)) + '\nsceneryRoutes;');
+  const sizes = Object.fromEntries([...source.matchAll(/(sc_\w+): \[(\d+), (\d+),/g)].map((m) => [m[1], [Number(m[2]), Number(m[3])]]));
+  const { Levels } = load('levels/worlds.js');
+  for (const id of [1, 4, 5]) {
+    const region = Levels.worlds.find((w) => w.id === id).region, route = routes[region];
+    assert.ok(route.length >= 3);
+    for (let i = 0; i < route.length; i++) {
+      assert.ok(route[i][0] >= 0 && route[i][0] <= 0.85 && sizes[route[i][1]]);
+      if (i) assert.ok(route[i][0] > route[i - 1][0]);
+    }
+    for (let seed = 1; seed <= 30; seed++) {
+      const art = {
+        D: 2, sceneryRoutes: routes, sceneryKeys: { [region]: [...new Set(route.map((r) => r[1])), 'local', 'painted'] },
+        panoramaLandmarks: { [region]: ['painted'] },
+        billKeys: ['bb_a', 'bb_b', 'bb_c']
+      };
+      const AH = load('systems/scenes.js', { Levels: { ids: [1] }, Art: art }, seed, { Phaser: { Scene: class {} } });
+      const s = new AH.Scenes[5](), placed = [];
+      s.L = Levels.make(id);
+      s.textures = { exists: () => true, get: (k) => ({ getSourceImage: () => ({ width: (sizes[k] ? sizes[k][0] : 140) * 2 }) }) };
+      s.add = { image(x, y, key) {
+        const o = { x, y, key, displayWidth: sizes[key] ? sizes[key][0] : 140,
+          scaleX: 0.5, setOrigin() { return this; }, setScrollFactor() { return this; }, setDepth() { return this; },
+          setScale(v) { this.displayWidth *= v / this.scaleX; this.scaleX = v; return this; } };
+        placed.push(o); return o;
+      } };
+      s.buildScenery();
+      assert.ok(!placed.some((p) => p.key === 'painted'), 'landmarks painted in the panorama are not repeated in the strip');
+      assert.ok(placed.every((p) => p.scaleX === 0.5), 'local architecture keeps its full detail');
+      const covered = placed.reduce((n, p) => n + p.displayWidth, 0), span = placed.at(-1).x + placed.at(-1).displayWidth - placed[0].x;
+      assert.ok(covered / span > 0.6, 'the townscape stays dense, with only occasional sky windows');
+      assert.ok(placed.some((p, i) => i && p.x - (placed[i - 1].x + placed[i - 1].displayWidth) >= 110), 'sky windows keep the sun and panorama visible');
+      const highlights = placed.filter((p) => route.some((r) => r[1] === p.key));
+      assert.deepEqual(highlights.map((p) => p.key), Array.from(route, (r) => r[1]));
+      const end = (s.L.width - 640) * 0.5 + 700;
+      highlights.forEach((p, i) => {
+        assert.ok(p.x >= end * route[i][0] - 40);
+        assert.ok(p.x < end * route[i][0] + 450, 'highlights appear close to their scheduled stop');
+        assert.equal(p.y, route[i][2] === undefined ? (id === 4 ? 362 : 336) : route[i][2], 'scenic baseline aligns with streets and rails');
+      });
+      placed.forEach((p, i) => {
+        const prev = placed.slice(0, i).filter((q) => q.key === p.key).pop();
+        if (prev) assert.ok(p.x - prev.x > 680 + p.displayWidth, 'no same landmark twice on screen');
+      });
+    }
+  }
+});
+
+test('regional transit moves behind landmarks with slim infrastructure and preserves Tokyo flight', () => {
+  const { Levels } = load('levels/worlds.js');
+  for (const id of [1, 2, 3, 4, 5, 6, 9]) {
+    const AH = load('systems/scenes.js', { Levels: { ids: [1] }, Art: { D: 2 } }, id, {
+      Phaser: { Scene: class {}, Utils: { Array: { GetRandom: (xs) => xs[0] } } }
+    });
+    const s = new AH.Scenes[5](), objects = [];
+    s.L = Levels.make(id); s.mode = s.L.mode;
+    s.cameras = { main: { scrollX: 0 } }; s.textures = { exists: () => true };
+    const display = (x, y, key) => {
+      const o = { x, y, key, rotation: 0, setOrigin() { return this; }, setScrollFactor(n) { this.sf = n; return this; },
+        setDepth(n) { this.depth = n; return this; }, setFlipX() { return this; }, setScale(n) { this.scale = n; return this; },
+        setTint() { return this; }, setAlpha(n) { this.alpha = n; return this; }, fastForward() {}, destroy() {} };
+      objects.push(o); return o;
+    };
+    s.add = { image: display, tileSprite: (x, y, w, h, key) => Object.assign(display(x, y, key), { w, h }), particles: display };
+    s.ambSky = () => {}; s.ambBirds = () => {};
+    s.buildAmbient();
+    assert.equal(s.amb.filter((o) => o.img.key.startsWith('amb_car_')).length, 1, 'levels open with calm streets');
+    assert.equal(s.road.h, 8, 'road is a slim distant band');
+    assert.ok(s.road.depth < -18, 'road cannot cover the landmark strip');
+    assert.ok(s.road.alpha < 1, 'the distant road is a soft band, not a hard line through the skyline');
+    for (const o of s.amb.filter((o) => /^amb_(?:car|train)_/.test(o.img.key))) {
+      assert.ok(o.img.depth < -18 && o.img.depth > -19, 'land transit sits between near skyline and landmarks');
+    }
+    assert.ok(s.amb.every((o) => o.img.x >= 0 && o.img.x <= 640));
+    const startX = s.amb.map((o) => o.img.x);
+    s.updateAmbient(0.1);
+    assert.ok(s.amb.every((o, i) => o.img.x !== startX[i]), 'first wave really moves');
+    if (id === 1 || id === 4) {
+      const train = s.amb.find((o) => o.img.key.startsWith('amb_train_'));
+      assert.ok(train); assert.equal(train.img.depth, -18.8); assert.equal(train.img.sf, 0.5);
+      assert.equal(train.img.scale, 0.325);
+      assert.equal(train.img.y, id === 1 ? 234 : 274, 'rail runs low, not across the middle of the skyline');
+      assert.equal(s.railLine.h, 22, 'viaduct does not form a tall foreground wall');
+      assert.ok(s.railLine.depth < train.img.depth);
+      assert.ok(s.ambT.rail > 20, 'seeded train has breathing room before the next arrival');
+    }
+    if (id === 1) assert.ok(s.amb.some((o) => o.img.key === 'amb_canalboat'));
+    if (id === 1) assert.equal(s.amb.find((o) => o.img.key === 'amb_car_tram').img.scale, 0.36);
+    const carCount = () => s.amb.filter((o) => o.img.key.startsWith('amb_car_')).length;
+    const cars = carCount();
+    s.updateAmbient(1.5);
+    if (id === 4) {
+      assert.equal(s.mode, 'fly'); assert.equal(s.road.y, 326); assert.equal(s.L.ambient.fx, 'petals');
+      assert.ok(carCount() > cars, 'busy Tokyo streets use a denser traffic rate');
+    } else assert.equal(carCount(), cars, 'other streets leave long gaps between traffic');
+    for (let t = 0; t < 120; t++) {
+      s.updateAmbient(0.5);
+      assert.ok(s.amb.filter((o) => o.car).length <= (id === 4 ? 3 : 2), 'never more than a few vehicles at once');
+    }
+    if (id === 5) assert.ok(s.amb.some((o) => o.img.key === 'amb_car_outback4x4'));
+    if (id === 2) { assert.equal(s.L.pipeZones[0].music, 'metro'); assert.equal(s.L.pipeZones[1].music, undefined); }
+  }
 });
 
 test('MFA shield works on E (ground and air) and as a crouch guard on DOWN; DOWN + direction slides', () => {
@@ -407,4 +543,23 @@ test('every region has exactly one unlockable hero suit and locked suits are enf
   assert.deepEqual(unlocks, [...Levels.ids].map((id, i) => i), 'one suit per level, in world order');
   assert.match(src, /suitOpen = \(i, unlocked\) => .*unlock \+ 2/, 'a suit opens once its level index is cleared');
   assert.match(src, /if \(!suitOpen\(out\.suit, data && data\.unlocked\)\) out\.suit = /, 'lookOf never returns a locked suit');
+});
+
+test('every regional boss is a fully animated street fighter with its own bolt and readable name', () => {
+  const { Levels } = load('levels/worlds.js');
+  const src = fs.readFileSync(path.join(__dirname, '..', 'art/sprites.js'), 'utf8');
+  const frames = src.match(/const FIGHT_FRAMES = (\[.*\]);/);
+  assert.ok(frames, 'the shared fighter rig lists its frames');
+  for (const f of ['_0', '_1', '_walk', '_attack', '_kick', '_jump', '_upper', '_stun']) assert.ok(frames[1].includes("'" + f + "'"));
+  const kinds = new Set();
+  for (const meta of Levels.worlds) {
+    const B = Levels.make(meta.id).boss;
+    assert.match(B.name, /^[A-Z0-9 \-.!':\/+,?]+$/, 'boss names use the pixel font charset');
+    if (B.kind === 'guardian') continue;
+    kinds.add(B.kind);
+    assert.ok(src.includes("fighterReg('" + B.kind + "'"), B.kind + ' uses the fighter rig');
+    assert.ok(src.includes("reg2('bolt_" + B.proj + "'"), B.kind + ' has its own projectile');
+  }
+  assert.ok(kinds.size >= 9, 'each region has a distinct fighter');
+  assert.doesNotMatch(src, /boss_molen|windmill boss|boss_sumo|boss_roo\b/i, 'the old mascot bosses are gone');
 });

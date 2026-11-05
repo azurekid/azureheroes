@@ -331,3 +331,104 @@ next to the existing Amsterdam hacker for the side-by-side encounter check.
 
 These are scoped visual and control checks, not complete level playthroughs or
 real-device tests. The Tokyo browser console reported only the existing favicon 404.
+
+## Regional transit and house/trance soundtrack
+
+Method: fresh isolated Chromium guest contexts per world, no accounts or score
+submissions. Keyboard movement was checked in Amsterdam, Tokyo and Sydney.
+London entry/exit used the actual Down-on-pipe interaction after teleporting to
+the pipe tops; jumping was checked inside the room. Mid-room and scenic inspection
+used teleports or paused camera positioning, with the hero hidden for landscape
+screenshots. No invulnerability, refilled Boost or forced boss stun was applied.
+
+| Check | Result | Evidence |
+|-------|--------|----------|
+| Amsterdam (1) | PASS - scoped | Art and moving blue/white trams, yellow trains and glass-roof canal boats loaded without runtime errors. Centraal and the canal-cruise stop were placed on the scenic route. |
+| London (2) | PASS - scoped | First pipe entered `tube`; tiled stations, roundels, journey maps, eight-theme platform materials and two passing trains were registered. Arcade jump worked. The real exit restored world bounds, a street checkpoint and London music. |
+| London touch layout | PASS - scoped | Forced-touch browser layout showed the room at mid-route; pointer-down on DUCK crouched the hero. All seven action/direction buttons were present. This was not a real-device test. |
+| Tokyo (4) | PASS - scoped | Flight and keyboard movement remained intact. Metro trains, elevated rails, street traffic and petals moved; billboard streets, Shibuya station and two blossom groves appeared at guaranteed stops. |
+| Sydney/Australia (5) | PASS - scoped | Beach sand, surf, umbrellas, outback roadhouses and larger red-rock Uluru were visually inspected. Expedition traffic appeared; solid 4x4 dimensions were 88x44. |
+| Music | PASS - technical | Original 32-bar 126-138 BPM house/trance tracks replace novelty/chiptune songs. Browser M mute/unmute set gain to 0/0.5 and resumed a running AudioContext. Eight-second drop excerpts from Paris, Amsterdam and boss tracks rendered with finite samples, peaks 0.202-0.211 and RMS about 0.038 (below clipping). This is not a listening-quality judgment. |
+| Automated | PASS | `npm test`: 48 tests. Thirty scenic-placement seeds per changed region, 80 room seeds across Amsterdam/London/Paris, all eight themes, all seven layouts, baseline alignment, transit movement, offbeat bass/four-on-floor timing, synth-only ducking and node cleanup. Existing combat, wardrobe, API and contribution-boundary tests also passed. |
+
+### QA-found scenic alignment issue - fixed
+- Level: Amsterdam, Tokyo and Australia.
+- Steps: inspect the station, beach and Uluru behind foreground platforms.
+- Expected: station trains align with rails and low landscape details remain visible.
+- Actual: the old universal strip baseline hid beach sand and placed Tokyo's
+  station train below the moving rail line.
+- File suspected: [scenes.js](../systems/scenes.js) and [sprites.js](../art/sprites.js).
+- Fix: optional per-highlight baselines, tested in deterministic placement and
+  re-inspected in fresh browser contexts. Uluru also gained a larger red-rock silhouette.
+
+No full-world completion, boss-balance pass, Safari test or human music-listening
+session was performed for this change.
+
+## Selectable music styles
+
+Method: isolated local guest sessions in Chromium. Keyboard input and browser-
+emulated touch events were exercised on the canvas. Amsterdam pipe entry/return
+and the boss trigger used teleports; there was no invulnerability or forced stun.
+The static server's `/api/health` and favicon requests returned the expected 404s;
+no JavaScript page errors were observed in the scoped touch and reload checks.
+
+| Check | Result | Evidence |
+|-------|--------|----------|
+| Selector | PASS - scoped | N and the MUSIC touch target cycle dance, jazz, country, blues and rock on title, map and level screens, including pause. N was also checked in Hero Lab and the leaderboard. Title/help targets do not overlap; the hidden selector does not react while help is open. |
+| Local preference | PASS | Selection survives reload without changing the saved run. An invalid stored style warns and defaults to dance; unavailable storage retains the choice for the session. |
+| Scene routing | PASS - scoped | Amsterdam's world track switched styles, a real Down-on-pipe interaction entered an Actions room and returned to world music, and the boss trigger selected a boss track. The setup teleported to each trigger; this is not a full playthrough. Automated tests also cover Metro, bonus, regional dance tracks and all other contexts. |
+| Mute and Gold Mode | PASS | Mute stayed active while switching genres and resumed normally. In a real Gold run, changing genre made no save or progress push; muting saved only the preference locally and made no push. Normal-mode mute still invoked progress sync. |
+| Audio output | PASS - technical | Eight-second offline renders of the title, world, challenge and boss arrangement for all five styles produced finite samples. Peaks were 0.153-0.220 and RMS 0.032-0.037, below clipping. These measurements do not judge how the music sounds. |
+| Automated | PASS | `npm test`: 57 tests, including genre rhythms and voices, swung eighth timing, contextual routing, storage failures, Gold Mode, node cleanup and the existing gameplay, API and contribution checks. |
+
+### QA-found Gold Mode mute issue - fixed
+- Level: any Gold Mode run.
+- Steps: mute while a Gold run is active.
+- Expected: change the local sound preference without pushing progress.
+- Actual before the fix: the shared save helper invoked the online progress push.
+- File suspected: [audio.js](../systems/audio.js).
+- Fix: suppress progress pushes from the shared save helper during Gold runs;
+  verified both Gold and normal behavior.
+
+No human listening assessment, real-phone/Safari test, full-world playthrough or
+unassisted boss-balance check was performed for this music change.
+
+## Documentation screenshot refresh
+
+Method: isolated local guest sessions. The title, map and Hero Lab were captured
+in a browser; Amsterdam, London, Paris, Tokyo and Sydney were started with the
+documented scene API in separate headless browser processes. Cloud and transit
+rooms were entered with `warpPipe` teleports. Daytime was selected with `?tod=day`;
+no invulnerability or forced boss stun was used.
+
+| Check | Result | Evidence |
+|-------|--------|----------|
+| Current screenshots | PASS - scoped | Visually inspected the title, map, Hero Lab, Amsterdam, Tokyo, Sydney, GitHub Actions, Docker, London Underground and Paris Metro captures at 1280x720. |
+| Links and artifacts | PASS - automated | Framework tests check local documentation links, PNG signatures, referenced screenshots and the temporary browser-output ignore rule. |
+
+The tool-managed headless WebGL target crashed when starting a level; fresh
+software-rendered browser processes were used for the gameplay captures. The
+cause of that capture failure was not established. These screenshots are not
+full playthroughs, real-device tests or evidence of gameplay balance.
+
+## Landmark-first transit composition
+
+Method: separate isolated guest browser processes for Amsterdam, Tokyo and Sydney,
+using the Canvas renderer after the integrated browser's WebGL target became
+unavailable during level startup. Inspected entry and later scenic stops at
+1280x720, plus Amsterdam at night with forced-touch controls. Scenes were paused
+for pixel comparisons; later views used camera positioning and extra decorative
+traffic spawned through existing scene methods, not an unassisted playthrough.
+
+| Check | Result | Evidence |
+|-------|--------|----------|
+| Amsterdam 1 | PASS - scoped | Centraal's facade and sign and the later canal scenery remain in front of trains, trams and infrastructure. Inspected both captures. |
+| Tokyo 4 | PASS - scoped | Billboard details and the Shibuya station sign/train remain visible; flight mode is unchanged. Inspected entry and station captures. |
+| Sydney 5 | PASS - scoped | Beach and outback artwork are no longer crossed by the road or traffic. Inspected entry and roadhouse captures. |
+| Actual overlap | PASS | Across seven sampled views, 1,426,448 opaque landmark pixels were identical with land transit visible versus hidden. Moving the same transit temporarily to the old foreground side changed 8,117-22,564 landmark pixels per view, confirming the check detects real occlusion. |
+| Night / forced touch | PASS - scoped | Amsterdam's night facade and sign stayed readable; the overlap check passed with the touch overlay visible. This is browser emulation, not a real-phone test. |
+| Regression | PASS | `npm test`: 59 tests. Transit tests cover all seven road worlds, slimmer bands, reduced tram/train display sizes, traffic spacing, seeded movement and Tokyo flight. Changed JavaScript syntax checks also passed. |
+
+No page exceptions were observed in the scoped Canvas checks. No full-world
+playthrough, unassisted combat-balance check or hardware-WebGL validation was
+performed. Playable vehicles, collision geometry and saved progress are unchanged.

@@ -63,7 +63,7 @@ Input contract: Arrows/WASD move, Space jump (press again in the air = double ju
 pushing into a wall = wall slide, Space then wall-jumps away and restores the double jump),
 F Azure Blast (low while ducking; blasts also destroy enemy and boss bullets), Shift Flight Boost,
 E = MFA Shield (ground and air), S / Down = duck (standing still = crouch guard with the shield,
-moving starts a slide attack), P / Esc pause, H help overlay, Q quit to title, R restart, M mute.
+moving starts a slide attack), P / Esc pause, H help overlay, Q quit to title, R restart, M mute, N cycle music style.
 `AH.Input.read()` returns `help`, `quit`, `esc` and `nav` (-1/0/1 page turns) besides the movement flags.
 Touch run controls include DUCK, SHIELD, PAUSE and HELP. On the title screen E opens the Hero Lab and H opens help.
 
@@ -102,6 +102,9 @@ Touch run controls include DUCK, SHIELD, PAUSE and HELP. On the title screen E o
 ### Save, resume and online contract
 - `AH.Save.data = { best, unlocked, bests: {id: score}, muted, hero, look: {body, skin, hair, hairCol, suit, hat, gear}, resume: {id, score, lives} | null, updated }`. `unlocked` is `n + 1` when all n levels are cleared.
 - Resume rules: level start saves `{id, startScore, startLives}`. Game over saves `{id, 0, 3}`. Level complete saves the next level with the current score and lives, or `null` after the last level. Call `AH.Save.setResume(id, score, lives)`. Never write `resume` directly.
+- `AH.Save.save()` may persist general preferences locally during Gold Mode, but
+  must not push progress online while `AH.Gold.run()` is true. Gold run scores,
+  unlocks and resume data must never be written.
 - `AH.Online` (`systems/online.js`) is only active when `/api/health` answers. Otherwise the game is in guest mode and nothing breaks. `save()` pushes progress when logged in. `submitScore(score, level, city)` returns `{best, rank}` or `null`.
 - Server API (`server.js`, see README): `health`, `leaderboard`, `register`, `login`, `me`, `logout`, `progress` (merge: unlocks never go backwards; newer `updated` wins for resume), `score`. Names: 3-15 chars `A-Z 0-9`. Locations are limited to the pixel font charset (max 20 chars).
 - Every on-screen string must use the pixel font charset: A-Z, 0-9, space and `- . ! ' : / + , ?`.
@@ -136,6 +139,12 @@ Touch run controls include DUCK, SHIELD, PAUSE and HELP. On the title screen E o
 - HUD snapshot adds `weapon`, `weaponTime`, `charge`; boss snapshots add `state`,
   `vulnerable`, `window` and `cue`. Boss damage is allowed only while vulnerable;
   green OPEN text/countdown and an overhead marker must agree with the hit check.
+- Boss snapshots also expose `round` (1-3, same as `phase`); the HUD shows `ROUND n`.
+  Regional fighter bosses use textures `boss_<kind>_0`, `_1`, `_walk`, `_attack`, `_kick`,
+  `_jump`, `_upper`, `_stun` (64x80, art faces left, feet at the bottom); missing frames
+  fall back to idle/attack, so the guardian keeps `boss_0/_attack/_stun`. Boss states:
+  `intro`, `idle`, `windup`, `charge`, `lunge`, `strike`, `leap`, `upper`, `recover`,
+  `stunned`, `dying`; `vulnerable` stays `stunned || recover`.
 - Pipe themes also include `entra` (identity/access vault) and `functions` (event reactor).
   Every theme needs floor, sign, far scenery and three background textures. Optional
   stage `layout` names identify shuffled room templates; geometry, enemy placement,
@@ -169,6 +178,28 @@ Touch run controls include DUCK, SHIELD, PAUSE and HELP. On the title screen E o
   all three reward names. Labels use the existing pixel-font charset.
 
 ### Regional rooms, street stands and music
+- London uses regional room `tube` (UK South only); Paris keeps `metro`. Both
+  have optional zone `music: 'metro'`; rooms omitting it use `pipe` music.
+- Optional `ambient.rail: [kind]` uses `amb_train_<kind>` and `amb_rail` behind
+  gameplay. `railY` (default 218) and `roadY` (default 256) are background baselines;
+  `roadRate` is the minimum traffic spawn interval in seconds (default 2.2).
+  Explicit road/rail scenery works in run and fly worlds without changing physics.
+  Vehicles and boats are seeded on entry as well as spawned during play.
+  Decorative roads, rail decks and land traffic render behind the landmark strip
+  (depth below -18), never across its facades or signs. Keep infrastructure slim
+  and transit spaced out; playable vehicles and collision geometry are unaffected.
+- `AH.Art.sceneryRoutes[region]` is an ordered array of `[fraction, textureKey, baseY?]`
+  scenic highlights (fractions 0..0.85 of the parallax strip). Scenes reserve
+  those keys from random selection and place each highlight once at its stop,
+  retaining the no-same-landmark-on-screen rule. This is decorative, not solid
+  geometry. Keep enough room between stops for the actual texture widths.
+  Optional `baseY` raises low coastal/landscape art above the foreground and aligns
+  station platforms with background rails; omitted values use the world's base.
+- Levels use the painted `bg_far_<region>` panorama (shared with the map thumbnail).
+  `AH.Art.panoramaLandmarks[region]` lists strip keys already painted in it; scenes never
+  place those in the strip. Random strip pieces render at 0.78 scale with open spacing;
+  curated route stops keep full size.
+- Australia's solid `outback4x4` is 88x44 in both `OB_SIZE` and `obSize`.
 - World option `pipeTheme` names a regional `CHALLENGES` entry (Paris: `metro`). It always
   sits behind the first pipe; the second pipe takes a distinct shared theme. Regional
   themes never enter the shared pool. Pipe platforms carry `theme`.
@@ -184,3 +215,16 @@ Touch run controls include DUCK, SHIELD, PAUSE and HELP. On the title screen E o
   regions fall back to `main`. Repeating the same resolved song never restarts it.
   Levels call `levelMusic()` on start and when leaving rooms, bonus areas and boss resets.
   Songs are code-only data (`AH.Audio.SONGS`), never fetched or loaded from files.
+- Music style is a device-local preference, independent of saved game progress:
+  `AH.Audio.style` is `dance` (default), `jazz`, `country`, `blues` or `rock`.
+  `loadStyle()` reads an allowlisted value from `azureheroes2027_music`; invalid or
+  unavailable storage falls back to dance with a warning. `setStyle(style)` rejects
+  invalid values, persists locally where possible and switches the current music
+  context without changing mute, scores, progress or online accounts.
+  `nextStyle()` cycles the same ordered list. N and the visible MUSIC button work
+  on the title, map, Hero Lab, leaderboard and during play or pause.
+- Dance retains the original house/trance regional and scene-specific tracks.
+  Each other style has original lounge, world, challenge and boss arrangements;
+  jazz/blues use swing, country uses twang and rock uses electric-style voices.
+  All sounds are synthesised locally. Kick-ducking applies only to dance tracks.
+  Preserve track routing, mute, sound effects, scheduling and node cleanup.

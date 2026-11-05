@@ -1,79 +1,115 @@
-# Building Microsoft Azure Heroes 2027 with no assets and no build step
+# Building Microsoft Azure Heroes 2027 with no runtime assets or build step
 
-Microsoft Azure Heroes 2027 is a retro side-scroller about a caped security hero: blue suit, glowing **A** on the chest, sunglasses. The hero travels the Azure world map through ten regions, from the canals of Amsterdam to the Microsoft campus in Redmond, and ends in a Virginia data center where a High-Risk CyberGuardian waits.
+Microsoft Azure Heroes 2027 is a retro side-scroller about a security hero travelling
+through ten Azure regions, from the canals of Amsterdam to the Virginia data center.
+Players can customize their hero, explore regional streets and transit, and face
+cloud-themed threats and a local boss in each world.
 
-The constraints shaped everything: HTML, CSS and JavaScript only, Phaser 3 from a CDN, no image files, no audio files, and the game must run by opening `index.html`.
+The game uses HTML, CSS and JavaScript, with Phaser 3 loaded from an integrity-pinned
+CDN. It needs no build step or runtime image and audio files. Static guest play
+needs no game server, but an internet connection is needed to load Phaser.
 
-![Title screen: Coming Soon becomes Press Start](screenshots/title.png)
+![Title screen](screenshots/title.png)
 
 ## Everything is drawn in code
 
-There are no sprite sheets. `art/sprites.js` draws each sprite on an offscreen canvas and hands the canvas to Phaser as a texture. Each sprite goes through the same pipeline:
+There are no sprite sheets. [art/sprites.js](../art/sprites.js) draws sprites and
+backgrounds on canvases and hands them to Phaser as textures. Pixel shapes are
+upscaled and lit with outlines, rim light, shading, dithering and glows. Parallax
+skylines, landmarks, moving traffic and a custom bitmap font complete the scene.
+The game renders at 1280x720 while retaining 640x360 logical coordinates.
 
-1. Draw the shapes on a small pixel grid, then upscale 2x.
-2. Run a lighting pass: a rim light on the top and left edges, shade on the bottom and right, a vertical gradient and a fine dither.
-3. Add a navy outline.
-4. For pickups and hazards, add a glow using canvas `shadowBlur`, which also works on mobile Safari.
+## Ten regions, three play styles
 
-Backgrounds are layered parallax skylines with neon signs, a sun with a halo, clouds and stars. Text uses a custom 5x7 bitmap font, so the HUD looks the same everywhere.
+- **Street runs** mix canal quays, promenades and piers with gaps, steps, higher
+  paths, moving boats, hazards and wall-jump opportunities.
+- **Flight worlds** auto-scroll through the sky, with airborne enemies, obstacles,
+  rings and Flight Boost.
+- **Virginia's data center** adds hack terminals, security gates and cables.
 
-![London Thames promenade](screenshots/london-thames.png)
+Each run generates a new layout; outdoor worlds also get a random time of day.
+Amsterdam has trams, yellow trains,
+canal cruises and herring stands. London has a Thames promenade and Underground;
+Paris has rooftops, bakeries, Seine boats and the Metro. Tokyo combines flight,
+billboards, trains and cherry blossoms, while Sydney features a beach and outback.
+Landmarks may come from across each country, not just its region's city.
 
-## Cities you can recognise
-
-Each run level has ground that matches the city. In Amsterdam you run along canal quays, ride canal boats, cross pull-up bridges that lift on a timer and can grab an Azure Bike. Behind you scroll gabled canal houses with step, bell, neck and spout gables, Centraal Station, Schiphol, the Microsoft office at Schiphol, the Amstel Hotel and the red lanterns of the old centre. London has the Thames promenade, Big Ben, Buckingham Palace and the Tower of London, and a red phone box that hides a bonus room.
-
-The scenery strip never shows the same landmark twice on one screen. The far skyline layer has no landmarks, so landmarks can't repeat there either.
-
-![Amsterdam landmarks](screenshots/amsterdam-landmarks.png)
-![Amsterdam pull-up bridge](screenshots/amsterdam-drawbridge.png)
-
-## Ten regions, three ways to play
-
-- **Azure region worlds**: ten levels, each themed on an Azure region (Amsterdam, London, Paris, Tokyo, Sydney, Venice, Rio, Mexico City, Redmond, Virginia). Landmarks come from the whole country, not only the region's city: the Colosseum and the Leaning Tower of Pisa appear in the Italy level, the Space Needle and Mt Rainier in Redmond, and Stonehenge and Edinburgh in the UK level. Every run has a new random layout and a random time of day.
-- **Rooftop runs** are classic platformers. Gaps that need a double jump and timed red laser traps keep it varied.
-- **Sky Canyon Pursuit** switches to an auto-scrolling flight mode. Drones chase the hero, rocks block the canyon and gold rings add score.
-- **Data Center Infiltration** adds hack terminals that fill a Hack Progress bar, Sec Gates that stay closed until the hack is done, cables to jump over and spider bots.
-
+![Amsterdam Canal Run](screenshots/world1.png)
 ![Tokyo Skyway Pursuit](screenshots/world4.png)
+![Sydney Harbour Run](screenshots/world5.png)
 
-Levels are plain data objects (`platforms`, `lasers`, `coins`, `mfaTokens`, `enemies`, `exit`), so adding one means adding one file.
+The world definitions and generators live in [levels/worlds.js](../levels/worlds.js).
+Adding a region involves its configuration, generated routes, original art, boss,
+map/progression wiring and tests, not just a single level file. The shared
+[contribution workflow](../CONTRIBUTING.md) explains the contract and skill framework.
 
-![Data Center Infiltration](screenshots/world10.png)
+## Cloud challenges and regional transit
 
-## Local bosses, local enemies, power-ups
+Street-world pipes lead to five-stage underground challenges with shuffled layouts,
+hazards, rewards and extra time. Six shared themes cover Azure Pipelines, AKS,
+GitHub Actions, Docker, Entra and Azure Functions. London and Paris each have a
+first pipe dedicated to the Underground or Metro, respectively. Their second
+pipe uses a shared theme.
 
-Every region has its own boss in the local style: a Windmill Titan in Amsterdam, a Bearskin Sentinel in London, a hovering Sumo Shogun in Tokyo, a Chef de Chaos in Paris, a Boxing Roo in Sydney, Gladiator Maximus in Venice, Carnaval Rei in Rio, El Luchador Supremo in Mexico City, the Blitz Linebacker in Redmond and the original High-Risk CyberGuardian in Virginia. Enemies, coins and scenery props are re-skinned per region (sushi drones, emus and crocodiles, clog bots and so on).
+Docker and AKS use shipping-container docks; Actions and Pipelines use industrial
+workshops. The transit rooms have station signs and passing trains. Seven layout
+templates vary the routes inside the eight room themes, including duck-height ducts,
+upper walkways and laser crossings.
 
-Ground bosses cannot be hit head-on. The player holds the **MFA Shield** to block bolts and charges. After enough blocks the boss is stunned, and only then does an Azure Blast hurt it. Hovering bosses cannot be blocked, so the player dodges and blasts them in an exposed window. All have three attack phases and a health bar with a blinking **RISK LEVEL: HIGH** label.
+![GitHub Actions challenge](screenshots/cloud-actions.png)
+![Docker Image Dock challenge](screenshots/cloud-docker.png)
+![London Underground challenge](screenshots/london-underground.png)
+![Paris Metro challenge](screenshots/paris-metro.png)
 
-![The Boxing Roo](screenshots/boss4.png)
-![The Sumo Shogun](screenshots/boss3.png)
+## Combat, bosses and Hero Lab
 
-Floating orbs add Copilot (an auto-firing sidekick), Defender, GitHub Actions, Power BI and Teams power-ups, plus Clippy tips and achievement toasts. The Hero Lab lets players build a male or female hero with six skin tones, several hair styles and colours, and suit colours, then add local wardrobe such as a cowboy hat, sombrero, beret, hachimaki, cork hat or carnaval plumes, and extras like Dutch clogs or a serape. Phishing hoppers, Ransomware chargers and DDoS botnet clouds that drop bombs appear in every region, and Azure Pipelines warp pipes lead to underground bonus zones.
+Phishing hoppers, Ransomware chargers, DDoS clouds, Rogue Hackers and cloud threats
+such as pipeline bugs and exposed endpoints teach security concepts through their
+nameplates and tips. Players can duck, slide, wall-jump, block with the MFA Shield,
+or tap and release the blaster. Holding fire charges a stronger shot; temporary
+Spread and Cosmos Beam pickups change the weapon.
 
-![Hero Lab](screenshots/hero-lab.png)
-![Azure Pipelines bonus zone](screenshots/pipe-zone.png)
+Every region ends with a three-round street-fighter duel against a local cyber
+criminal, from a Muay Thai access broker in Amsterdam to a zero-day luchador in
+Mexico City. Fighters face you, close the distance and mix projectiles with combos,
+jump kicks and uppercuts; a missed melee move leaves them open to punishment.
+A red **ARMORED** indicator means attacks will
+not damage it; a green **OPEN** indicator, target marker and countdown identify
+the damage window. Ground bosses can be opened by blocking or by dodging a charge
+into the arena wall; all bosses also overheat after repeated attacks. Hovering bosses
+must be dodged rather than blocked.
 
-![Female hero](screenshots/title-female.png)
+Hero Lab offers body, skin, hair, outfit, headwear and accessory choices. Clearing a
+region unlocks a themed outfit, hairstyle and accessory; classic outfits, including
+the capeless Cloud Hacker, are available from the start.
 
-## A world map, accounts and a global high score table
+![Hero Lab with the Cloud Hacker outfit](screenshots/hero-lab.png)
 
-Levels are chosen on a pixel-art Azure world map. Cleared regions are linked by gold flight routes with a plane flying the latest leg. Players can continue from the level where they left off, even after a game over.
+## A world map and optional accounts
 
-When the game is hosted with `server.js` on Azure App Service, players register with a hero name and location, their progress syncs between devices and every game over or cleared level posts to a global leaderboard. The server is a single zero-dependency Node.js file with salted scrypt passwords, hashed tokens, rate limits and a JSON store on App Service persistent storage. On a static host the same page runs in guest mode.
+The world map tracks unlocked regions, completed routes and the Continue point.
+Guest progress is stored locally. When hosted with `server.js`, players can also
+register, sync their progress and compete on a leaderboard. The zero-dependency
+Node.js server uses salted scrypt passwords, hashed expiring tokens, rate limits and
+a JSON store; the static site remains playable without an account.
 
-![World map](screenshots/world-map-cleared.png)
-![Leaderboard](screenshots/leaderboard.png)
+![World map](screenshots/world-map.png)
 
 ## Sound without files
 
-`systems/audio.js` synthesises jump, coin, hit, block, boss and win effects, plus a looping music pattern, using oscillators and noise from the Web Audio API. A mute button is always available, and the setting is saved.
+[systems/audio.js](../systems/audio.js) synthesises effects and music with Web Audio.
+Players choose **dance, jazz, country, blues or rock** with N or the MUSIC button.
+Each style has title, world, challenge and boss arrangements; the choice is stored
+on the device independently of online progress. M mutes music and effects.
 
-## Testing without a keyboard
+## Testing and running
 
-Because the game exposes its state, a headless Chrome script can drive it. A simple bot steers the hero, jumps at pit edges, blasts enemies and uses the shield against the boss. Running it found real bugs. In one case, Azure Blasts passed straight through the boss because a Phaser rectangle was compared using the wrong property names. See [tests/playtest.md](../tests/playtest.md) for the report.
+See the README's [specific-world and challenge instructions](../README.md#testing-a-specific-world-or-challenge)
+for guest profiles, world IDs, pipe inspection and developer-console navigation.
+These shortcuts, including the teleport used for some screenshots, are assisted
+setup rather than evidence of an unassisted playthrough. The
+[playtest report](../tests/playtest.md) records checks and their limitations.
 
-## Run it
-
-Open `index.html`, or deploy the folder to GitHub Pages or Azure Static Web Apps for guest mode. Run `npm start` locally, or deploy to Azure App Service, for accounts and the leaderboard. There is nothing to build. See the [README](../README.md) for controls and deployment.
+Open `index.html` or use a static host for guest mode. Run `npm start` for the
+local account server and `npm test` for the automated suite. See the
+[README](../README.md) for controls, hosting and deployment details.

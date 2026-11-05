@@ -21,6 +21,7 @@ description: 'Coordinate Azure Heroes community development. Use for game featur
 | Generated layouts, height changes, pipe rooms | [level-builder](../level-builder/SKILL.md) | `levels/worlds.js` |
 | Region identity, local boss and landmarks | [region-world-generator](../region-world-generator/SKILL.md) | world row, map and art |
 | Movement, slide/duck, combat, AI, save and accounts | [gameplay-systems](../gameplay-systems/SKILL.md) | `systems/`, optionally `server.js` |
+| Original music, synth voices, beat scheduling and sound effects | [gameplay-systems](../gameplay-systems/SKILL.md) | `systems/audio.js` |
 | Sprites, scenery, wardrobe, read-only HUD | [sprite-artist](../sprite-artist/SKILL.md) | `art/sprites.js`, `ui/hud.js` |
 | Verification and reproducible bug reports | [qa-playtester](../qa-playtester/SKILL.md) | `tests/` |
 | Trust boundaries, workflows, credentials and backdoor prevention | [game-security](../game-security/SKILL.md) | cross-cutting review |

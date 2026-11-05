@@ -29,6 +29,33 @@ test('community skills have discoverable metadata and resolvable local reference
   }
 });
 
+test('documentation local links and screenshot files remain valid and referenced', () => {
+  const docs = ['README.md', 'CONTRIBUTING.md', 'AGENTS.md', 'SECURITY.md', 'docs/article.md', 'tests/playtest.md'];
+  const screenshotsDir = path.join(root, 'docs/screenshots');
+  const screenshots = new Set();
+  for (const file of docs) {
+    for (const match of read(file).matchAll(/\[[^\]]+\]\(([^)]+)\)/g)) {
+      const link = match[1];
+      if (/^(?:[a-z][a-z0-9+.-]*:|\/\/|#)/i.test(link)) continue;
+      const target = path.resolve(root, path.dirname(file), link.split(/[?#]/)[0]);
+      assert.ok(target.startsWith(root + path.sep), file + ' link must stay repository-local: ' + link);
+      assert.ok(fs.existsSync(target), file + ' broken reference: ' + link);
+      if (path.dirname(target) === screenshotsDir && path.extname(target) === '.png') {
+        assert.deepEqual(fs.readFileSync(target).subarray(0, 8),
+          Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]), link + ' must be a PNG');
+        screenshots.add(path.basename(target));
+      }
+    }
+  }
+  const files = fs.readdirSync(screenshotsDir).filter((file) => file.endsWith('.png'));
+  assert.ok(files.length, 'player documentation needs screenshots');
+  for (const file of files) assert.ok(screenshots.has(file), 'unreferenced screenshot: ' + file);
+});
+
+test('temporary Playwright browser output is ignored', () => {
+  assert.match(read('.gitignore'), /^\.playwright-mcp\/$/m);
+});
+
 test('CI actions remain immutable and PR validation stays unprivileged', () => {
   for (const file of fs.readdirSync(path.join(root, '.github/workflows'))) {
     const text = read('.github/workflows/' + file);

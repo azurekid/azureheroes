@@ -1,8 +1,8 @@
 # Microsoft Azure Heroes 2027
 
-A 16-bit synthwave side-scrolling adventure built with **Phaser 3** (loaded from a CDN), plain HTML, CSS and JavaScript. There is no build step and there are no image or audio files: every sprite and background is drawn in code and every sound is synthesised with the Web Audio API.
+A 16-bit synthwave side-scrolling adventure built with **Phaser 3** (loaded from a CDN), plain HTML, CSS and JavaScript. There is no build step and no runtime image or audio assets: every sprite and background is drawn in code and every sound is synthesised with the Web Audio API.
 
-The game runs fully offline as a static site. When it is hosted with the small Node.js server in `server.js` (for example on Azure App Service), players can also register, sync their progress and compete on a global high score dashboard.
+The game runs in guest mode as a static site without a game server, but needs an internet connection to load Phaser from the CDN. When it is hosted with the small Node.js server in `server.js` (for example on Azure App Service), players can also register, sync their progress and compete on a global high score dashboard.
 
 ![Title screen](docs/screenshots/title.png)
 
@@ -24,24 +24,23 @@ Levels are picked on an **Azure world map**. Each pin is an Azure region. Cleare
 The game remembers where you left off. **C: Continue** on the title screen or map resumes the level you were playing, also after a game over (the score then restarts at zero so the high score table stays fair). After a cleared level, Continue takes you to the next one with your score and lives.
 
 ![World map](docs/screenshots/world-map.png)
-![All regions cleared](docs/screenshots/world-map-cleared.png)
 
 ## Levels
 
 | Level | Azure region | World | Boss | Mode |
 |-------|--------------|-------|------|------|
-| 1 | `westeurope` | Amsterdam Canal Run: canal houses, Centraal Station, Schiphol, Microsoft HQ, Kinderdijk, Rotterdam, The Hague | Windmill Titan | Run |
-| 2 | `uksouth` | London Thames Run: Big Ben, Tower Bridge, Stonehenge, Edinburgh, Glenfinnan, a secret phone box | Bearskin Sentinel | Run |
-| 3 | `francecentral` | Paris Seine Run: Eiffel Tower, Sacre-Coeur, Moulin Rouge, zinc rooftops, bakeries, bateaux-mouches, Louvre, Mont-Saint-Michel, a Metro sub-level and a ghost station | Chef de Chaos | Run |
-| 4 | `japaneast` | Tokyo Skyway Pursuit: Mount Fuji, Tokyo Tower, Himeji, Osaka Castle, Shinkansen | Sumo Shogun (hovering) | Flight |
-| 5 | `australiaeast` | Sydney Harbour Run: Opera House, Harbour Bridge, Uluru, Twelve Apostles | Boxing Roo | Run |
-| 6 | `italynorth` | Venice Lagoon Run: Rialto, St Mark's, gondolas, Colosseum, Leaning Tower of Pisa, a Trevi portal | Gladiator Maximus | Run |
-| 7 | `brazilsouth` | Rio Sugarloaf Pursuit: Christ the Redeemer, Sugarloaf, Brasilia, Iguazu | Carnaval Rei (hovering) | Flight |
-| 8 | `mexicocentral` | Mexico City Skyway: Teotihuacan, Chichen Itza, Angel of Independence, hot air balloons | El Luchador Supremo (hovering) | Flight |
-| 9 | `westus2` | Redmond Campus Lake Run: Microsoft campus, Space Needle, Mt Rainier, an Xbox bonus door | The Blitz Linebacker | Run |
+| 1 | `westeurope` | Amsterdam Canal Run: blue/white trams, yellow trains, glass-roof canal cruises, Centraal Station, canal houses, Schiphol, Microsoft HQ | De Kraker: Access Broker (Muay Thai) | Run |
+| 2 | `uksouth` | London Thames Run: Big Ben, Tower Bridge, an Underground sub-level, Stonehenge, Edinburgh, Glenfinnan, a secret phone box | The Phishing Kingpin (bare-knuckle) | Run |
+| 3 | `francecentral` | Paris Seine Run: Eiffel Tower, Sacre-Coeur, Moulin Rouge, zinc rooftops, bakeries, bateaux-mouches, Louvre, Mont-Saint-Michel, a Metro sub-level and a ghost station | Madame Savate: Spoofer | Run |
+| 4 | `japaneast` | Tokyo Skyway Pursuit: Ginza Line metro, Shibuya crowds, billboard streets, sakura, Mount Fuji, Tokyo Tower, Shinkansen | Ronin Rootkit (hovering) | Flight |
+| 5 | `australiaeast` | Sydney Harbour Run: Sydney beach/surf, outback roadhouses and expedition 4x4s, Uluru, Opera House, Harbour Bridge, Twelve Apostles | The Botnet Brawler | Run |
+| 6 | `italynorth` | Venice Lagoon Run: Rialto, St Mark's, gondolas, Colosseum, Leaning Tower of Pisa, a Trevi portal | Maximus the Ransomer | Run |
+| 7 | `brazilsouth` | Rio Sugarloaf Pursuit: Christ the Redeemer, Sugarloaf, Brasilia, Iguazu | Capoeira Cryptojacker (hovering) | Flight |
+| 8 | `mexicocentral` | Mexico City Skyway: Teotihuacan, Chichen Itza, Angel of Independence, hot air balloons | El Luchador Zero-Day (hovering) | Flight |
+| 9 | `westus2` | Redmond Campus Lake Run: Microsoft campus, Space Needle, Mt Rainier, an Xbox bonus door | The DDoS Enforcer | Run |
 | 10 | `eastus` | Virginia Data Center: Capitol, Washington Monument, hack terminals, Sec Gates | High-Risk CyberGuardian | Data center |
 
-Levels are generated at random each time a level starts, so platforms, lasers, enemies, coins, power-ups and MFA tokens land in new places on every run. Run levels mix gaps, steps up, drops and floating platforms at different heights, and every region has its own coins, enemy skins, scenery props, traffic, birds and sky objects (planes, balloons, blimps, helicopters). Each run also gets a random time of day, from sunrise to night.
+Levels are generated at random each time a level starts, so platforms, lasers, enemies, coins, power-ups and MFA tokens land in new places on every run. Run levels mix gaps, steps up, drops and floating platforms at different heights, and every region has its own coins, enemy skins, scenery props, traffic, birds and sky objects (planes, balloons, blimps, helicopters). Outdoor worlds also get a random time of day, from sunrise to night; Virginia's data center uses indoor lighting.
 
 Every region also has cyber-threat enemies: **Phishing hoppers** leap at you, **Ransomware chargers** wind up and dash, and **DDoS botnet clouds** follow you and drop bombs. Street and data-center levels also feature pipeline bugs, vulnerable container images, overprivileged RBAC robots, exposed-endpoint turrets, stale guest-account crawlers and **Rogue Hackers** who fire from handheld terminals. Their bolts can be blocked with the MFA Shield. Defeating them reveals tips about GitHub Actions, Defender for Cloud, Entra MFA and access reviews, least privilege and Azure Private Link.
 
@@ -53,13 +52,18 @@ Run levels are not just rooftops. The ground matches the city: canal quays and b
 - **Secret phone box** (London): stand inside for a moment to warp to a bonus room full of credits.
 - **Shooting enemies**: some walkers fire bolts back at you. Streets have denser patrols, including low cloud threats that can be slide-attacked or blasted while ducking.
 - **Vertical routes**: taller steps, deeper drops and more upper walkways reward jumping between street and rooftop routes. Pipe entrances and returns are reserved before hazards are placed.
-- **Amsterdam street life**: look for Hollandse Haring stands, larger bicycles and more legible small-car traffic.
+- **Amsterdam street life**: blue/white articulated trams, moving yellow commuter trains and glass-roof canal cruises join Hollandse Haring stands and bicycles. Centraal and a canal-cruise vista are guaranteed scenic stops.
+- **Tokyo street life**: moving silver/orange metro trains on elevated tracks, a Shibuya station, denser road traffic, pedestrian crossings and Azure/Copilot/GitHub/Xbox billboards. Detailed sakura groves and falling petals accompany the existing flight controls; the metro is scenery, not a ground-mode room.
+- **Australian coast and outback**: guaranteed Sydney surf/beach, red-earth roadhouses and Uluru highlights, plus roof-rack expedition 4x4 traffic and jumpable vehicles. Harbour ferries, routes and the Boxing Roo remain.
 - **Paris street life**: boulangerie stalls on the quays, Haussmann zinc rooftops, bateaux-mouches on the Seine and Guimard Metro entrances. The Eiffel Tower, Sacre-Coeur and Moulin Rouge appear more often than other local landmarks.
 - **No repeats**: a scenery strip of local landmarks and Microsoft billboards scrolls behind the street. The same landmark never shows twice on screen.
+- **Landmarks first**: decorative roads, slim rail decks, trains and trams sit behind
+  the landmark strip, with more space between arrivals. Facades and signs stay
+  unobstructed; rideable bikes, solid vehicles and platform heights are unchanged.
 
 Microsoft touches: the Microsoft logo in the HUD and title, Microsoft HQ and Azure/Copilot/Xbox signs in the scenery, a Bliss-style hill, a Blue Screen game over and an Azure portal "Deployment succeeded" level-complete panel.
 
-Every level ends in an arena with that region's boss. Bosses attack faster as their health drops, with telegraphed charges and staggered volleys. **Red health bar / ARMORED means shots cannot damage the boss. Green bar, target brackets and OPEN countdown mean fire now.** Ground bosses open after you block two shots or a charge with the MFA Shield. Jump or dodge a charge and the boss slams into the arena wall, dazed for over three seconds. All bosses overheat after three attacks, so there is always a damage opportunity. Hovering bosses must be dodged. Old bullets clear when the damage window opens. The exit opens when the boss is down. Losing a life restores defeated enemies, except those close to the checkpoint.
+Every level ends in a street-fighter style showdown with that region's boss: a cyber-criminal fighter who faces you, walks in and out of range and mixes thrown projectiles with three-hit combos, jump kicks, anti-air uppercuts and a round 3 super move. The fight runs in three ROUNDs (one per third of health) and ends in a K.O. Bosses attack faster as their health drops; every move has a readable windup and an on-screen cue. **A missed combo, jump kick or uppercut leaves the boss off balance: WHIFF / OPEN means punish it.** **Red health bar / ARMORED means shots cannot damage the boss. Green bar, target brackets and OPEN countdown mean fire now.** Ground bosses open after you block two shots, two combo strikes or a charge with the MFA Shield. Jump or dodge a charge and the boss slams into the arena wall, dazed for over three seconds. All bosses overheat after three attacks, so there is always a damage opportunity. Hovering bosses must be dodged. Old bullets clear when the damage window opens. The exit opens when the boss is down. Losing a life restores defeated enemies, except those close to the checkpoint.
 
 ### Power-ups
 
@@ -98,7 +102,8 @@ which hides the selected hair, or choose a hat or hijab to wear that instead.
 **Gold Mode (easter egg).** On the title screen type Up, Up, Down, Down, Left,
 Right, Left, Right, A. You get a golden suit and 30 lives for that browser session.
 Gold runs are a sandbox: their scores are never submitted to the leaderboard and
-nothing is saved (no bests, unlocks or continue point). Reload the page to leave it.
+run progress is not saved (no bests, unlocks or continue point). General device
+preferences, such as music style, remain separate. Reload the page to leave Gold Mode.
 
 | Clear region | Outfit | Hairstyle | Accessory |
 |---|---|---|---|
@@ -126,6 +131,7 @@ Street levels have two warp pipes into different randomly selected **cloud chall
 | Entra Access Vault | Navigate an identity vault, verify identities, review access and apply least privilege. |
 | Azure Functions Reactor | Route events through a reactor, secure triggers and bindings, and monitor workloads. |
 | Paris Metro - Ligne 14 (Paris only) | Ride through tiled stations with passing trains; route traffic with Front Door, WAF, DDoS Protection and Private Endpoints. |
+| London Underground (London only) | Deep Tube tunnels, red roundels, red/white/blue trains, tiled stations, route maps and MIND THE GAP platforms; secure identities and private network routes. |
 
 Rooms shuffle seven distinct layout types: steps, catwalks, ducts, split-level routes,
 security-laser crossings, encounter arenas and switchbacks. Bay widths, lesson order,
@@ -139,8 +145,9 @@ Pipelines use industrial runner workshops with assembly arms, conveyors and
 workstations. Entra adds circular vault doors, identity cabinets and access circuits;
 Functions adds reactor cores, trigger conduits and event-processing machinery.
 Layered scenery and three background variations give the rooms depth.
-Paris always opens the Metro behind its first pipe (a Guimard entrance); the
-second pipe uses a shared theme. Regions can add their own room the same way.
+Paris always opens the Metro behind its first pipe (a Guimard entrance); London
+always opens the Underground (a red-roundel entrance). Their second pipes use
+shared themes. Regional rooms never appear in other countries.
 
 ### Testing a specific world or challenge
 
@@ -171,12 +178,18 @@ if (room) level.warpPipe(
 ```
 
 Theme names are `docker`, `aks`, `actions`, `pipelines`, `entra`, `functions`, and
-`metro` (Paris, `{ id: 3 }`, first pipe). If the desired theme is
+`metro` (Paris, `{ id: 3 }`, first pipe), and `tube` (London, `{ id: 2 }`, first pipe). If the desired theme is
 absent, press R to regenerate the world, then rerun the room snippet. Flight worlds
 and Virginia have no pipe rooms. Use the actual exit pipe to check the return.
 Append `?touch=1` to the local URL to check the touch layout; this does not replace
 real-device testing. These are developer-console calls to existing scene APIs;
 no diagnostic routes or cheats are added to the shipped game.
+
+For the new scenery, test Amsterdam **1**, Tokyo **4** and Sydney **5**. Transit
+starts on entry and continues during play. Tokyo keeps flight controls.
+Australia's beach opens the scenic route; outback and Uluru appear farther along,
+then the coast returns. `AH.Art.sceneryRoutes[level.L.region]` lists the guaranteed
+stops as `[fractionOfSceneryStrip, textureKey, optionalBaseY]`; they are not collision platforms.
 
 To find a Rogue Hacker, start a street world or Virginia (`{ id: 10 }`) and use
 `console.table(AHGame.scene.getScene('Level').L.enemies.filter(e => e.type === 'hacker'))`
@@ -185,26 +198,44 @@ positions vary.
 
 To hear a specific track, run `AH.Audio.music('metro')` (see Music below).
 
+To jump straight to a world's boss fight, start the world as above, then run
+`const L = AHGame.scene.getScene('Level'); L.player.sprite.body.reset(L.L.boss.trigger + 30, 200);`
+(flight worlds: `L.startBoss()`). Step back from a combo, move away from a jump kick
+or stay on the ground under an uppercut: the boss should show WHIFF / OPEN and take hits.
+
 Collect 5 MFA tokens for an extra life. Every enemy takes 2 hits and drops an Azure Credit. Best score, unlocked levels and the resume point are stored in `localStorage`, and synced to your account when you are logged in.
 
 ## Music
 
-Music is a synthesised chiptune engine (`systems/audio.js`, Web Audio only, no audio
-files). A lookahead scheduler plays multi-section songs written as per-bar chords and
-melody strings; bass, chords and drums are generated from style patterns, on a music
-bus with a compressor and echo below the sound effects.
+Choose **dance, jazz, country, blues or rock** by pressing **N** or tapping the
+**MUSIC** button on the title screen, world map, Hero Lab, leaderboard, or during a
+level (including pause). The button shows the current style and cycles through the
+choices. The selection is saved on this device only, separately from game progress;
+it is not synced to an online account. If browser storage is unavailable, the
+selection lasts for the current session.
+
+The original soundtrack is synthesised locally with Web Audio; no audio files are
+downloaded. **Dance** is the default, with house and melodic trance at 126-138 BPM,
+offbeat bass, filtered synths, short breakdowns and drops. **Jazz** has swung piano
+and walking bass; **country** has twangy guitar and alternating bass; **blues** has
+swung guitar, organ and 12-bar progressions; **rock** has electric-style guitars,
+power chords and a driving backbeat. Each style has distinct title, world, challenge
+and boss arrangements. Kick-ducking applies only to dance; a filtered echo and
+compressor help keep music below sound effects.
 
 | Track | Where |
 |-------|-------|
 | `title` | Title screen and world map |
-| `main` | Street levels; Paris plays a musette waltz, Amsterdam a street organ, London a march and Tokyo a koto theme. Other regions use the default theme. |
+| `main` | Worlds. Dance has regional tracks for Paris, London, Amsterdam and Tokyo. |
 | `pipe` | Cloud challenge rooms |
-| `metro` | The Paris Metro room (swing manouche) |
-| `bonus` | Secret bonus rooms |
+| `metro` | Paris Metro and London Underground (the challenge arrangement outside dance) |
+| `bonus` | Secret bonus rooms (the title arrangement outside dance) |
 | `boss` | Boss arenas |
 
-`AH.Audio.music(kind, region)` starts a track; calling it again with the same track
-does not restart it, and `music(null)` stops. M mutes music and effects.
+`AH.Audio.music(kind, region)` starts the selected style's track; calling it again
+with the same track does not restart it, and `music(null)` stops. For debugging,
+`AH.Audio.setStyle('jazz')` switches styles without changing the current context.
+M mutes both music and effects.
 
 ## Controls
 
@@ -220,6 +251,7 @@ does not restart it, and `music(null)` stops. M mutes music and effects.
 | MFA Shield (blocks shots and boss hits from the front, works in the air) | E | Shield button |
 | Crouch guard (low shield) | Down / S while standing still | Duck button |
 | Pause / Restart / Mute | P or Esc / R / M | Pause button |
+| Change music style | N | MUSIC button |
 | Help (Hero Handbook) | H (title and in game) | HELP button |
 | Quit to title | Q, or QUIT in the pause menu | Pause > QUIT |
 | Enter pipe | Down on a pipe | Stand still on the pipe |
@@ -274,9 +306,6 @@ Accounts only appear when the page is served by `server.js`. On a static host th
 
 Passwords are hashed with salted scrypt, tokens are random, stored as SHA-256 hashes and expire after 30 days. Requests are rate limited, input is validated and only the game files are served. Data is stored in `DATA_DIR/heroes.json`.
 
-![Leaderboard](docs/screenshots/leaderboard.png)
-![Log in or register](docs/screenshots/login.png)
-
 ## Deploy
 
 ### Azure App Service (accounts + leaderboard)
@@ -289,7 +318,11 @@ Passwords are hashed with salted scrypt, tokens are random, stored as SHA-256 ha
 
 2. Set the app setting `DATA_DIR=/home/data` so the store lives on persistent storage (`az webapp config appsettings set --name <app-name> --resource-group <rg> --settings DATA_DIR=/home/data`).
 3. The startup command is `npm start` (App Service runs it by default because `package.json` has a `start` script). App Service provides `PORT`.
-4. For continuous deployment, `.github/workflows/azure-app-service.yml` runs the tests and deploys on every push to `main`. Add the repository variable `AZURE_WEBAPP_NAME` and the secret `AZURE_WEBAPP_PUBLISH_PROFILE`.
+4. On pushes to `main` or a manual run, `.github/workflows/azure-app-service.yml`
+   runs the tests. The deploy job runs after they pass when repository variable
+   `AZURE_WEBAPP_NAME` is set; it also needs the secret `AZURE_WEBAPP_PUBLISH_PROFILE`.
+   The job uses the `production` environment, whose branch and approval protections
+   must be configured in GitHub as described in [SECURITY.md](SECURITY.md).
 
 The JSON store is designed for a single instance. To scale out to more instances, move the store to Azure Table Storage or Cosmos DB.
 
@@ -300,34 +333,17 @@ The JSON store is designed for a single instance. To scale out to more instances
 
 ## Screenshots
 
-![Title with Continue](docs/screenshots/title-continue.png)
-![Hero Lab](docs/screenshots/hero-lab.png)
-![Female hero on the title screen](docs/screenshots/title-female.png)
-![Amsterdam](docs/screenshots/world1.png)
-![Amsterdam landmarks](docs/screenshots/amsterdam-landmarks.png)
-![Amsterdam pull-up bridge](docs/screenshots/amsterdam-drawbridge.png)
-![London Thames](docs/screenshots/london-thames.png)
-![London](docs/screenshots/world2.png)
-![Paris](docs/screenshots/world3.png)
-![Paris secret Metro bonus](docs/screenshots/secret-paris.png)
-![Tokyo](docs/screenshots/world4.png)
-![Sydney](docs/screenshots/world5.png)
-![Venice](docs/screenshots/world6.png)
-![Rio](docs/screenshots/world7.png)
-![Mexico City](docs/screenshots/world8.png)
-![Redmond](docs/screenshots/world9.png)
-![Virginia Data Center](docs/screenshots/world10.png)
-![Sunrise](docs/screenshots/tod-sunrise.png)
-![Night](docs/screenshots/tod-night.png)
-![Azure Pipelines bonus zone](docs/screenshots/pipe-zone.png)
-![Ransomware charger](docs/screenshots/enemy-ransomware.png)
-![DDoS botnet](docs/screenshots/enemy-botnet.png)
-![Game over with world rank](docs/screenshots/game-over-rank.png)
-![Windmill Titan](docs/screenshots/boss1.png)
-![Bearskin Sentinel](docs/screenshots/boss2.png)
-![Sumo Shogun](docs/screenshots/boss3.png)
-![Boxing Roo](docs/screenshots/boss4.png)
-![Carnaval Rei](docs/screenshots/boss5.png)
-![CyberGuardian](docs/screenshots/boss6.png)
+These guest-mode captures show a selection of worlds and challenges; generated
+layouts vary. Some rooms were entered using the documented developer-console
+teleport rather than a full playthrough.
+
+![Hero Lab with the Cloud Hacker outfit](docs/screenshots/hero-lab.png)
+![Amsterdam Canal Run](docs/screenshots/world1.png)
+![Tokyo Skyway Pursuit](docs/screenshots/world4.png)
+![Sydney Harbour Run](docs/screenshots/world5.png)
+![GitHub Actions challenge](docs/screenshots/cloud-actions.png)
+![Docker Image Dock challenge](docs/screenshots/cloud-docker.png)
+![London Underground challenge](docs/screenshots/london-underground.png)
+![Paris Metro challenge](docs/screenshots/paris-metro.png)
 
 Read the write-up in [docs/article.md](docs/article.md).

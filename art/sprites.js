@@ -2468,171 +2468,434 @@ const CL = GEAR === 'clogs' ? (y0, y1) => lg(g, 0, y0, 0, y1, [[0, '#fff090'], [
   }
   Object.keys(SKINS).forEach(regSkins);
 
-  /* ---- local bosses (64x80, three states each) */
-  function bossReg(kind, draw) {
-    [['_0', 'idle'], ['_attack', 'attack'], ['_stun', 'stun']].forEach(function (m) {
+  /* ---- street-fighter bosses: one 64x80 rig, faces left, feet on y 79.
+     Frames per kind: _0/_1 guard bob, _walk, _attack jab, _kick, _jump dive kick, _upper, _stun. */
+  const FIGHT_POSE = {
+    idle: { hip: [33, 51], sh: [31, 30], head: [29, 18], fk: [24, 64], ff: [19, 78], bk: [41, 64], bf: [46, 78], fe: [22, 38], fh: [17, 28], be: [38, 40], bh: [28, 32] },
+    walk: { hip: [32, 50], sh: [30, 29], head: [28, 17], fk: [22, 62], ff: [13, 77], bk: [40, 64], bf: [49, 78], fe: [20, 37], fh: [15, 27], be: [37, 39], bh: [27, 31] },
+    attack: { hip: [35, 51], sh: [27, 30], head: [23, 19], fk: [21, 63], ff: [13, 78], bk: [43, 64], bf: [52, 78], fe: [15, 30], fh: [4, 29], be: [32, 39], bh: [22, 33] },
+    kick: { hip: [37, 49], sh: [43, 30], head: [47, 18], fk: [21, 47], ff: [6, 44], bk: [37, 63], bf: [37, 78], fe: [37, 37], fh: [31, 31], be: [49, 38], bh: [54, 46] },
+    jump: { hip: [36, 40], sh: [43, 22], head: [47, 11], fk: [24, 50], ff: [12, 62], bk: [42, 52], bf: [50, 58], fe: [36, 30], fh: [30, 26], be: [50, 30], bh: [54, 22] },
+    upper: { hip: [32, 48], sh: [30, 27], head: [34, 15], fk: [24, 61], ff: [20, 78], bk: [39, 62], bf: [45, 77], fe: [21, 18], fh: [18, 6], be: [39, 37], bh: [35, 42] },
+    stun: { hip: [34, 53], sh: [37, 33], head: [40, 22], fk: [28, 66], ff: [23, 78], bk: [40, 66], bf: [45, 78], fe: [30, 43], fh: [27, 53], be: [44, 43], bh: [45, 53] }
+  };
+  FIGHT_POSE.bob = {};
+  Object.keys(FIGHT_POSE.idle).forEach(function (k) {
+    const v = FIGHT_POSE.idle[k], foot = k === 'ff' || k === 'bf', knee = k === 'fk' || k === 'bk';
+    FIGHT_POSE.bob[k] = [v[0] + (k === 'fk' ? -0.7 : k === 'bk' ? 0.7 : 0), v[1] + (foot ? 0 : knee ? 1 : 1.7)];
+  });
+  const FIGHT_FRAMES = [['_0', 'idle'], ['_1', 'bob'], ['_walk', 'walk'], ['_attack', 'attack'], ['_kick', 'kick'], ['_jump', 'jump'], ['_upper', 'upper'], ['_stun', 'stun']];
+  const FSKIN = {
+    tan: { l: '#ecb48a', m: '#c27f56', d: '#7a4a2e' },
+    pale: { l: '#f6d4bc', m: '#d8a486', d: '#925e46' },
+    olive: { l: '#deb084', m: '#b07e54', d: '#6a442a' },
+    brown: { l: '#c48c5e', m: '#8c5a36', d: '#4c2e1a' },
+    deep: { l: '#9c6a48', m: '#6a4228', d: '#38200f' }
+  };
+  function fPal(l, m, d) { return { l: l, m: m, d: d }; }
+  function fDark(c) { return { l: c.m, m: c.d, d: lerpCol(c.d, '#000000', 0.4) }; }
+  function fAt(a, b, t) { return [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t]; }
+  function fUnit(a, b) { const dx = b[0] - a[0], dy = b[1] - a[1], L = Math.hypot(dx, dy) || 1; return [dx / L, dy / L]; }
+  function fLimb(g, a, b, w, c) { limb(g, a[0], a[1], b[0], b[1], w, c.d, c.m, c.l); }
+  function fStar(g, x, y, r, col) {
+    poly(g, [[x, y - r], [x + r * 0.3, y - r * 0.3], [x + r, y], [x + r * 0.3, y + r * 0.3], [x, y + r], [x - r * 0.3, y + r * 0.3], [x - r, y], [x - r * 0.3, y - r * 0.3]], col);
+  }
+  // torso frame along the spine: at(t, w) -> point, t 0 = hip .. 1 = shoulder, w > 0 = back side
+  function fFrame(P, F) {
+    const h = P.hip, s = P.sh, dx = s[0] - h[0], dy = s[1] - h[1], L = Math.hypot(dx, dy) || 1, nx = -dy / L, ny = dx / L;
+    const W = F.fem ? { s: 7.4, c: 7.8, w: 4.9, h: 7.6 } : { s: 10.6, c: 10.6, w: 7.4, h: 7.8 };
+    return { W: W, at: function (t, w) { return [h[0] + dx * t + nx * w, h[1] + dy * t + ny * w]; } };
+  }
+  function fTorsoPath(g, T) {
+    const W = T.W, at = T.at, pts = [at(1, W.s), at(0.72, W.c), at(0.35, W.w), at(0, W.h), at(0, -W.h), at(0.35, -W.w), at(0.72, -W.c), at(1, -W.s)];
+    g.beginPath(); g.moveTo(pts[0][0], pts[0][1]); pts.slice(1).forEach((p) => g.lineTo(p[0], p[1])); g.closePath();
+    return pts;
+  }
+  function fTorso(g, P, F, T) {
+    const W = T.W, at = T.at, sk = F.skin, top = F.topC, acc = F.accent, sh = P.sh, hp = P.hip;
+    const grad = (c) => lg(g, sh[0] - 10, sh[1], hp[0] + 10, hp[1], [[0, c.l], [0.55, c.m], [1, c.d]]);
+    const body = F.top === 'bare' || F.top === 'tank' || F.top === 'harness' ? sk : F.top === 'waistcoat' ? F.top2 : top;
+    fTorsoPath(g, T); g.fillStyle = grad(body); g.fill();
+    g.save(); fTorsoPath(g, T); g.clip();
+    if (body === sk) {
+      // pecs, abs and a lit edge on the bare chest
+      g.globalAlpha = 0.55;
+      const c1 = at(0.78, -W.c + 1.5), c2 = at(0.7, 0), c3 = at(0.78, W.c - 1.5);
+      g.strokeStyle = sk.d; g.lineWidth = 0.9; g.beginPath(); g.moveTo(c1[0], c1[1]); g.quadraticCurveTo(at(0.6, -4)[0], at(0.6, -4)[1], c2[0], c2[1]);
+      g.quadraticCurveTo(at(0.6, 4)[0], at(0.6, 4)[1], c3[0], c3[1]); g.stroke();
+      [0.48, 0.32, 0.17].forEach(function (t) { const a = at(t, -2.6), b = at(t, 2.6); line(g, a[0], a[1], b[0], b[1], 0.7, sk.d); });
+      const m1 = at(0.62, 0), m2 = at(0.08, 0); line(g, m1[0], m1[1], m2[0], m2[1], 0.6, sk.d);
+      g.globalAlpha = 1;
+      const e1 = at(0.95, -W.s + 1.2), e2 = at(0.4, -W.w + 0.6); line(g, e1[0], e1[1], e2[0], e2[1], 1, 'rgba(255,240,220,0.45)');
+      if (F.tattoo) {
+        g.globalAlpha = 0.9;
+        const t1 = at(0.86, 1.5), t2 = at(0.72, 4.5), t3 = at(0.5, 4.5), t4 = at(0.62, -5), t5 = at(0.82, -5.5);
+        [[t1, t2], [t2, t3], [t4, t5]].forEach((s) => line(g, s[0][0], s[0][1], s[1][0], s[1][1], 0.7, acc));
+        [t3, t5, t1].forEach((p) => ell(g, p[0], p[1], 0.9, 0.9, '#ffffff'));
+        g.globalAlpha = 1;
+      }
+    }
+    if (F.top === 'tank') {
+      const pts = [at(1.02, -W.s + 2.6), at(1.02, -W.s + 4.4), at(0.8, -2.4), at(0.8, 2.4), at(1.02, W.s - 4.4), at(1.02, W.s - 2.6), at(0.7, W.c), at(0, W.h + 1), at(0, -W.h - 1), at(0.7, -W.c)];
+      poly(g, pts, grad(top));
+      const lp = at(0.52, -1.5); rrect(g, lp[0] - 3.4, lp[1] - 2.4, 6.8, 4.6, 1, acc); ell(g, lp[0], lp[1] - 0.2, 1.4, 1.4, '#0a1a10');
+    } else if (F.top === 'waistcoat') {
+      const pts = [at(1.02, -W.s), at(1.02, -3.4), at(0.55, 0), at(1.02, 3.4), at(1.02, W.s), at(0, W.h + 1), at(-0.06, 0), at(0, -W.h - 1)];
+      poly(g, pts, grad(top));
+      const n1 = at(1.02, -0.6), n2 = at(0.7, -0.4); line(g, n1[0], n1[1], n2[0], n2[1], 2, F.tie || '#7a1020');
+      [0.46, 0.32, 0.18].forEach((t) => { const p = at(t, -0.3); ell(g, p[0], p[1], 0.8, 0.8, '#ffd23f'); });
+      const w1 = at(0.3, -0.3), w2 = at(0.22, -W.w), w3 = at(0.36, -W.w + 1);
+      g.strokeStyle = '#ffd23f'; g.lineWidth = 0.6; g.beginPath(); g.moveTo(w1[0], w1[1]); g.quadraticCurveTo(w2[0], w2[1] + 2, w3[0], w3[1]); g.stroke();
+      for (let i = 0; i < 6; i++) { const a = at(0.15 + i * 0.13, W.s - 2), b = at(0.15 + i * 0.13, -W.s + 2); line(g, a[0], a[1], b[0], b[1], 0.3, 'rgba(255,255,255,0.12)'); }
+    } else if (F.top === 'jacket') {
+      const pts = [at(1.04, -3.4), at(0.6, -1.4), at(0, -2.4), at(0, 2.6), at(0.6, 1.4), at(1.04, 3.4)];
+      poly(g, pts, lg(g, sh[0], sh[1], hp[0], hp[1], [[0, F.top2.l], [1, F.top2.d]]));
+      const lp = at(0.66, 0); fStar(g, lp[0], lp[1], 2.2, acc);
+      [[1.02, -W.s + 0.6, 0.72, -3.6, 1.04, -3.4], [1.02, W.s - 0.6, 0.72, 3.6, 1.04, 3.4]].forEach(function (q) {
+        const a = at(q[0], q[1]), b = at(q[2], q[3]), c = at(q[4], q[5]); poly(g, [a, b, c], top.l);
+      });
+      for (let i = 0; i < 4; i++) { const p = at(0.2 + i * 0.18, -2.6); ell(g, p[0], p[1], 0.5, 0.5, '#d8dce8'); }
+      const z = at(0.95, 2.8), z2 = at(0.05, 2.8); line(g, z[0], z[1], z2[0], z2[1], 0.5, '#c8ccd8');
+    } else if (F.top === 'stripe') {
+      for (let y = sh[1] - 12; y < hp[1] + 4; y += 3.2) { g.fillStyle = F.top2.m; g.fillRect(0, y, 64, 1.4); }
+      const n1 = at(1.02, -W.s + 1.6), n2 = at(0.94, 0), n3 = at(1.02, W.s - 1.6);
+      poly(g, [n1, n2, n3], sk.m);
+    } else if (F.top === 'gi') {
+      const a = at(1.02, -4), b = at(0.45, 1.4), c = at(1.02, 3.4);
+      poly(g, [a, b, c], sk.m); line(g, a[0], a[1], b[0], b[1], 1.6, F.top2.l); line(g, c[0], c[1], b[0], b[1], 1.4, F.top2.m);
+      const f1 = at(0.8, W.s), f2 = at(0.2, W.h); line(g, f1[0], f1[1], f2[0], f2[1], 0.6, 'rgba(0,0,0,0.35)');
+    } else if (F.top === 'harness') {
+      const a = at(1, -W.s + 1), b = at(0.08, W.h - 1); line(g, a[0], a[1], b[0], b[1], 2.4, '#5a3214'); line(g, a[0], a[1], b[0], b[1], 0.6, '#a8703a');
+      const r = at(0.6, 0.6); ell(g, r[0], r[1], 2, 2, '#d8c070'); ell(g, r[0], r[1], 1, 1, '#5a3214');
+    }
+    g.restore();
+    // belt
+    const b1 = at(0.06, -W.h - 0.6), b2 = at(0.06, W.h + 0.6), b3 = at(-0.08, W.h + 0.8), b4 = at(-0.08, -W.h - 0.8);
+    poly(g, [b1, b2, b3, b4], F.belt || '#1a1a22');
+    if (F.buckle) { const k = at(-0.01, -1.2); rrect(g, k[0] - 3.2, k[1] - 2, 6.4, 4, 1, lg(g, k[0], k[1] - 2, k[0], k[1] + 2, GOLD)); ell(g, k[0], k[1], 1.3, 1.2, F.accent); }
+  }
+  function fHand(g, e, h, F, back) {
+    const u = fUnit(e, h), x = h[0] + u[0] * 1.3, y = h[1] + u[1] * 1.3, sk = back ? fDark(F.skin) : F.skin;
+    const wx = h[0] - u[0] * 2.2, wy = h[1] - u[1] * 2.2, px = -u[1], py = u[0];
+    if (F.hands === 'gloves') {
+      const c = back ? fDark(F.handC) : F.handC;
+      ell(g, wx, wy, 3.4, 3.4, '#f2f2f2');
+      ell(g, x, y, 5.2, 4.8, lg(g, x - 5, y - 5, x + 5, y + 5, [[0, c.l], [0.5, c.m], [1, c.d]]));
+      ell(g, x - 1.6, y - 1.8, 1.8, 1.1, 'rgba(255,255,255,0.55)');
+      return;
+    }
+    const fist = F.hands === 'fingerless' || F.hands === 'cestus' ? (back ? fDark(F.handC) : F.handC) : sk;
+    ell(g, x, y, 3.6, 3.3, lg(g, x - 3, y - 3, x + 3, y + 3, [[0, fist.l], [0.6, fist.m], [1, fist.d]]));
+    if (F.hands === 'fingerless') { ell(g, x + u[0] * 2, y + u[1] * 2, 2, 1.8, sk.m); }
+    if (F.hands === 'wraps' || F.hands === 'brass') line(g, wx + px * 2.6, wy + py * 2.6, wx - px * 2.6, wy - py * 2.6, 2.2, F.wrapC || '#f4f0e8');
+    if (F.hands === 'wraps') line(g, x + px * 2.8, y + py * 2.8, x - px * 2.8, y - py * 2.8, 1.2, F.wrapC || '#f4f0e8');
+    if (F.hands === 'brass') { line(g, x + u[0] * 2 + px * 3, y + u[1] * 2 + py * 3, x + u[0] * 2 - px * 3, y + u[1] * 2 - py * 3, 1.6, '#e8c050'); }
+    if (F.hands === 'cestus') { [-1.6, 1.6].forEach((o) => ell(g, x + u[0] * 2 + px * o, y + u[1] * 2 + py * o, 0.8, 0.8, '#e8e8f0')); }
+  }
+  function fArm(g, s, e, h, F, back) {
+    const sk = back ? fDark(F.skin) : F.skin, sl = F.sleeveC && (back ? fDark(F.sleeveC) : F.sleeveC);
+    const uw = F.fem ? 5.4 : 8, fw = F.fem ? 4.6 : 6.8;
+    const kind = F.sleeve || 'none';
+    if (kind === 'long') { fLimb(g, s, e, uw + 0.6, sl); fLimb(g, e, h, fw + 0.6, sl); }
+    else if (kind === 'gi') { fLimb(g, e, fAt(e, h, 0.4), fw, sk); fLimb(g, fAt(e, h, 0.35), h, fw - 0.4, sk); fLimb(g, s, e, uw + 2, sl); fLimb(g, e, fAt(e, h, 0.38), fw + 3, sl); }
+    else if (kind === 'rolled') { fLimb(g, e, h, fw, sk); fLimb(g, s, e, uw + 0.6, sl); const c = fAt(s, e, 0.96); ell(g, c[0], c[1], 3.6, 3.2, sl.l); }
+    else {
+      fLimb(g, s, e, uw, sk); fLimb(g, e, h, fw, sk);
+      if (!F.fem) { const m = fAt(s, e, 0.45); ell(g, m[0], m[1], uw * 0.42, uw * 0.36, 'rgba(255,240,220,0.22)'); }
+      if (kind === 'short') fLimb(g, s, fAt(s, e, 0.5), uw + 1.4, sl);
+    }
+    if (F.manica && !back) { for (let i = 0; i < 3; i++) { const p = fAt(s, e, 0.15 + i * 0.3); ell(g, p[0], p[1], 3.8, 2.4, i % 2 ? '#c8ccd8' : '#9aa0b4'); } }
+    if (F.tattoo && !back) { const a = fAt(s, e, 0.25), b = fAt(s, e, 0.8); line(g, a[0], a[1], b[0], b[1], 0.6, F.accent); }
+    fHand(g, e, h, F, back);
+  }
+  function fFoot(g, k, f, F, back) {
+    const u = fUnit(k, f), side = Math.abs(u[0]) > Math.abs(u[1]);
+    const sk = back ? fDark(F.skin) : F.skin, fc = F.footC && (back ? fDark(F.footC) : F.footC);
+    const cx = side ? f[0] + u[0] * 0.6 : f[0] - 2.4, cy = side ? f[1] : f[1] - 1.5, rx = side ? 2.4 : 4.6, ry = side ? 4.4 : 2.3;
+    const kind = F.feet || 'bare';
+    if (kind === 'bare' || kind === 'sandal') {
+      ell(g, cx, cy, rx, ry, lg(g, cx - rx, cy - ry, cx + rx, cy + ry, [[0, sk.l], [1, sk.d]]));
+      const a = fAt(k, f, 0.86); ell(g, a[0], a[1], 3.6, 1.6, kind === 'sandal' ? '#6a3a14' : (F.wrapC || '#f4f0e8'));
+    } else {
+      ell(g, cx, cy, rx + 0.6, ry + 0.4, lg(g, cx - rx, cy - ry, cx + rx, cy + ry, [[0, fc.l], [0.5, fc.m], [1, fc.d]]));
+      if (!side) { g.fillStyle = 'rgba(0,0,0,0.55)'; g.fillRect(cx - rx - 0.6, cy + ry - 0.6, rx * 2 + 1.2, 1); }
+    }
+  }
+  function fLeg(g, hp, k, f, F, back) {
+    const sk = back ? fDark(F.skin) : F.skin, lc = back ? fDark(F.legC) : F.legC;
+    const tw = F.fem ? 7 : 9.4, sw = F.fem ? 5.4 : 7.2, legs = F.legs;
+    const boot = F.feet === 'boots' || F.feet === 'greaves';
+    if (legs === 'shorts' || legs === 'skirt') {
+      fLimb(g, hp, k, tw, sk); fLimb(g, k, f, sw, sk);
+      if (legs === 'shorts') {
+        const m = fAt(hp, k, 0.66); fLimb(g, hp, m, tw + 3.6, lc);
+        const u = fUnit(hp, k), px = -u[1] * (tw + 3.6) / 2, py = u[0] * (tw + 3.6) / 2;
+        line(g, m[0] + px, m[1] + py, m[0] - px, m[1] - py, 1.2, F.accent);
+      }
+    } else {
+      const w2 = legs === 'gi' ? 2.6 : legs === 'tights' ? -0.6 : 0.8;
+      fLimb(g, hp, k, tw + w2, lc); fLimb(g, k, fAt(k, f, boot ? 0.6 : 0.92), sw + w2, lc);
+      if (legs === 'gi') { const a = fAt(k, f, 0.86); ell(g, a[0], a[1], 4.6, 2.2, lc.m); }
+      if (F.legStripe) { line(g, hp[0] + 2, hp[1], k[0] + 2, k[1], 0.8, F.legStripe); line(g, k[0] + 2, k[1], f[0] + 1.5, f[1] - 3, 0.8, F.legStripe); }
+    }
+    if (boot) {
+      const c = back ? fDark(F.footC) : F.footC;
+      fLimb(g, fAt(k, f, F.feet === 'greaves' ? 0.12 : 0.5), fAt(k, f, 0.9), sw + 1.2, c);
+      if (F.feet === 'greaves') { const m = fAt(k, f, 0.4); ell(g, m[0] - 1, m[1], 2, 4, 'rgba(255,255,255,0.35)'); }
+    }
+    fFoot(g, k, f, F, back);
+  }
+  function fHead(g, P, F, S) {
+    const hx = P.head[0], hy = P.head[1], sk = F.skin, hc = F.hairC || '#1a1410', acc = F.accent;
+    // hair that hangs behind the head
+    if (F.hair === 'ponytail') { limb(g, hx + 4, hy - 3, hx + 11, hy + 6, 4, '#000', hc, null); limb(g, hx + 11, hy + 6, hx + 9, hy + 15, 3, '#000', hc, null); ell(g, hx + 5, hy - 3, 2, 2, F.accent); }
+    if (F.hair === 'mullet') poly(g, [[hx + 2, hy - 2], [hx + 7.4, hy - 1], [hx + 8, hy + 9], [hx + 3, hy + 7]], hc);
+    if (F.hair === 'dreads') [0, 1, 2, 3].forEach((i) => limb(g, hx + 1 + i * 1.8, hy - 4, hx + 4 + i * 2.6, hy + 9 + (i % 2) * 2, 2, '#000', hc, null));
+    if (F.hat === 'helmet') poly(g, [[hx - 8, hy - 7], [hx - 4, hy - 15], [hx + 4, hy - 16], [hx + 10, hy - 11], [hx + 11, hy - 4], [hx + 7, hy - 8], [hx, hy - 10]], lg(g, hx, hy - 16, hx, hy - 6, [[0, '#ff4a3a'], [1, '#8a1010']]));
+    limb(g, P.sh[0] + 1, P.sh[1] + 1, hx + 1, hy + 4.6, F.fem ? 4.6 : 6.4, sk.d, sk.m, null);
+    ell(g, hx, hy, 6.3, 7.4, lg(g, hx - 6, hy - 7, hx + 6, hy + 7, [[0, sk.l], [0.6, sk.m], [1, sk.d]]));
+    if (!F.fem) poly(g, [[hx - 6.2, hy + 1], [hx - 5.4, hy + 6], [hx - 1.6, hy + 8], [hx + 3.8, hy + 6.6], [hx + 6, hy + 1.6]], lg(g, hx, hy, hx, hy + 8, [[0, sk.m], [1, sk.d]]));
+    ell(g, hx + 4.6, hy + 0.6, 1.4, 2.2, sk.d);
+    // hair caps, clipped to the skull
+    g.save(); g.beginPath(); g.ellipse(hx, hy, 6.9, 8, 0, 0, Math.PI * 2); g.clip();
+    const hairline = [[hx - 9, hy - 12], [hx + 9, hy - 12], [hx + 9, hy + 4], [hx + 3.4, hy + 3.2], [hx + 2.6, hy - 1.6], [hx - 2, hy - 3.2], [hx - 9, hy - 3.8]];
+    if (F.hair === 'buzz') { g.globalAlpha = 0.85; poly(g, hairline, hc); g.globalAlpha = 1; }
+    else if (F.hair === 'mohawk') { g.globalAlpha = 0.35; poly(g, hairline, hc); g.globalAlpha = 1; }
+    else if (F.hair && F.hair !== 'none') poly(g, hairline, lg(g, hx, hy - 8, hx, hy + 3, [[0, lerpCol(hc, '#ffffff', 0.25)], [1, hc]]));
+    if (F.face === 'balaclava') { g.fillStyle = '#121218'; g.fillRect(hx - 9, hy + 1.2, 18, 10); g.fillStyle = acc; g.fillRect(hx - 9, hy + 1.2, 18, 0.7); }
+    if (F.face === 'lucha') {
+      g.fillStyle = lg(g, hx, hy - 8, hx, hy + 8, [[0, F.faceC.l], [1, F.faceC.d]]); g.fillRect(hx - 9, hy - 10, 18, 20);
+      poly(g, [[hx - 7, hy - 1], [hx - 3, hy - 4.6], [hx + 3, hy - 4.6], [hx + 4.6, hy - 0.4], [hx + 1, hy + 1.6], [hx - 1.4, hy - 1], [hx - 4, hy + 1.6]], acc);
+      line(g, hx - 1, hy - 8, hx - 1, hy - 4.6, 1.2, acc);
+    }
+    g.restore();
+    if (F.hair === 'mohawk') { for (let i = 0; i < 5; i++) poly(g, [[hx - 5 + i * 2.6, hy - 5.6], [hx - 4.6 + i * 2.6, hy - 12 - (i % 2) * 2], [hx - 2.2 + i * 2.6, hy - 6.2]], i % 2 ? acc : lerpCol(acc, '#000000', 0.25)); }
+    if (F.hair === 'topknot') { ell(g, hx + 1.4, hy - 8.8, 2.6, 2.2, hc); line(g, hx - 0.4, hy - 7, hx + 3.2, hy - 7, 1, acc); }
+    if (F.hair === 'slick' || F.hair === 'ponytail') line(g, hx - 4, hy - 5.6, hx + 3, hy - 6.6, 0.7, 'rgba(255,255,255,0.4)');
+    // face
+    const ex1 = hx - 4, ex2 = hx + 0.8, ey = hy - 0.4;
+    const masked = F.face === 'shades' || F.face === 'domino' || F.face === 'lucha' || F.face === 'balaclava' || F.face === 'oni';
+    if (F.face === 'lucha') { [ex1, ex2].forEach((x) => ell(g, x, ey, 2.2, 1.6, '#ffffff')); }
+    if (S.stun) {
+      [ex1, ex2].forEach((x) => { line(g, x - 1.2, ey - 1, x + 1.2, ey + 1, 0.7, '#2a1a1a'); line(g, x - 1.2, ey + 1, x + 1.2, ey - 1, 0.7, '#2a1a1a'); });
+    } else {
+      [ex1, ex2].forEach((x, i) => {
+        if (masked && F.glowEyes) eyeGlow(g, x, ey, 1.1, acc);
+        ell(g, x, ey, i ? 1.3 : 1.5, 0.9, masked && F.glowEyes ? acc : '#f4f0ea');
+        ell(g, x - 0.3, ey, 0.6, 0.7, masked && F.glowEyes ? '#ffffff' : '#20140e');
+      });
+    }
+    if (F.face !== 'lucha') {
+      line(g, hx - 6.2, hy - 3.1, hx - 2.6, hy - 1.9, 1.1, F.browC || hc); line(g, hx - 0.6, hy - 2, hx + 2.8, hy - 3.1, 1.1, F.browC || hc);
+      poly(g, [[hx - 2.2, hy - 1.4], [hx - 4.2, hy + 2.4], [hx - 2.2, hy + 2.8]], sk.d);
+    }
+    if (F.scar) line(g, hx + 0.4, hy - 4.4, hx + 2, hy + 1.6, 0.6, '#c8504a');
+    if (F.facial === 'stubble') { g.globalAlpha = 0.32; poly(g, [[hx - 6, hy + 3], [hx - 1.6, hy + 7.8], [hx + 4.6, hy + 5.6], [hx + 5, hy + 2.4], [hx - 1, hy + 3.6]], hc); g.globalAlpha = 1; }
+    if (F.facial === 'beard') poly(g, [[hx - 6, hy + 2.6], [hx - 4.8, hy + 8], [hx - 1, hy + 10.4], [hx + 4.4, hy + 7.4], [hx + 5, hy + 2], [hx + 1, hy + 4.6], [hx - 3, hy + 3.6]], hc);
+    if (F.facial === 'mustache') { g.strokeStyle = hc; g.lineWidth = 1.5; g.lineCap = 'round'; g.beginPath(); g.moveTo(hx - 6.6, hy + 2.6); g.quadraticCurveTo(hx - 3, hy + 2.4, hx + 0.8, hy + 4); g.stroke(); }
+    if (F.face !== 'balaclava' && F.face !== 'oni') {
+      if (S.atk) ell(g, hx - 3, hy + 4.8, 1.6, 1.2, '#3a0e0e');
+      else line(g, hx - 4.6, hy + 4.8, hx - 1, hy + 4.4, 0.8, '#4a1e18');
+    }
+    if (F.face === 'domino') { poly(g, [[hx - 7, hy - 2.4], [hx + 3.6, hy - 2.6], [hx + 5.8, hy - 0.8], [hx + 3.6, hy + 1.4], [hx - 1.6, hy + 0.6], [hx - 6.8, hy + 1.2]], '#121218'); [ex1, ex2].forEach((x) => { if (!S.stun) { eyeGlow(g, x, ey, 0.9, acc); ell(g, x, ey, 1.1, 0.7, acc); } }); }
+    if (F.face === 'shades') {
+      poly(g, [[hx - 7.2, hy - 2.2], [hx + 4.6, hy - 2.4], [hx + 5, hy + 0.4], [hx - 1, hy + 1.2], [hx - 6.6, hy + 1.2]], '#0a0a12');
+      if (!S.stun) { g.fillStyle = acc; g.fillRect(hx - 6.6, hy - 0.8, 10.6, 0.8); eyeGlow(g, hx - 3.4, hy - 0.4, 1.2, acc); }
+    }
+    if (F.face === 'oni') {
+      poly(g, [[hx - 6.6, hy + 1.2], [hx + 4.6, hy + 1], [hx + 5.2, hy + 4.8], [hx + 1, hy + 9], [hx - 4, hy + 8.6], [hx - 6.4, hy + 5]], lg(g, hx, hy, hx, hy + 9, [[0, '#ff3a3a'], [1, '#7a0a14']]));
+      for (let i = 0; i < 4; i++) poly(g, [[hx - 5 + i * 2.2, hy + 4.6], [hx - 4 + i * 2.2, hy + 7], [hx - 3 + i * 2.2, hy + 4.6]], '#f4f0e0');
+      line(g, hx - 5.6, hy + 4.4, hx + 3.6, hy + 4.4, 0.6, '#2a0408');
+    }
+    // headwear
+    if (F.hat === 'flatcap') {
+      ell(g, hx + 0.6, hy - 4.6, 7.4, 3.8, lg(g, hx - 6, hy - 8, hx + 6, hy - 1, [[0, F.hatC.l], [0.6, F.hatC.m], [1, F.hatC.d]]));
+      poly(g, [[hx - 6.6, hy - 3.6], [hx - 11, hy - 2], [hx - 10, hy - 1], [hx - 4, hy - 1.8]], F.hatC.d); ell(g, hx + 0.4, hy - 8, 0.9, 0.7, F.hatC.l);
+      line(g, hx - 5, hy - 6.6, hx + 6, hy - 5.4, 0.4, 'rgba(255,255,255,0.25)');
+    }
+    if (F.hat === 'beret') { ell(g, hx + 2, hy - 5.8, 7.6, 3, F.hatC.m, -0.18); ell(g, hx + 0.6, hy - 6.6, 5, 1.4, F.hatC.l, -0.18); line(g, hx + 2, hy - 8.6, hx + 2.6, hy - 10, 1, F.hatC.d); }
+    if (F.hat === 'bandana') { rrect(g, hx - 6.6, hy - 5.6, 13.2, 2.6, 1, F.hatC.m); limb(g, hx + 6, hy - 4.4, hx + 10, hy - 1, 1.6, F.hatC.d, F.hatC.m, null); limb(g, hx + 6, hy - 4.4, hx + 10.6, hy - 5.6, 1.6, F.hatC.d, F.hatC.m, null); }
+    if (F.hat === 'helmet') {
+      g.save(); g.beginPath(); g.ellipse(hx, hy, 7.6, 8.6, 0, 0, Math.PI * 2); g.clip();
+      poly(g, [[hx - 9, hy - 10], [hx + 9, hy - 10], [hx + 9, hy + 9], [hx + 2.6, hy + 9], [hx + 1.4, hy + 0.4], [hx - 2.6, hy - 3.2], [hx - 9, hy - 3.6]], lg(g, hx - 7, hy - 8, hx + 7, hy + 6, [[0, '#f4f4fa'], [0.4, '#b4b8c8'], [1, '#4a4e64']]));
+      g.restore();
+      rrect(g, hx - 7.8, hy - 4.6, 15.6, 1.8, 0.8, lg(g, 0, hy - 5, 0, hy - 3, GOLD));
+      line(g, hx + 2, hy - 2, hx + 3, hy + 7, 0.6, 'rgba(0,0,0,0.45)');
+    }
+  }
+  function fighterReg(kind, F) {
+    FIGHT_FRAMES.forEach(function (m) {
       reg2('boss_' + kind + m[0], 64, 80, function (g) {
-        const S = { atk: m[1] === 'attack', stun: m[1] === 'stun', up: m[1] === 'attack' ? 10 : 0, eye: m[1] === 'stun' ? '#6a6a80' : EYE };
-        draw(g, S);
-        if (S.stun) {
-          g.globalCompositeOperation = 'source-atop'; g.fillStyle = 'rgba(70,70,100,0.35)'; g.fillRect(0, 0, 64, 80); g.globalCompositeOperation = 'source-over';
-          [[7, 10], [53, 6], [45, 2], [20, 1]].forEach((p) => poly(g, [[p[0], p[1] - 3.4], [p[0] + 1, p[1] - 1], [p[0] + 3.4, p[1]], [p[0] + 1, p[1] + 1], [p[0], p[1] + 3.4], [p[0] - 1, p[1] + 1], [p[0] - 3.4, p[1]], [p[0] - 1, p[1] - 1]], '#ffd23f'));
+        const P = FIGHT_POSE[m[1]], S = { atk: m[1] === 'attack' || m[1] === 'kick' || m[1] === 'upper' || m[1] === 'jump', stun: m[1] === 'stun', pose: m[1] };
+        const T = fFrame(P, F), W = T.W, acc = F.accent;
+        if (F.air) hoverPlate(g, F.plate[0], F.plate[1], F.plate[2], m[1] === 'jump' ? -8 : 0);
+        if (F.back) F.back(g, P, T, S);
+        fArm(g, T.at(0.94, W.s - 2.4), P.be, P.bh, F, true);
+        fLeg(g, T.at(0, 3), P.bk, P.bf, F, true);
+        fLeg(g, T.at(0, -3), P.fk, P.ff, F, false);
+        if (F.legs !== 'skirt') ell(g, P.hip[0], P.hip[1] + 1, W.h + 1.6, 4.4, lg(g, 0, P.hip[1] - 4, 0, P.hip[1] + 5, [[0, F.legC.l], [1, F.legC.d]]));
+        else { for (let i = -3; i <= 3; i++) { const a = T.at(-0.02, i * 2.4); rrect(g, a[0] - 1.1, a[1], 2.2, 7.4, 0.6, i % 2 ? '#8a5228' : '#6a3a18'); } }
+        fTorso(g, P, F, T);
+        fHead(g, P, F, S);
+        fArm(g, T.at(0.94, -W.s + 2.4), P.fe, P.fh, F, false);
+        if (F.front) F.front(g, P, T, S);
+        // motion: speed lines and impact flashes in the strike frames
+        g.globalAlpha = 0.75;
+        if (m[1] === 'attack') { for (let i = 0; i < 3; i++) line(g, P.fh[0] + 6 + i, P.fh[1] - 3 + i * 3, P.fh[0] + 16 - i * 2, P.fh[1] - 3 + i * 3, 0.8, acc); fStar(g, P.fh[0] - 3, P.fh[1], 4, 'rgba(255,255,255,0.85)'); }
+        if (m[1] === 'kick') {
+          // swept arc of the kicking foot, from the floor up to the strike
+          const hx = P.hip[0], hy = P.hip[1], r = Math.hypot(P.ff[0] - hx, P.ff[1] - hy), a1 = Math.atan2(P.ff[1] - hy, P.ff[0] - hx), a0 = a1 - 1.05;
+          g.globalAlpha = 0.35; g.fillStyle = acc; g.beginPath(); g.arc(hx, hy, r + 3, a0, a1, false); g.arc(hx, hy, r - 6, a1, a0, true); g.closePath(); g.fill();
+          g.globalAlpha = 0.85; g.strokeStyle = acc; g.lineWidth = 1; g.beginPath(); g.arc(hx, hy, r + 3, a0, a1, false); g.stroke();
+          fStar(g, P.ff[0] - 3, P.ff[1], 4, 'rgba(255,255,255,0.85)');
         }
-      }, { shade: 0.5 });
+        if (m[1] === 'jump') { for (let i = 0; i < 4; i++) line(g, 44 + i * 4, 44 + i * 3, 56 + i * 2, 34 + i * 3, 0.8, acc); }
+        if (m[1] === 'upper') { for (let i = 0; i < 3; i++) line(g, P.fh[0] - 3 + i * 3, P.fh[1] + 8, P.fh[0] - 3 + i * 3, P.fh[1] + 18 - i * 2, 0.8, acc); eyeGlow(g, P.fh[0], P.fh[1] - 1, 2.2, acc); }
+        g.globalAlpha = 1;
+        if (S.stun) {
+          g.globalCompositeOperation = 'source-atop'; g.fillStyle = 'rgba(70,70,100,0.3)'; g.fillRect(0, 0, 64, 80); g.globalCompositeOperation = 'source-over';
+          const hx = P.head[0], hy = P.head[1] - 11;
+          [[-8, 0], [7, -2], [-1, -5]].forEach((p) => fStar(g, hx + p[0], hy + p[1], 3.2, '#ffd23f'));
+        }
+      }, { shade: 0.45 });
     });
   }
-  function bEyes(g, S, x1, x2, y, r) {
-    [x1, x2].forEach(function (x) {
-      if (!S.stun) eyeGlow(g, x, y, r * 1.6, EYE);
-      ell(g, x, y, r, r * 0.85, S.eye);
-      if (!S.stun) ell(g, x - r * 0.3, y - r * 0.3, r * 0.3, r * 0.3, '#fff');
-    });
+  function hoverPlate(g, c1, c2, glowCol, dy) {
+    dy = dy || 0;
+    ell(g, 32, 77 + dy, 24, 3.4, glowCol);
+    ell(g, 32, 73.6 + dy, 20, 3.6, lg(g, 12, 70 + dy, 52, 77 + dy, [[0, c1], [1, c2]]));
+    [[18, 77.6], [32, 78], [46, 77.6]].forEach((p) => ell(g, p[0], p[1] + dy, 3, 1.6, 'rgba(255,255,255,0.8)'));
   }
-  function hoverPlate(g, c1, c2, glowCol) {
-    ell(g, 32, 77, 24, 3.4, glowCol);
-    ell(g, 32, 73.6, 20, 3.6, lg(g, 12, 70, 52, 77, [[0, c1], [1, c2]]));
-    [[18, 77.6], [32, 78], [46, 77.6]].forEach((p) => ell(g, p[0], p[1], 3, 1.6, 'rgba(255,255,255,0.8)'));
-  }
-  const SK = { l: '#f4c8a0', m: '#d89a70', d: '#9a5a3a' };
-
-  // Tokyo: floating sumo wrestler
-  bossReg('sumo', function (g, S) {
-    const up = S.up;
-    limb(g, 23, 58, 22, 69, 12, SK.d, SK.m, SK.l); limb(g, 41, 58, 42, 69, 12, SK.d, SK.m, SK.l);
-    ell(g, 21, 71, 8, 3.2, SK.m); ell(g, 43, 71, 8, 3.2, SK.m);
-    hoverPlate(g, '#c4e6ff', '#4a6aa8', 'rgba(39,224,255,0.55)');
-    ell(g, 32, 50, 25, 20, lg(g, 8, 30, 56, 70, [[0, SK.l], [0.5, SK.m], [1, SK.d]]));
-    ell(g, 32, 56, 1.8, 1.4, SK.d); ell(g, 22, 40, 7, 5, 'rgba(255,255,255,0.18)');
-    poly(g, [[9, 56], [55, 56], [52, 64], [32, 69], [12, 64]], lg(g, 9, 56, 55, 69, [[0, '#c04bff'], [1, '#4a1a8a']]));
-    rrect(g, 9, 55, 46, 3.4, 1.4, '#ffd23f'); poly(g, [[28, 58], [36, 58], [34, 68], [30, 68]], '#ffd23f');
-    limb(g, 13, 34, 7, 46 - up, 12, SK.d, SK.m, SK.l); ell(g, 6, 52 - up, 6.4, 6, SK.l);
-    limb(g, 51, 34, 57, 46 - up, 12, SK.d, SK.m, SK.l); ell(g, 58, 52 - up, 6.4, 6, SK.l);
-    ell(g, 32, 33, 18, 8, lg(g, 14, 26, 50, 40, [[0, SK.l], [1, SK.m]]));
-    ell(g, 32, 17, 12, 11, lg(g, 20, 6, 44, 28, [[0, SK.l], [0.6, SK.m], [1, SK.d]]));
-    ell(g, 32, 7.6, 6.4, 3.8, '#14133f'); poly(g, [[28.6, 8], [32, 1], [35.4, 8]], '#14133f');
-    poly(g, [[20.4, 13], [24, 7.6], [40, 7.6], [43.6, 13], [32, 10.4]], '#14133f');
-    ell(g, 24, 22, 3, 2, 'rgba(255,120,120,0.45)'); ell(g, 40, 22, 3, 2, 'rgba(255,120,120,0.45)');
-    line(g, 24, 13.6, 29.6, 15.6, 1.4, '#14133f'); line(g, 40, 13.6, 34.4, 15.6, 1.4, '#14133f');
-    bEyes(g, S, 27, 37, 17, 2); line(g, 28, 25, 36, 25, 1, '#6a2a2a');
-    if (S.atk) { [6, 58].forEach((x) => { const gr = g.createRadialGradient(x, 50, 0, x, 50, 9); gr.addColorStop(0, 'rgba(255,255,255,0.9)'); gr.addColorStop(1, 'rgba(255,42,74,0)'); g.fillStyle = gr; g.fillRect(x - 10, 40, 20, 20); }); }
-  });
-
-  // Sydney: boxing kangaroo
-  bossReg('roo', function (g, S) {
-    const up = S.up, B = { l: '#e8a860', m: '#b8702a', d: '#6a3a10' };
-    poly(g, [[42, 58], [62, 76], [57, 79.6], [38, 70]], lg(g, 40, 58, 62, 79, [[0, B.m], [1, B.d]]));
-    ell(g, 24, 62, 10, 13, lg(g, 14, 50, 34, 74, [[0, B.l], [1, B.d]])); ell(g, 40, 62, 10, 13, lg(g, 30, 50, 50, 74, [[0, B.l], [1, B.d]]));
-    poly(g, [[8, 76], [32, 76], [34, 79.6], [4, 79.6]], '#3a2410'); poly(g, [[32, 76], [56, 76], [60, 79.6], [30, 79.6]], '#3a2410');
-    ell(g, 32, 44, 16, 20, lg(g, 16, 24, 48, 66, [[0, B.l], [0.5, B.m], [1, B.d]]));
-    ell(g, 32, 48, 9, 14, '#f8e0b8'); line(g, 26, 50, 38, 50, 1, '#c8986a');
-    rrect(g, 16, 55, 32, 4.4, 2, lg(g, 0, 55, 0, 60, GOLD)); poly(g, [[32, 55.4], [33.4, 57], [32, 58.8], [30.6, 57]], '#ff2a4a');
-    limb(g, 15, 38, 9, 48 - up, 8, B.d, B.m, B.l); ell(g, 8, 54 - up, 7.4, 6.6, lg(g, 2, 48, 14, 60, [[0, '#ff7a8a'], [1, '#a8101e']])); ell(g, 6, 51 - up, 2, 1.4, 'rgba(255,255,255,0.7)');
-    limb(g, 49, 38, 55, 48 - up, 8, B.d, B.m, B.l); ell(g, 56, 54 - up, 7.4, 6.6, lg(g, 50, 48, 62, 60, [[0, '#ff7a8a'], [1, '#a8101e']])); ell(g, 54, 51 - up, 2, 1.4, 'rgba(255,255,255,0.7)');
-    poly(g, [[24, 13], [21, 0.6], [28.6, 9]], B.m); poly(g, [[40, 13], [43, 0.6], [35.4, 9]], B.m);
-    poly(g, [[24, 11], [22.4, 3.6], [27, 9]], '#ff9ab0'); poly(g, [[40, 11], [41.6, 3.6], [37, 9]], '#ff9ab0');
-    ell(g, 32, 19, 9.6, 10, lg(g, 22, 9, 42, 29, [[0, B.l], [1, B.m]]));
-    ell(g, 32, 25.6, 6, 4.4, '#f8e0b8'); ell(g, 32, 23.6, 2, 1.4, '#2a1408');
-    rrect(g, 22, 12, 20, 3, 1.4, '#ff2a4a');
-    bEyes(g, S, 27.4, 36.6, 17.6, 1.9); line(g, 28.4, 27.6, 35.6, 27.6, 0.8, '#6a3a1a');
-  });
-
-  // London: bearskin royal guard
-  bossReg('guard', function (g, S) {
-    const up = S.up;
-    limb(g, 24, 58, 23, 70, 11, '#0a0a1c', '#1a1a38', '#3a3a6a'); limb(g, 40, 58, 41, 70, 11, '#0a0a1c', '#1a1a38', '#3a3a6a');
-    poly(g, [[14, 70], [31, 70], [33, 79.6], [10, 79.6]], lg(g, 0, 70, 0, 80, [[0, '#3a3a5a'], [1, '#050510']])); poly(g, [[33, 70], [50, 70], [54, 79.6], [31, 79.6]], lg(g, 0, 70, 0, 80, [[0, '#3a3a5a'], [1, '#050510']]));
-    line(g, 57, 22 - up, 57, 78, 2, '#c8c8d8'); poly(g, [[55, 22 - up], [57, 12 - up], [59, 22 - up]], '#ffffff');
-    limb(g, 10, 30, 8, 42 - up, 9, '#6a0a14', '#c81a2a', '#ff6a7a'); limb(g, 8, 42 - up, 8, 50 - up, 8, '#6a0a14', '#c81a2a', '#ff6a7a'); ell(g, 8, 55 - up, 6, 5.4, '#f0f0ff');
-    limb(g, 54, 30, 56, 42 - up, 9, '#6a0a14', '#c81a2a', '#ff6a7a'); limb(g, 56, 42 - up, 57, 50 - up, 8, '#6a0a14', '#c81a2a', '#ff6a7a'); ell(g, 57, 55 - up, 6, 5.4, '#f0f0ff');
-    poly(g, [[13, 26], [51, 26], [48, 62], [16, 62]], lg(g, 12, 26, 52, 62, [[0, '#ff6a7a'], [0.4, '#c81a2a'], [1, '#6a0a14']]));
-    line(g, 15, 28, 47, 58, 3, '#f0f0ff'); line(g, 49, 28, 17, 58, 3, '#f0f0ff');
-    [30, 38, 46, 54].forEach((y) => { ell(g, 32, y, 1.6, 1.6, '#ffd23f'); });
-    rrect(g, 15, 56, 34, 4.4, 1.4, '#0a0a1c'); rrect(g, 29, 55.6, 6, 5.2, 1, lg(g, 0, 55, 0, 61, GOLD));
-    ell(g, 10, 27, 8, 4.6, lg(g, 2, 22, 18, 32, GOLD)); ell(g, 54, 27, 8, 4.6, lg(g, 46, 22, 62, 32, GOLD));
-    ell(g, 32, 24, 10, 9.6, lg(g, 22, 15, 42, 34, [[0, '#ffd2ad'], [1, '#c98a66']]));
-    rrect(g, 23, 20, 18, 6, 2.4, '#0d0424'); bEyes(g, S, 27.6, 36.4, 23, 2);
-    line(g, 23, 30, 41, 30, 1.4, '#ffd23f');
-    poly(g, [[18, 20], [18.6, 5], [24, 0.8], [40, 0.8], [45.4, 5], [46, 20], [41, 16.4], [23, 16.4]], lg(g, 18, 0, 46, 20, [[0, '#5a5a7a'], [0.4, '#1a1a2a'], [1, '#050510']]));
-    [[24, 4, 22.6, 14], [30, 2.6, 29, 15], [36, 2.6, 36.6, 15], [42, 4, 42.4, 14]].forEach((l) => line(g, l[0], l[1], l[2], l[3], 0.9, 'rgba(190,190,230,0.55)'));
-    ell(g, 44, 7, 2, 5.4, '#ff2a4a');
-  });
-
-  // Amsterdam: windmill titan
-  bossReg('molen', function (g, S) {
-    const up = S.up, rot = S.atk ? 0.5 : S.stun ? 0.2 : 0.785;
-    for (let i = 0; i < 4; i++) {
-      const an = rot + i * Math.PI / 2, c = Math.cos(an), s = Math.sin(an);
-      line(g, 32, 33, 32 + c * 29, 33 + s * 29, 2.4, '#8a5a30');
-      line(g, 32 + c * 10, 33 + s * 10, 32 + c * 29, 33 + s * 29, 7, 'rgba(250,240,215,0.9)');
-      line(g, 32 + c * 10, 33 + s * 10, 32 + c * 29, 33 + s * 29, 1, 'rgba(120,80,40,0.8)');
-    }
-    limb(g, 23, 60, 22, 70, 12, '#6a3a10', '#c8842a', '#ffe08a'); limb(g, 41, 60, 42, 70, 12, '#6a3a10', '#c8842a', '#ffe08a');
-    [[11, 79.6, 34], [32, 79.6, 55]].forEach((c) => poly(g, [[c[0] + 3, 70], [c[0] + 23, 70], [c[2] + 0, 78], [c[0] - 2, 79.6]], lg(g, 0, 70, 0, 80, [[0, '#ffe08a'], [0.5, '#e0a040'], [1, '#8a5018']])));
-    rrect(g, 12, 74, 22, 2.6, 1, '#2f6bff'); rrect(g, 33, 74, 22, 2.6, 1, '#2f6bff');
-    limb(g, 12, 38, 7, 48 - up, 9, '#6a3a10', '#a86a20', '#e0a040'); ell(g, 6, 54 - up, 6.4, 5.6, lg(g, 0, 48, 12, 60, [[0, '#6fa0ff'], [1, '#14339e']]));
-    limb(g, 52, 38, 57, 48 - up, 9, '#6a3a10', '#a86a20', '#e0a040'); ell(g, 58, 54 - up, 6.4, 5.6, lg(g, 52, 48, 64, 60, [[0, '#6fa0ff'], [1, '#14339e']]));
-    poly(g, [[17, 24], [47, 24], [54, 62], [10, 62]], lg(g, 10, 24, 54, 62, [[0, '#ffb090'], [0.5, '#d86a50'], [1, '#8a2a20']]));
-    for (let r = 0; r < 6; r++) { const y = 30 + r * 5.4; line(g, 13, y, 51, y, 0.6, 'rgba(70,10,10,0.5)'); for (let x = (r % 2) * 4 + 14; x < 50; x += 8) line(g, x, y, x, y + 5.4, 0.6, 'rgba(70,10,10,0.4)'); }
-    rrect(g, 12, 56, 40, 4, 1, '#f0f0ff'); rrect(g, 27, 49, 10, 13, 4, '#6a3a10');
-    const core = S.stun ? '#555570' : '#ff5a7a', cg = g.createRadialGradient(32, 42, 0, 32, 42, 9);
-    cg.addColorStop(0, S.stun ? 'rgba(160,160,180,0.9)' : 'rgba(255,255,255,0.95)'); cg.addColorStop(0.4, core); cg.addColorStop(1, 'rgba(255,42,74,0)');
-    g.fillStyle = cg; g.fillRect(22, 32, 20, 20);
-    ell(g, 32, 33, 3.2, 3.2, '#4a2a10');
-    poly(g, [[10, 24], [32, 2], [54, 24]], lg(g, 10, 2, 54, 24, [[0, '#ff6a50'], [1, '#8a1a10']]));
-    for (let i = 0; i < 4; i++) line(g, 18 + i * 9, 20 - i * 2.4, 22 + i * 7.4, 22, 0.7, 'rgba(70,10,10,0.5)');
-    rrect(g, 21, 19, 22, 6.4, 2.4, '#0d0424'); bEyes(g, S, 27, 37, 22.2, 2.2);
-  });
-
-  // Rio: carnival king on a hovering float
-  bossReg('samba', function (g, S) {
-    const up = S.up, FC = ['#ff2a9a', '#ffd23f', '#27e0ff', '#4dff7a', '#ff7a2a'];
-    for (let i = -4; i <= 4; i++) {
-      const an = -Math.PI / 2 + i * 0.3, r = 15;
-      ell(g, 32 + Math.cos(an) * r, 20 + Math.sin(an) * r * 0.8, 11, 3.6, FC[(i + 4) % 5], an);
-      ell(g, 32 + Math.cos(an) * (r + 5), 20 + Math.sin(an) * (r + 5) * 0.8, 3.2, 1.6, '#ffffff', an);
-    }
-    hoverPlate(g, '#ff7ad9', '#7a1a8a', 'rgba(255,122,217,0.55)');
-    limb(g, 26, 58, 25, 70, 8, '#8a4a1a', '#c88040', '#ffc890'); limb(g, 38, 58, 39, 70, 8, '#8a4a1a', '#c88040', '#ffc890');
-    poly(g, [[17, 54], [47, 54], [58, 71], [6, 71]], lg(g, 6, 54, 58, 71, [[0, '#ff7ad9'], [0.5, '#c02cc9'], [1, '#4a0f5a']]));
-    for (let i = 0; i < 6; i++) line(g, 20 + i * 5, 56, 12 + i * 8, 70, 0.8, 'rgba(255,230,120,0.7)');
-    poly(g, [[19, 32], [45, 32], [42, 58], [22, 58]], lg(g, 19, 32, 45, 58, [[0, '#7dffa8'], [0.5, '#1ab85a'], [1, '#0a5a30']]));
-    for (let i = 0; i < 5; i++) line(g, 22, 38 + i * 4.4, 42, 38 + i * 4.4, 0.6, 'rgba(255,255,255,0.4)');
-    ell(g, 26, 40, 5.6, 4.6, lg(g, 20, 35, 32, 45, GOLD)); ell(g, 38, 40, 5.6, 4.6, lg(g, 32, 35, 44, 45, GOLD));
-    rrect(g, 21, 52, 22, 4, 1.4, lg(g, 0, 52, 0, 56, GOLD));
-    limb(g, 19, 36, 10, 46 - up, 7, '#8a4a1a', '#c88040', '#ffc890'); limb(g, 45, 36, 54, 46 - up, 7, '#8a4a1a', '#c88040', '#ffc890');
-    [8, 56].forEach((x) => { line(g, x, 53 - up, x, 40 - up, 1.4, '#6a3a10'); ell(g, x, 38 - up, 4.4, 5.6, lg(g, x - 4, 32 - up, x + 4, 44 - up, [[0, '#ff7a8a'], [1, '#a8101e']])); ell(g, x, 38 - up, 2, 1, '#ffd23f'); ell(g, x, 54 - up, 3, 3, '#c88040'); });
-    ell(g, 32, 23, 8.4, 9, lg(g, 24, 14, 40, 32, [[0, '#d89050'], [1, '#8a4a1a']]));
-    rrect(g, 23.4, 18.6, 17.2, 6.4, 3, lg(g, 0, 18, 0, 25, GOLD)); bEyes(g, S, 28, 36, 21.8, 1.8);
-    poly(g, [[28, 30.4], [36, 30.4], [32, 33.6]], '#ff2a4a');
-    ell(g, 32, 12.4, 3, 2.4, '#ff2a9a'); ell(g, 32, 12.4, 1.2, 1, '#ffffff');
-  });
-
-  /* ---- boss projectiles (22x12) */
   const BOLT = { noOutline: true, shade: 0 };
-  reg2('bolt_molen', 22, 12, function (g) {
-    line(g, 9, 6, 21, 6, 1.4, '#2fa84a'); poly(g, [[14, 6], [18, 2.4], [17, 6.6]], '#2fa84a');
-    poly(g, [[2.4, 2], [4, 4.4], [6, 1.4], [8, 4.4], [9.6, 2], [9.2, 8.6], [6, 11], [2.8, 8.6]], '#ff2a6a'); ell(g, 6, 6.6, 2.4, 2.8, '#ff8ab0');
-  }, Object.assign({ glow: '#ff2a6a' }, BOLT));
-  reg2('bolt_guard', 22, 12, function (g) {
-    ell(g, 11, 9.6, 9, 1.6, '#c4e6ff'); poly(g, [[3.6, 3.4], [18.4, 3.4], [16, 9.4], [6, 9.4]], lg(g, 0, 3, 0, 10, [[0, '#ffffff'], [1, '#a8b8e0']]));
-    rrect(g, 4.4, 4.6, 13.2, 1.6, 0.6, '#2f6bff'); g.lineWidth = 1.4; g.strokeStyle = '#ffffff'; g.beginPath(); g.arc(19, 6, 2.2, -1.5, 1.5); g.stroke();
-    line(g, 8, 0.8, 7, 2.6, 0.8, 'rgba(255,255,255,0.7)'); line(g, 13, 0.4, 12, 2.6, 0.8, 'rgba(255,255,255,0.7)');
-  }, Object.assign({ glow: '#7fb0ff' }, BOLT));
-  reg2('bolt_sumo', 22, 12, function (g) {
-    rrect(g, 3, 6, 17, 5, 2.2, '#ffffff');
-    rrect(g, 2, 2, 19, 5.6, 2.6, lg(g, 0, 2, 0, 8, [[0, '#ffb080'], [1, '#ff5a3a']]));
-    [[7, 2.6, 6, 7], [12, 2.6, 11, 7], [17, 2.6, 16, 7]].forEach((l) => line(g, l[0], l[1], l[2], l[3], 0.7, 'rgba(255,235,220,0.9)'));
-    rrect(g, 10, 1.6, 3, 10, 0.8, '#14301f');
-  }, Object.assign({ glow: '#ff9a5a' }, BOLT));
-  reg2('bolt_roo', 22, 12, function (g) {
-    g.lineCap = 'round'; g.lineJoin = 'round'; g.strokeStyle = '#8a4a10'; g.lineWidth = 3.8; g.beginPath(); g.moveTo(3, 2.4); g.lineTo(10, 9.4); g.lineTo(19.6, 3); g.stroke();
-    g.strokeStyle = '#ffc860'; g.lineWidth = 1.6; g.beginPath(); g.moveTo(3, 2.4); g.lineTo(10, 9); g.lineTo(19.6, 3); g.stroke();
-    g.strokeStyle = '#ff2a4a'; g.lineWidth = 0.8; g.beginPath(); g.moveTo(8, 7.6); g.lineTo(12, 7.6); g.stroke();
-  }, Object.assign({ glow: '#ffb05a' }, BOLT));
-  reg2('bolt_samba', 22, 12, function (g) {
-    ell(g, 11, 6, 10, 3.2, lg(g, 1, 3, 21, 9, [[0, '#ff2a9a'], [0.5, '#ffd23f'], [1, '#27e0ff']]));
-    line(g, 2, 6, 21, 6, 0.8, 'rgba(255,255,255,0.8)'); ell(g, 6, 5, 3, 1, 'rgba(255,255,255,0.5)');
-  }, Object.assign({ glow: '#ff7ad9' }, BOLT));
+
+  /* ---- boss roster: fictional cyber-crime fighters, each a full outfit on the shared rig */
+  const FBLACK = fPal('#44444f', '#22222b', '#0a0a10');
+  fighterReg('kraker', { // Amsterdam: Muay Thai access broker
+    skin: FSKIN.tan, top: 'bare', tattoo: true, accent: '#ff7a1a', legs: 'shorts', legC: fPal('#ffa040', '#e8650c', '#8a3404'),
+    feet: 'bare', hands: 'wraps', hair: 'buzz', hairC: '#2a1e14', face: 'balaclava', glowEyes: true, scar: true,
+    front: function (g, P, T) {
+      const r = T.at(-0.06, -T.W.h + 1.6);
+      g.strokeStyle = '#ffd23f'; g.lineWidth = 0.8; g.beginPath(); g.arc(r[0], r[1] + 2.6, 2, 0, Math.PI * 2); g.stroke();
+      [-1.4, 0.4, 2].forEach((o, i) => { line(g, r[0] + o, r[1] + 4, r[0] + o * 1.6, r[1] + 8 - i * 0.6, 0.9, i === 1 ? '#ff7a1a' : '#d8dce8'); });
+    }
+  });
+  fighterReg('kingpin', { // London: bare-knuckle phishing boss
+    skin: FSKIN.pale, top: 'waistcoat', topC: fPal('#5e5e70', '#3a3a4a', '#1a1a24'), top2: fPal('#ffffff', '#dadae6', '#8a8aa0'), tie: '#8a1020',
+    sleeve: 'rolled', sleeveC: fPal('#ffffff', '#dadae6', '#8a8aa0'), legs: 'pants', legC: fPal('#50505e', '#30303c', '#14141c'),
+    feet: 'boots', footC: fPal('#7a5434', '#4a2e18', '#1e1008'), hands: 'brass', hair: 'slick', hairC: '#3a2a1c',
+    hat: 'flatcap', hatC: fPal('#8e7e5c', '#5e5038', '#2a2416'), facial: 'mustache', accent: '#27d0ff',
+    front: function (g, P, T, S) {
+      if (S.stun) return;
+      const p = T.at(0.5, 3.2);
+      rrect(g, p[0] - 1, p[1] - 3.4, 5, 3.4, 0.5, 'rgba(39,208,255,0.9)'); line(g, p[0] - 1, p[1] - 3.4, p[0] + 1.5, p[1] - 1.6, 0.5, '#ffffff'); line(g, p[0] + 4, p[1] - 3.4, p[0] + 1.5, p[1] - 1.6, 0.5, '#ffffff');
+      rrect(g, p[0] - 1.6, p[1] - 0.6, 6.2, 2.6, 0.4, '#24242e');
+    }
+  });
+  fighterReg('savate', { // Paris: savate spoofer
+    fem: true, skin: FSKIN.pale, top: 'stripe', topC: fPal('#ffffff', '#ececf4', '#9a9ab0'), top2: fPal('#3a4aa0', '#1e2a70', '#0c1236'),
+    sleeve: 'long', sleeveC: fPal('#3a4aa0', '#1e2a70', '#0c1236'), legs: 'tights', legC: FBLACK, feet: 'shoes', footC: fPal('#5a2a3a', '#2a0e18', '#0a0206'),
+    hands: 'fingerless', handC: FBLACK, hair: 'ponytail', hairC: '#2a1810', hat: 'beret', hatC: fPal('#ff5a6a', '#d01a2a', '#6a0a12'),
+    face: 'domino', glowEyes: true, accent: '#ff3aa8', browC: '#2a1810',
+    front: function (g, P) {
+      const hx = P.head[0], hy = P.head[1];
+      rrect(g, hx - 4.4, hy + 7, 9, 2.6, 1.2, '#d01a2a'); limb(g, hx + 3, hy + 8.4, hx + 8, hy + 14, 2, '#6a0a12', '#d01a2a', null);
+    }
+  });
+  fighterReg('ronin', { // Tokyo: hovering rootkit ronin
+    air: true, plate: ['#4a4a6a', '#0a0a1a', 'rgba(255,42,58,0.55)'], skin: FSKIN.olive, top: 'gi', topC: fPal('#4e4e8e', '#2a2a5e', '#121232'),
+    top2: fPal('#ff5a5a', '#c81a2a', '#5a0a10'), sleeve: 'gi', sleeveC: fPal('#4e4e8e', '#2a2a5e', '#121232'), legs: 'gi', legC: fPal('#3e3e4e', '#22222e', '#0e0e16'),
+    belt: '#c81a2a', feet: 'sandal', hands: 'wraps', hair: 'topknot', hairC: '#121014', face: 'oni', glowEyes: true, accent: '#ff2a3a',
+    back: function (g, P, T) {
+      const a = T.at(0.05, T.W.h + 2), b = T.at(1.42, T.W.s - 2);
+      limb(g, a[0], a[1], b[0], b[1], 2.6, '#000000', '#1a1a24', '#4a4a5a');
+      const h = fAt(a, b, 0.78); limb(g, h[0], h[1], b[0], b[1], 2.2, '#5a0a10', '#c81a2a', null);
+    }
+  });
+  fighterReg('brawler', { // Sydney: botnet brawler
+    skin: FSKIN.tan, top: 'tank', topC: fPal('#fff06a', '#e8c014', '#8a6a04'), legs: 'shorts', legC: fPal('#3ad07a', '#14904a', '#064a22'),
+    feet: 'boots', footC: fPal('#9a7a54', '#5a3e24', '#2a1a0c'), hands: 'gloves', handC: fPal('#ff6a6a', '#d01a2a', '#5a0a10'),
+    hair: 'buzz', hairC: '#b0642a', face: 'shades', facial: 'beard', accent: '#2ae07a'
+  });
+  fighterReg('gladiator', { // Rome: ransomware gladiator
+    skin: FSKIN.olive, top: 'harness', legs: 'skirt', legC: fPal('#a8703a', '#7a4a1e', '#3a200a'), feet: 'greaves', footC: fPal('#f0f0f8', '#a8acc0', '#4a4e64'),
+    hands: 'cestus', handC: fPal('#a8703a', '#7a4a1e', '#3a200a'), manica: true, hat: 'helmet', hair: 'none', facial: 'beard', hairC: '#2a1a10',
+    belt: '#5a3214', buckle: true, accent: '#ff3a2a',
+    front: function (g, P, T, S) {
+      if (S.stun) return;
+      const p = T.at(-0.1, -T.W.h + 2.4); line(g, p[0], p[1] - 4, p[0], p[1] - 2.6, 0.6, '#d8dce8');
+      g.strokeStyle = '#ffd23f'; g.lineWidth = 0.9; g.beginPath(); g.arc(p[0], p[1] - 1.6, 1.6, Math.PI, 0); g.stroke();
+      rrect(g, p[0] - 2.4, p[1] - 1.4, 4.8, 3.8, 0.6, '#ff3a2a'); ell(g, p[0], p[1] + 0.4, 0.6, 0.8, '#2a0408');
+    }
+  });
+  fighterReg('capoeira', { // Rio: hovering cryptojacker
+    air: true, plate: ['#fff06a', '#14904a', 'rgba(255,210,63,0.55)'], skin: FSKIN.deep, top: 'bare', legs: 'pants', legC: fPal('#ffffff', '#e2e2ec', '#8a8aa0'),
+    belt: '#ffd23f', legStripe: '#14b04a', feet: 'bare', hands: 'bare', hair: 'dreads', hairC: '#1a1008', hat: 'bandana', hatC: fPal('#5aff9a', '#14b04a', '#06501e'),
+    face: 'shades', accent: '#ffd23f', tattoo: true
+  });
+  fighterReg('luchador', { // Mexico City: zero-day luchador
+    air: true, plate: ['#27e0ff', '#5a0a34', 'rgba(39,224,255,0.55)'], skin: FSKIN.brown, top: 'bare', legs: 'tights', legC: fPal('#ff5ab8', '#d01a7a', '#5a0a34'),
+    legStripe: '#27e0ff', feet: 'boots', footC: fPal('#ff5ab8', '#d01a7a', '#5a0a34'), hands: 'fingerless', handC: FBLACK, hair: 'none',
+    face: 'lucha', faceC: fPal('#ff6ac8', '#d01a7a', '#5a0a34'), belt: '#c89a20', buckle: true, accent: '#27e0ff'
+  });
+  fighterReg('enforcer', { // New York: DDoS enforcer
+    skin: FSKIN.brown, top: 'jacket', topC: fPal('#4a4a56', '#26262e', '#0c0c12'), top2: fPal('#ff4a4a', '#c81a1a', '#5a0808'), sleeve: 'long',
+    sleeveC: fPal('#4a4a56', '#26262e', '#0c0c12'), legs: 'pants', legC: fPal('#5a7ab8', '#34508a', '#162444'), feet: 'boots', footC: FBLACK,
+    hands: 'fingerless', handC: FBLACK, hair: 'mohawk', hairC: '#2a1a10', face: 'shades', facial: 'stubble', accent: '#ff2a3a',
+    front: function (g, P, T) {
+      const a = T.at(-0.04, -T.W.h + 1), b = T.at(-0.04, T.W.h - 1);
+      g.strokeStyle = '#d8dce8'; g.lineWidth = 0.8; g.setLineDash([1.2, 0.8]); g.beginPath(); g.moveTo(a[0], a[1]); g.quadraticCurveTo((a[0] + b[0]) / 2, a[1] + 6, b[0], b[1]); g.stroke(); g.setLineDash([]);
+    }
+  });
+
+  /* ---- boss projectiles (22x12, travel left; the scene flips them) */
+  function trail(g, y, col) { [0, 1, 2].forEach((i) => line(g, 14 + i * 2, y - 2 + i * 2, 21, y - 2 + i * 2, 0.8, col)); }
+  reg2('bolt_kraker', 22, 12, function (g) {
+    trail(g, 6, 'rgba(255,122,26,0.7)');
+    rrect(g, 2, 2.2, 12, 7.6, 1.4, lg(g, 0, 2, 0, 10, [[0, '#ffb060'], [1, '#c84a04']]));
+    rrect(g, 4, 4, 3.4, 2.8, 0.6, lg(g, 0, 4, 0, 7, GOLD)); line(g, 9, 4.6, 12.6, 4.6, 0.7, '#ffffff'); line(g, 9, 7, 11.6, 7, 0.7, 'rgba(255,255,255,0.6)');
+  }, Object.assign({ glow: '#ff7a1a' }, BOLT));
+  reg2('bolt_kingpin', 22, 12, function (g) {
+    trail(g, 6, 'rgba(39,208,255,0.7)');
+    rrect(g, 2, 2.4, 11.6, 7.4, 0.8, '#f4f8ff'); line(g, 2, 2.6, 7.8, 6.6, 0.8, '#7a8aa8'); line(g, 13.6, 2.6, 7.8, 6.6, 0.8, '#7a8aa8');
+    g.strokeStyle = '#27d0ff'; g.lineWidth = 1.2; g.lineCap = 'round'; g.beginPath(); g.moveTo(16, 1.6); g.lineTo(16, 7); g.arc(13.8, 7, 2.2, 0, Math.PI * 0.85); g.stroke();
+  }, Object.assign({ glow: '#27d0ff' }, BOLT));
+  reg2('bolt_savate', 22, 12, function (g) {
+    trail(g, 6, 'rgba(255,58,168,0.6)');
+    ell(g, 8, 6, 6.4, 5.6, lg(g, 2, 0, 14, 12, [[0, '#ffffff'], [0.4, '#ff6ac8'], [1, '#a0105a']]));
+    g.globalCompositeOperation = 'destination-out'; ell(g, 11, 6, 5.4, 5, '#000'); g.globalCompositeOperation = 'source-over';
+  }, Object.assign({ glow: '#ff3aa8' }, BOLT));
+  reg2('bolt_ronin', 22, 12, function (g) {
+    trail(g, 6, 'rgba(255,42,58,0.6)');
+    fStar(g, 8, 6, 5.6, lg(g, 2, 0, 14, 12, [[0, '#ffffff'], [0.5, '#b4b8c8'], [1, '#4a4e64']]));
+    ell(g, 8, 6, 1.6, 1.6, '#ff2a3a'); ell(g, 8, 6, 0.6, 0.6, '#1a0408');
+  }, Object.assign({ glow: '#ff2a3a' }, BOLT));
+  reg2('bolt_brawler', 22, 12, function (g) {
+    trail(g, 7, 'rgba(42,224,122,0.6)');
+    line(g, 3, 2.4, 8, 2.4, 0.8, '#d8dce8'); line(g, 9, 2.4, 14, 2.4, 0.8, '#d8dce8'); line(g, 5.4, 2.4, 6.4, 4.6, 0.8, '#5a5e70'); line(g, 11.6, 2.4, 10.6, 4.6, 0.8, '#5a5e70');
+    rrect(g, 4, 4.4, 9.6, 4.6, 1.6, lg(g, 0, 4, 0, 9, [[0, '#5aff9a'], [1, '#0a6a30']])); ell(g, 6, 6.6, 1.2, 1.2, '#ff2a3a');
+  }, Object.assign({ glow: '#2ae07a' }, BOLT));
+  reg2('bolt_gladiator', 22, 12, function (g) {
+    trail(g, 7, 'rgba(255,58,42,0.6)');
+    g.strokeStyle = '#d8dce8'; g.lineWidth = 1.4; g.beginPath(); g.arc(8, 5, 3, Math.PI, 0); g.stroke();
+    rrect(g, 3.6, 5, 8.8, 6, 1, lg(g, 0, 5, 0, 11, GOLD)); ell(g, 8, 7.4, 1, 1.2, '#4a1004'); g.fillStyle = '#4a1004'; g.fillRect(7.6, 7.6, 0.8, 2);
+  }, Object.assign({ glow: '#ff3a2a' }, BOLT));
+  reg2('bolt_capoeira', 22, 12, function (g) {
+    trail(g, 6, 'rgba(255,210,63,0.6)');
+    ell(g, 8, 6, 5.4, 5.4, lg(g, 3, 1, 13, 11, GOLD)); ell(g, 8, 6, 4, 4, 'rgba(255,255,255,0.18)');
+    g.strokeStyle = '#7a4a04'; g.lineWidth = 0.9; g.beginPath(); g.moveTo(7, 3); g.lineTo(7, 9); g.moveTo(7, 3); g.quadraticCurveTo(10.6, 3.2, 7, 6); g.quadraticCurveTo(11.4, 6.4, 7, 9); g.stroke();
+  }, Object.assign({ glow: '#ffd23f' }, BOLT));
+  reg2('bolt_luchador', 22, 12, function (g) {
+    poly(g, [[10, 2], [21, 4], [17, 6], [21, 8], [10, 10]], 'rgba(39,224,255,0.55)');
+    ell(g, 7.6, 6, 5.6, 4.8, lg(g, 2, 1, 13, 11, [[0, '#ffb0e8'], [0.5, '#ff5ab8'], [1, '#8a0a4a']]));
+    [3.6, 5.6, 7.6].forEach((y) => line(g, 3.4, y + 0.4, 6.4, y + 0.4, 0.6, '#5a0a34'));
+  }, Object.assign({ glow: '#27e0ff' }, BOLT));
+  reg2('bolt_enforcer', 22, 12, function (g) {
+    [[2, 3.4, 1], [8, 4, 0.85], [14, 4.6, 0.6]].forEach(function (b) {
+      g.globalAlpha = b[2]; rrect(g, b[0], b[1], 5.4, 5.4 - (b[1] - 3.4) * 2, 0.8, lg(g, 0, 3, 0, 9, [[0, '#ff7a7a'], [1, '#a80a14']]));
+      g.fillStyle = '#ffffff'; g.fillRect(b[0] + 1.2, b[1] + 1.2, 1.2, 0.8); g.fillRect(b[0] + 3, b[1] + 1.2, 1.2, 0.8);
+    });
+    g.globalAlpha = 1;
+  }, Object.assign({ glow: '#ff2a3a' }, BOLT));
 
   /* ---- regional Azure Credit coins (currency symbol on the face) */
   const COINS = { westeurope: '\u20AC', uksouth: '\u00A3', japaneast: '\u00A5', australiaeast: 'A$', brazilsouth: 'R$', eastus: '$' };
@@ -2919,6 +3182,43 @@ const CL = GEAR === 'clogs' ? (y0, y1) => lg(g, 0, y0, 0, y1, [[0, '#fff090'], [
     ell(g, 82, 14, 4, 3, '#ff7ad9'); ell(g, 6, 15, 3, 2.4, '#ffd23f');
   }, { shade: 0.3 });
 
+  function canalBoat(g) {
+    poly(g, [[1, 25], [145, 25], [155, 30], [145, 43], [14, 43], [3, 35]], lg(g, 0, 25, 0, 43, [[0, '#f4f0e2'], [1, '#246b95']]));
+    line(g, 10, 36, 148, 36, 2, '#c72f40');
+    rrect(g, 17, 9, 118, 20, 7, '#c0d5d9');
+    for (let x = 20; x < 130; x += 14) {
+      poly(g, [[x, 27], [x + 1, 14], [x + 5, 10], [x + 12, 10], [x + 12, 27]], lg(g, 0, 10, 0, 27, [[0, '#b8ecf1'], [1, '#39728c']]));
+      line(g, x + 2, 15, x + 11, 12, 0.8, '#e8ffff');
+      ell(g, x + 7, 22, 2, 2, '#d6a17f'); g.fillStyle = '#283b68'; g.fillRect(x + 4, 24, 6, 3);
+    }
+    line(g, 15, 29, 136, 29, 1, '#ffffff');
+    txt(g, 'AMSTERDAM CANAL CRUISE', 32, 32, 0.6, '#153d69');
+    ell(g, 142, 31, 3, 3, '#e97736'); ell(g, 142, 31, 1.5, 1.5, '#fff0cc');
+    [12, 147].forEach((x) => { line(g, x, 20, x, 27, 0.8, '#d9e7ea'); });
+    g.fillStyle = 'rgba(230,250,255,0.65)'; g.fillRect(4, 44, 148, 0.8);
+  }
+  reg2('amb_canalboat', 156, 46, canalBoat, { shade: 0.25 });
+
+  function outback4x4(g) {
+    wheels(g, [19, 68], 35, 8);
+    rrect(g, 9, 11, 64, 24, 2, lg(g, 0, 11, 0, 35, [[0, '#aab78b'], [0.6, '#668464'], [1, '#344f42']]));
+    g.fillStyle = '#d6cbb0'; g.fillRect(9, 9, 64, 4); g.fillRect(12, 12, 3, 10);
+    [17, 34, 51].forEach((x) => { rrect(g, x, 14, 13, 10, 1, '#162d39'); lit(g, x + 1, 15, 11, 7, '#b8dee2'); line(g, x + 2, 16, x + 9, 16, 0.7, '#efffff'); });
+    g.fillStyle = '#5c7558'; g.fillRect(3, 25, 13, 10); g.fillStyle = '#d7d0ac'; g.fillRect(1, 31, 10, 3);
+    g.fillStyle = '#273d37'; g.fillRect(2, 26, 4, 5); ell(g, 3, 26, 2, 2, '#fff1aa');
+    [33, 50, 67].forEach((x) => line(g, x, 13, x, 33, 0.7, '#324a39'));
+    g.fillStyle = '#d2d3bb'; g.fillRect(36, 25, 4, 1.2); g.fillRect(53, 25, 4, 1.2);
+    line(g, 12, 5, 70, 5, 2, '#293e36'); line(g, 12, 8, 70, 8, 1, '#293e36');
+    [17, 36, 58, 68].forEach((x) => line(g, x, 5, x, 11, 1, '#293e36'));
+    rrect(g, 21, 0, 22, 5, 1, '#bda073'); rrect(g, 46, 1, 17, 4, 1, '#566b58');
+    line(g, 26, 0, 26, 5, 1, '#394b3d'); line(g, 38, 0, 38, 5, 1, '#394b3d');
+    line(g, 9, 23, 9, 10, 2.4, '#24382e'); line(g, 9, 10, 6, 8, 2.4, '#24382e');
+    ell(g, 78, 26, 7, 9, '#1b2926'); ell(g, 78, 26, 3.2, 5, '#8e9b86');
+    g.fillStyle = '#304138'; g.fillRect(73, 35, 14, 3);
+    txt(g, 'OUTBACK', 37, 29, 0.5, '#e4dfc5');
+    for (let x = 13; x < 74; x += 7) { g.fillStyle = 'rgba(223,160,91,0.65)'; g.fillRect(x, 32 + x % 3, 2.8, 1); }
+  }
+
   /* ---- solid street obstacles: jump over or stand on them */
   const OBST = {
     bus: [96, 56, function (g) {
@@ -2962,6 +3262,7 @@ const CL = GEAR === 'clogs' ? (y0, y1) => lg(g, 0, y0, 0, y1, [[0, '#fff090'], [
       g.fillStyle = '#27e0ff'; g.fillRect(1, 26, 62, 2);
       [14, 50].forEach(function (x) { ell(g, x, 32, 5, 5, '#14082a'); ell(g, x, 32, 2, 2, '#b8b8d8'); });
     }],
+    outback4x4: [88, 44, outback4x4],
     lifeguard: [34, 52, function (g) {
       [[6, 52, 10, 22], [28, 52, 24, 22]].forEach(function (l) { line(g, l[0], l[1], l[2], l[3], 1.8, '#e8e0f8'); });
       line(g, 8, 40, 26, 40, 1.2, '#e8e0f8');
@@ -3510,6 +3811,113 @@ const CL = GEAR === 'clogs' ? (y0, y1) => lg(g, 0, y0, 0, y1, [[0, '#fff090'], [
     }
   }
 
+  /* ---- London Underground: deep-bore tunnels, tiled platforms and Tube stock */
+  function tubeRoundel(g, x, y, r, label) {
+    ell(g, x, y, r, r, '#d72f40'); ell(g, x, y, r * 0.63, r * 0.63, '#ede9df');
+    g.fillStyle = '#183d78'; g.fillRect(x - r * 1.3, y - r * 0.23, r * 2.6, r * 0.46);
+    if (label) { const s = Math.min(0.7, r * 2.35 / txtW(label, 1)); txt(g, label, x - txtW(label, s) / 2, y - 2.5 * s, s, '#ffffff'); }
+  }
+  function tubeBlock(g, w, h, low) {
+    metroTiles(g, 0, 0, w, h, '#ddd9ca', '#817f79');
+    g.fillStyle = '#183d78'; g.fillRect(0, 0, w, Math.min(5, h)); g.fillRect(0, h - 4, w, 4);
+    line(g, 0, 0.8, w, 0.8, 1.2, '#fff0b3');
+    if (h <= 24) {
+      g.fillStyle = '#61717f'; g.fillRect(0, 5, w, Math.max(0, h - 9));
+      for (let x = 5; x < w; x += 14) { line(g, x, 6, x + 6, h - 5, 0.7, '#a0acaf'); ell(g, x, 3, 0.7, 0.7, '#ffffff'); }
+    } else if (w >= 40) tubeRoundel(g, w / 2, h / 2, Math.min(12, w / 4, h / 4), '');
+    if (low) {
+      g.fillStyle = '#efc34b'; g.fillRect(0, h - 5, w, 5);
+      for (let x = 0; x < w; x += 10) poly(g, [[x, h], [x + 4, h - 5], [x + 8, h - 5], [x + 4, h]], '#26344f');
+    }
+  }
+  reg2('cloud_floor_tube', 128, 64, function (g) {
+    tubeBlock(g, 128, 64, false);
+    g.fillStyle = '#777c80'; g.fillRect(0, 0, 128, 9);
+    g.fillStyle = '#f1ca48'; g.fillRect(0, 1, 128, 2);
+    for (let x = 3; x < 128; x += 5) { ell(g, x, 5, 0.5, 0.5, '#c0bba5'); line(g, x, 10, x, 14, 0.6, '#a7a69c'); }
+    txt(g, 'MIND THE GAP', 36, 16, 0.65, '#183d78');
+    g.fillStyle = 'rgba(10,18,37,0.4)'; g.fillRect(0, 34, 128, 30);
+  }, FLAT);
+  reg2('challenge_sign_tube', 248, 36, function (g) {
+    rrect(g, 0, 0, 248, 36, 3, '#183d78');
+    g.strokeStyle = '#ebe9dc'; g.lineWidth = 1; g.strokeRect(2, 2, 244, 32);
+    tubeRoundel(g, 17, 18, 10, '');
+  }, FLAT);
+  reg2('challenge_far_tube', 640, 360, function (g) {
+    g.fillStyle = lg(g, 0, 0, 0, 360, [[0, '#080e1c'], [0.55, '#26303c'], [1, '#131c2a']]); g.fillRect(0, 0, 640, 360);
+    for (let x = -160; x < 800; x += 320) {
+      for (let r = 150; r >= 30; r -= 18) { g.strokeStyle = r % 36 ? '#4a535e' : '#1a2532'; g.lineWidth = 4; g.beginPath(); g.ellipse(x + 160, 205, r, r * 0.86, 0, 0, Math.PI * 2); g.stroke(); }
+      line(g, x + 10, 286, x + 310, 286, 2, '#9e9c92');
+      line(g, x + 10, 293, x + 310, 293, 2, '#3c4653');
+    }
+  }, FLAT);
+  for (let variant = 0; variant < 3; variant++) reg2('challenge_bg_tube' + (variant ? '_' + variant : ''), 640, 360, function (g) {
+    const station = ['WESTMINSTER', 'BAKER STREET', 'PICCADILLY'][variant];
+    metroTiles(g, 0, 140, 640, 125, '#b8b8b0', '#707781');
+    for (let x = 0; x < 640; x += 128) {
+      g.strokeStyle = '#626c79'; g.lineWidth = 9; g.beginPath(); g.arc(x + 64, 140, 60, Math.PI, 0); g.stroke();
+      g.strokeStyle = '#c1c5be'; g.lineWidth = 2; g.beginPath(); g.arc(x + 64, 140, 55, Math.PI, 0); g.stroke();
+      g.fillStyle = '#53616d'; g.fillRect(x, 137, 8, 128);
+      lit(g, x + 26, 143, 71, 2.6, '#f0ecd3');
+    }
+    g.fillStyle = '#183d78'; g.fillRect(0, 160, 640, 3);
+    g.fillStyle = '#ac3747'; g.fillRect(0, 164, 640, 1.4);
+    tubeRoundel(g, 118, 201, 26, station);
+    metroPoster(g, 208, 177, 69, 64, variant === 2 ? 3 : variant);
+    rrect(g, 304, 178, 126, 54, 2, '#dfded2');
+    txt(g, 'PLAN YOUR JOURNEY', 312, 183, 0.65, '#233955');
+    ['#d73343', '#2981a6', '#d2ad31', '#288969'].forEach((color, i) => {
+      line(g, 313, 201 + i * 6, 345 + i * 9, 201 + i * 6, 1.8, color);
+      line(g, 345 + i * 9, 201 + i * 6, 365 + i * 9, 195 + i * 6, 1.8, color);
+      line(g, 365 + i * 9, 195 + i * 6, 418, 195 + i * 6, 1.8, color);
+      ell(g, 345 + i * 9, 201 + i * 6, 1.7, 1.7, '#f4f1e4');
+    });
+    rrect(g, 460, 162, 162, 24, 2, '#222a32');
+    txt(g, 'WAY OUT', 473, 168, 1, '#f6d348');
+    poly(g, [[591, 169], [601, 174], [591, 179], [591, 176], [581, 176], [581, 172], [591, 172]], '#f6d348');
+    g.fillStyle = '#192431'; g.fillRect(461, 197, 160, 65);
+    for (let step = 0; step < 7; step++) { line(g, 474 + step * 9, 258 - step * 7, 617, 258 - step * 7, 1.4, '#75818a'); }
+    rrect(g, 19, 220, 32, 41, 2, '#35527a'); lit(g, 24, 225, 22, 15, '#92d8e6');
+    txt(g, 'TICKETS', 22, 247, 0.6, '#faf1ce');
+    [177, 298].forEach((x) => { g.fillStyle = '#6e463b'; g.fillRect(x, 246, 72, 4); line(g, x + 6, 250, x + 6, 263, 2, '#283d53'); line(g, x + 66, 250, x + 66, 263, 2, '#283d53'); });
+    g.fillStyle = '#b7b4a1'; g.fillRect(0, 264, 640, 5); g.fillStyle = '#e0bf54'; g.fillRect(0, 269, 640, 1.5);
+    g.fillStyle = '#171d2a'; g.fillRect(0, 272, 640, 28);
+    for (let x = 0; x < 640; x += 13) line(g, x, 279, x + 4, 297, 2, '#414652');
+    line(g, 0, 284, 640, 284, 1.8, '#a7a99e'); line(g, 0, 296, 640, 296, 1.5, '#777d83');
+    txt(g, 'MIND THE GAP', 343, 259, 0.6, '#3b4150');
+  }, FLAT);
+  reg2('challenge_train_tube', 360, 76, function (g) {
+    for (let car = 0; car < 2; car++) {
+      const x = car * 181;
+      rrect(g, x + 2, 9, 174, 54, 16, lg(g, 0, 9, 0, 63, [[0, '#e5e6de'], [0.6, '#f1f0df'], [1, '#b2b5b4']]));
+      g.fillStyle = '#153b72'; g.fillRect(x + 7, 52, 164, 10);
+      for (let d = 0; d < 3; d++) {
+        const dx = x + 25 + d * 49;
+        rrect(g, dx, 20, 21, 32, 2, '#bd293c'); lit(g, dx + 3, 23, 6, 17, '#a6ccd7'); lit(g, dx + 12, 23, 6, 17, '#a6ccd7');
+        line(g, dx + 10.5, 22, dx + 10.5, 51, 0.7, '#721c2b');
+        if (d < 2) { rrect(g, dx + 25, 23, 20, 18, 2, '#253646'); lit(g, dx + 27, 25, 16, 14, '#d6dfd8'); ell(g, dx + 35, 34, 2.4, 2.6, '#6d5957'); }
+      }
+      wheels(g, [x + 34, x + 141], 66, 5);
+      tubeRoundel(g, x + 98, 47, 5, '');
+      rrect(g, x + 3, 19, 18, 34, 7, '#c72f43'); rrect(g, x + 6, 23, 12, 18, 4, '#233b4d');
+      ell(g, x + 8, 48, 1.8, 1.8, '#fff2b8'); ell(g, x + 17, 48, 1.8, 1.8, '#fff2b8');
+      txt(g, 'BAKERLOO', x + 54, 13, 0.6, '#253c52');
+    }
+  }, FLAT);
+  reg2('pipe_tube', 44, 46, function (g) {
+    metroTiles(g, 2, 5, 40, 41, '#c8c6ba', '#777f83');
+    g.fillStyle = '#183d78'; g.fillRect(0, 0, 44, 5); g.fillStyle = '#f3d16b'; g.fillRect(0, 0, 44, 1);
+    g.fillStyle = '#25374a'; g.fillRect(8, 10, 28, 29);
+    for (let y = 16; y < 40; y += 5) line(g, 9, y, 35, y, 1, '#aeb8b6');
+    tubeRoundel(g, 22, 26, 10, '');
+  }, { shade: 0.2 });
+  reg2('pipe_tube_top', 70, 80, function (g) {
+    [9, 61].forEach((x) => { g.fillStyle = '#243b48'; g.fillRect(x, 28, 2, 52); ell(g, x + 1, 27, 3, 3, '#e1c88c'); });
+    tubeRoundel(g, 35, 28, 22, 'UNDERGROUND');
+    rrect(g, 15, 55, 40, 9, 1, '#202d3f'); txt(g, 'SUBWAY', 22, 57, 0.65, '#ffffff');
+    line(g, 10, 71, 61, 71, 1.3, '#748c8e');
+  }, { shade: 0.2 });
+
   ['pipelines', 'aks', 'actions', 'docker', 'entra', 'functions'].forEach(function (theme, i) {
     const dock = theme === 'docker' || theme === 'aks';
     const facility = theme === 'entra' || theme === 'functions';
@@ -3649,6 +4057,16 @@ const CL = GEAR === 'clogs' ? (y0, y1) => lg(g, 0, y0, 0, y1, [[0, '#fff090'], [
     g.fillStyle = '#ffffff'; g.fillRect(4, 10, 72, 8);
     g.fillStyle = 'rgba(160,200,255,0.8)'; g.fillRect(4, 16, 72, 2);
   }, { shade: 0.5 });
+  // Azure cloud stairway platform: soft puffs over a glowing blue underside (stretched to the platform width).
+  reg2('sky_cloud', 120, 20, function (g) {
+    [[14, 11, 11], [34, 7, 12], [56, 5, 13], [78, 7, 12], [98, 9, 11], [110, 12, 8]].forEach(function (c) {
+      ell(g, c[0], c[1] + 1, c[2], c[2] * 0.62, '#c8dcff');
+      ell(g, c[0] - 1, c[1], c[2] * 0.92, c[2] * 0.56, lg(g, 0, c[1] - c[2] * 0.6, 0, c[1] + c[2] * 0.5, [[0, '#ffffff'], [1, '#e2eeff']]));
+    });
+    rrect(g, 3, 9, 114, 8, 4, lg(g, 0, 9, 0, 17, [[0, '#eef5ff'], [0.55, '#9cc8ff'], [1, '#2f86e0']]));
+    g.fillStyle = 'rgba(80,224,255,0.95)'; g.fillRect(6, 16.6, 108, 1.2);
+    [18, 40, 62, 84, 104].forEach(function (x, i) { g.fillStyle = i % 2 ? '#0078d4' : '#50e6ff'; g.fillRect(x, 13, 3, 1.2); g.fillRect(x + 1, 12, 1.2, 3); });
+  }, { shade: 0.4, glow: '#50c8ff' });
 
   /* ---- Microsoft brand pieces */
   reg2('ms_logo', 16, 16, function (g) { msLogo(g, 0.5, 0.5, 15); }, FLAT);
@@ -4172,23 +4590,60 @@ const CL = GEAR === 'clogs' ? (y0, y1) => lg(g, 0, y0, 0, y1, [[0, '#fff090'], [
     mini: [34, 18, function (g, w, h) { carBody(g, w, h, '#7fe8ff', '#2a8aa8', 7, 26, 3, 'rgba(230,250,255,0.85)'); ell(g, 17, 9, 2, 2, '#ffffff'); wheels(g, [8, 26], h - 4, 3.6); }],
     citroen: [38, 20, function (g, w, h) { poly(g, [[2, h - 6], [3, h - 11], [10, h - 13], [13, 4], [26, 3], [33, h - 12], [37, h - 10], [37, h - 6]], lg(g, 0, 3, 0, h, [[0, '#ff8ab8'], [1, '#a82a6a']])); poly(g, [[14, 5.4], [25, 4.6], [30, h - 12], [12, h - 12]], 'rgba(200,230,255,0.85)'); line(g, 21, 5, 21, h - 12, 0.8, '#a82a6a'); wheels(g, [9, 30], h - 4.4, 3.8); }],
     vespa: [24, 20, function (g) { ell(g, 15, 13, 6.4, 3.6, '#ff3a3a'); poly(g, [[4, 6], [7, 6], [8, 15], [5, 15]], '#ff3a3a'); line(g, 3, 5, 8, 5, 1, '#14082a'); ell(g, 13, 7, 3, 3.4, '#2a1a3a'); ell(g, 13.6, 3.6, 2.6, 2.6, '#ffffff'); rrect(g, 11, 2.6, 5, 1.6, 0.8, '#7fe8ff'); wheels(g, [5, 19], 17, 3); }],
-    tram: [92, 34, function (g, w, h) { rrect(g, 1, 4, w - 2, h - 10, 3, lg(g, 0, 4, 0, h - 6, [[0, '#ffffff'], [0.5, '#e8e8f8'], [1, '#9a9ac0']])); g.fillStyle = '#2f6bff'; g.fillRect(1, h - 13, w - 2, 3); for (let x = 6; x < w - 6; x += 9) { g.fillStyle = '#14082a'; g.fillRect(x, 7, 7, 9); lit(g, x + 0.5, 7.5, 6, 8, '#ffe9a0'); } line(g, 40, 4, 48, -2, 0.8, '#14082a'); line(g, 48, -2, 60, -2, 0.8, '#14082a'); txt(g, 'AZURE TRAM', 30, 18.6, 0.5, '#2f6bff'); wheels(g, [14, 34, 58, 78], h - 4.6, 3.4); }],
+    tram: [112, 42, function (g, w) {
+      rrect(g, 1, 10, w - 2, 25, 4, lg(g, 0, 10, 0, 35, [[0, '#f3f5ef'], [1, '#afbfc7']]));
+      g.fillStyle = '#1967b2'; g.fillRect(2, 29, w - 4, 5);
+      for (let x = 6; x < w - 9; x += 13) { rrect(g, x, 14, 10, 12, 1, '#182b42'); lit(g, x + 1, 15, 8, 9, '#c2dfe5'); }
+      [24, 76].forEach((x) => { g.fillStyle = '#2178bc'; g.fillRect(x, 13, 12, 21); line(g, x + 6, 15, x + 6, 33, 0.6, '#dcecf4'); });
+      g.fillStyle = '#384851'; g.fillRect(52, 11, 6, 23); for (let x = 53; x < 58; x += 1.5) line(g, x, 12, x, 32, 0.5, '#9aa5a5');
+      line(g, 39, 10, 49, 3, 1.1, '#263c51'); line(g, 49, 3, 60, 10, 1.1, '#263c51'); line(g, 44, 2, 56, 2, 1, '#263c51');
+      rrect(g, 84, 11, 21, 4, 1, '#142935'); txt(g, 'CENTRAAL', 86, 11.6, 0.36, '#ffd672');
+      txt(g, 'AMSTERDAM', 6, 30, 0.45, '#ffffff'); wheels(g, [15, 42, 69, 97], 37, 3.7);
+      ell(g, 4, 29, 1.6, 1.2, '#fff0bd');
+    }],
+    outback4x4: [62, 31, function (g) { g.save(); g.scale(62 / 88, 62 / 88); outback4x4(g); g.restore(); }],
     cyclist: [26, 24, function (g) { [[5, 19], [21, 19]].forEach((wv) => { g.lineWidth = 1.2; g.strokeStyle = '#14062a'; g.beginPath(); g.arc(wv[0], wv[1], 4.4, 0, 7); g.stroke(); }); line(g, 5, 19, 12, 12, 1.2, '#ff7a2a'); line(g, 12, 12, 19, 12, 1.2, '#ff7a2a'); line(g, 12, 12, 14, 19, 1.2, '#ff7a2a'); line(g, 19, 12, 21, 19, 1.2, '#ff7a2a'); limb(g, 14, 9, 13, 16, 2.4, '#2a3a8a', '#3a5ad8'); limb(g, 13, 4, 15, 10, 4, '#ff4fa0', '#ff8ac8'); line(g, 12, 5, 7, 10, 1.4, '#ffd2ad'); ell(g, 12.6, 1.8, 2.2, 2.2, '#c98a66'); ell(g, 12.6, 0.8, 2.4, 1.4, '#ffe14a'); }]
   };
   Object.keys(CARS).forEach(function (k) { reg2('amb_car_' + k, CARS[k][0], CARS[k][1], function (g, w, h) { CARS[k][2](g, w, h); }, { shade: 0.35 }); });
+  function commuterTrain(g, dutch) {
+    const body = dutch ? '#f5cb3d' : '#c8d6db', stripe = dutch ? '#23538d' : '#ed8a24';
+    for (let car = 0; car < 2; car++) {
+      const x = car * 124;
+      rrect(g, x + 2, 5, 119, 32, 6, lg(g, 0, 5, 0, 37, [[0, dutch ? '#ffe46b' : '#f1f3eb'], [0.5, body], [1, dutch ? '#c08e21' : '#7b8b94']]));
+      g.fillStyle = stripe; g.fillRect(x + 4, dutch ? 12 : 29, 114, dutch ? 13 : 4);
+      for (let win = 0; win < 6; win++) { const wx = x + 13 + win * 16; rrect(g, wx, 14, 11, 9, 1, '#19354b'); lit(g, wx + 1, 15, 9, 6, '#b7d9de'); }
+      [29, 92].forEach((dx) => {
+        g.fillStyle = dutch ? '#e5b72c' : '#9baab0'; g.fillRect(x + dx, 10, 13, 25);
+        lit(g, x + dx + 2, 14, 9, 11, '#b2d8de'); line(g, x + dx + 6.5, 12, x + dx + 6.5, 34, 0.7, '#4e616a');
+      });
+      wheels(g, [x + 25, x + 99], 40, 4);
+      line(g, x + 42, 5, x + 49, 0, 0.8, '#364e5d'); line(g, x + 49, 0, x + 57, 5, 0.8, '#364e5d');
+      txt(g, dutch ? 'AMSTERDAM' : 'GINZA LINE G01', x + 47, 7, 0.46, '#19384e');
+      lit(g, x + 4, 13, 6, 12, '#a6cfdf'); ell(g, x + 5, 31, 1.5, 1, '#fff6b8');
+    }
+    g.fillStyle = '#344654'; g.fillRect(121, 13, 5, 21);
+  }
+  reg2('amb_train_nltrain', 248, 46, (g) => commuterTrain(g, true), { shade: 0.25 });
+  reg2('amb_train_tokyometro', 248, 46, (g) => commuterTrain(g, false), { shade: 0.25 });
+  reg2('amb_rail', 128, 22, function (g) {
+    g.fillStyle = '#526674'; g.fillRect(0, 1, 128, 4);
+    line(g, 0, 0.5, 128, 0.5, 0.8, '#87969a');
+    for (let x = 4; x < 128; x += 8) line(g, x, 0, x + 2, 3, 0.7, '#455968');
+    g.fillStyle = lg(g, 0, 5, 0, 22, [[0, '#697d85'], [1, '#455d6c']]); g.fillRect(60, 5, 5, 17);
+    poly(g, [[55, 5], [70, 5], [65, 10], [60, 10]], '#596f7b');
+    line(g, 61, 10, 61, 22, 0.6, '#819298');
+  }, FLAT);
   reg2('amb_football', 10, 6, function (g) { ell(g, 5, 3, 4.6, 2.6, lg(g, 0, 0, 0, 6, [[0, '#c8682a'], [1, '#5a2a10']])); line(g, 3, 3, 7, 3, 0.5, '#ffffff'); [4, 5, 6].forEach((x) => line(g, x, 2.4, x, 3.6, 0.4, '#ffffff')); }, { shade: 0.2 });
   reg2('amb_baseball', 6, 6, function (g) { ell(g, 3, 3, 2.6, 2.6, '#ffffff'); g.strokeStyle = '#ff2a3a'; g.lineWidth = 0.4; g.beginPath(); g.arc(0.6, 3, 1.8, -1, 1); g.stroke(); g.beginPath(); g.arc(5.4, 3, 1.8, 2.1, 4.2); g.stroke(); }, { shade: 0.2 });
   reg2('amb_petal', 5, 4, function (g) { ell(g, 2.5, 2, 2.2, 1.4, '#ffc0dc', 0.4); ell(g, 2, 1.6, 0.8, 0.5, '#ffffff'); }, FLAT);
   reg2('amb_leaf', 6, 5, function (g) { ell(g, 3, 2.5, 2.6, 1.6, '#ff8a2a', -0.5); line(g, 1, 4, 5, 1, 0.3, '#8a3a10'); }, FLAT);
   reg2('amb_confetti', 3, 3, function (g) { g.fillStyle = '#ffffff'; g.fillRect(0, 0, 3, 3); }, FLAT);
   // far-bank boulevard the background traffic drives on (tiles horizontally)
-  reg2('amb_road', 64, 14, function (g) {
-    g.fillStyle = lg(g, 0, 0, 0, 3, [[0, '#d8d4f0'], [1, '#6a6898']]); g.fillRect(0, 0, 64, 2);
-    g.fillStyle = lg(g, 0, 2, 0, 10, [[0, '#2a2650'], [1, '#14122e']]); g.fillRect(0, 2, 64, 8);
-    g.fillStyle = '#ffe9a0'; for (let x = 2; x < 64; x += 16) g.fillRect(x, 5.6, 8, 0.7);
-    g.fillStyle = '#8a88b8'; g.fillRect(0, 10, 64, 1.2);
-    g.fillStyle = lg(g, 0, 11, 0, 14, [[0, '#4a4878'], [1, '#1a1838']]); g.fillRect(0, 11, 64, 3);
-    for (let x = 4; x < 64; x += 8) { g.fillStyle = '#b8b4dc'; g.fillRect(x, 11.2, 1, 2.8); }
+  reg2('amb_road', 64, 8, function (g) {
+    g.fillStyle = '#748793'; g.fillRect(0, 0, 64, 1);
+    g.fillStyle = lg(g, 0, 1, 0, 6, [[0, '#455b6d'], [1, '#344858']]); g.fillRect(0, 1, 64, 5);
+    g.fillStyle = '#8c9b9d'; for (let x = 3; x < 64; x += 20) g.fillRect(x, 3.4, 6, 0.5);
+    g.fillStyle = '#5c7180'; g.fillRect(0, 6, 64, 2);
   }, FLAT);
   reg2('amb_trail', 8, 2, function (g) { g.fillStyle = 'rgba(255,255,255,0.7)'; g.fillRect(0, 0, 8, 2); }, FLAT);
 
@@ -4419,39 +4874,6 @@ const CL = GEAR === 'clogs' ? (y0, y1) => lg(g, 0, y0, 0, y1, [[0, '#fff090'], [
   SKINS[R] = { robot: centurion, drone: pigeon, spider: pizzaCrawler };
   regSkins(R);
   COINS[R] = '\u20AC'; regCoins(R);
-  bossReg('gladiator', function (g, S) {
-    const up = S.up;
-    limb(g, 22, 60, 20, 71, 11, '#673b32', '#b66542', '#e4ac68');
-    limb(g, 42, 60, 44, 71, 11, '#673b32', '#b66542', '#e4ac68');
-    rrect(g, 10, 71, 22, 8, 2, '#4d3441'); rrect(g, 33, 71, 22, 8, 2, '#4d3441');
-    limb(g, 12, 30, 8, 43 - up, 9, '#8a4c38', '#c87646', '#edb76c');
-    limb(g, 52, 30, 56, 42 - up, 9, '#8a4c38', '#c87646', '#edb76c');
-    ell(g, 8, 50 - up, 6, 6, '#c9874e'); ell(g, 57, 49 - up, 6, 6, '#c9874e');
-    poly(g, [[13, 27], [50, 27], [53, 61], [11, 61]], lg(g, 10, 27, 54, 61, [[0, '#b77b44'], [0.45, '#a14f3a'], [1, '#572f42']]));
-    for (let y = 33; y < 58; y += 6) line(g, 14, y, 50, y, 0.9, 'rgba(255,220,150,0.55)');
-    rrect(g, 12, 56, 40, 5, 1.5, '#d9b066'); rrect(g, 27, 55, 10, 7, 1.4, '#f0d08a');
-    ell(g, 32, 22, 12, 12, lg(g, 20, 10, 44, 34, [[0, '#e2b477'], [1, '#9a573d']]));
-    rrect(g, 21, 18, 22, 8, 3, '#4a3041'); bEyes(g, S, 27, 37, 22, 2.2);
-    poly(g, [[18, 18], [18, 7], [24, 2], [40, 2], [46, 7], [46, 18], [40, 14], [24, 14]], lg(g, 18, 2, 46, 18, [[0, '#e7c37a'], [0.55, '#9c6746'], [1, '#543d46']]));
-    line(g, 25, 6, 25, 14, 0.8, '#f7e7b5'); line(g, 32, 4, 32, 14, 0.8, '#f7e7b5'); line(g, 39, 6, 39, 14, 0.8, '#f7e7b5');
-    poly(g, [[24, 8], [27, -2], [31, 7]], '#c53b32'); poly(g, [[33, 7], [38, -2], [40, 10]], '#e34c3b');
-    ell(g, 32, 33, 5, 5, '#855642');
-    ell(g, 11, 31, 9, 11, lg(g, 2, 20, 20, 42, [[0, '#ecd18c'], [1, '#8b6649']]));
-    line(g, 11, 22, 11, 40, 0.8, '#f7e7b5'); line(g, 4, 31, 18, 31, 0.8, '#f7e7b5');
-    line(g, 57, 39 - up, 59, 9 - up, 2.2, '#d9d3be');
-    line(g, 57, 39 - up, 57, 10 - up, 0.8, '#ffffff');
-    poly(g, [[51, 11 - up], [57, 2 - up], [63, 11 - up]], '#d7d0bc');
-    line(g, 51, 14 - up, 63, 14 - up, 1.3, '#a34e43');
-    if (S.atk) ell(g, 58, 9 - up, 3, 3, '#ffe18a');
-  });
-  reg2('bolt_gladiator', 22, 12, function (g) {
-    g.save(); g.translate(11, 6); g.rotate(0.35);
-    line(g, -7, 0, 8, 0, 1.5, '#d8d2c0');
-    poly(g, [[-7, 0], [-4, -4], [-2, 0], [-4, 4]], '#bb382e');
-    poly(g, [[7, -4], [10, 0], [7, 4]], '#f1e4bd');
-    line(g, -1, -3, 4, -3, 0.9, '#bf5041'); line(g, -1, 3, 4, 3, 0.9, '#bf5041');
-    g.restore(); ell(g, 11, 6, 1.4, 1.4, '#ffe18a');
-  }, Object.assign({ glow: '#e65a42' }, BOLT));
 
   reg2('prop_cypress', 22, 34, function (g) { cypress(g, 11, 34, 0.82, '#a64b3c'); }, { shade: 0.4 });
   reg2('prop_amphora', 24, 30, function (g) {
@@ -4722,48 +5144,6 @@ const CL = GEAR === 'clogs' ? (y0, y1) => lg(g, 0, y0, 0, y1, [[0, '#fff090'], [
   COINS[R] = '$';
   regCoins(R);
 
-  bossReg('linebacker', function (g, S) {
-    const navy = '#101d3c', blue = '#203960', green = '#8be34f', trim = '#c9ff81';
-    // Cleats and heavy leg guards.
-    limb(g, 22, 58, 18, 71, 12, navy, blue, '#7296a5'); limb(g, 42, 58, 45, 70, 12, navy, blue, '#7296a5');
-    rrect(g, 9, 70, 18, 8, 2, '#101629'); rrect(g, 39, 69, 18, 8, 2, '#101629');
-    g.fillStyle = green; g.fillRect(11, 73, 12, 1.5); g.fillRect(41, 72, 12, 1.5);
-    // Broad shoulder pads, jersey and chest armor.
-    poly(g, [[12, 28], [22, 22], [42, 22], [53, 29], [50, 60], [14, 60]], lg(g, 12, 22, 53, 60, [[0, '#38567c'], [0.4, blue], [1, navy]]));
-    ell(g, 18, 32, 15, 10, lg(g, 4, 23, 32, 42, [[0, '#78aaae'], [1, '#243e63']]));
-    ell(g, 47, 32, 15, 10, lg(g, 32, 23, 60, 42, [[0, '#526b8b'], [1, '#1e3557']]));
-    g.strokeStyle = green; g.lineWidth = 2; g.beginPath(); g.ellipse(18, 31, 12, 7, -0.18, 0.15, Math.PI * 1.9); g.stroke();
-    g.beginPath(); g.ellipse(47, 31, 12, 7, 0.18, Math.PI * 1.05, Math.PI * 2.85); g.stroke();
-    rrect(g, 21, 33, 25, 26, 4, lg(g, 21, 33, 47, 59, [[0, '#2d4d70'], [1, navy]]));
-    g.fillStyle = green; g.fillRect(22, 35, 23, 2); g.fillRect(22, 56, 23, 2);
-    txt(g, 'BLITZ', 24, 40, 0.8, '#d7ff9a');
-    // Arms: lifted during the attack animation.
-    const up = S.up;
-    limb(g, 14, 34, 8, 45 - up, 11, navy, blue, '#7ea1b0');
-    limb(g, 8, 45 - up, 9, 53 - up, 10, navy, blue, '#7ea1b0');
-    ell(g, 9, 55 - up, 6, 5.4, '#253b5b');
-    limb(g, 51, 35, 57, 44 - up, 10, navy, blue, '#7ea1b0');
-    limb(g, 57, 44 - up, 54, 51 - up, 9, navy, blue, '#7ea1b0');
-    ell(g, 53, 53 - up, 5.6, 5.2, '#253b5b');
-    // Helmet and face guard; no real team marks.
-    ell(g, 32, 21, 16, 14, lg(g, 15, 6, 49, 35, [[0, '#8294a8'], [0.38, '#314863'], [1, '#101b33']]));
-    poly(g, [[16, 17], [17, 8], [23, 3], [40, 3], [47, 9], [48, 18], [41, 15], [21, 15]], lg(g, 16, 3, 48, 19, [[0, '#5b7690'], [0.5, '#263d5a'], [1, '#111c35']]));
-    g.fillStyle = green; g.fillRect(20, 14, 25, 2); g.fillRect(19, 16, 2, 8); g.fillRect(45, 16, 2, 8);
-    line(g, 20, 22, 44, 22, 1.5, '#b3c5cd'); line(g, 21, 18, 22, 29, 1.2, '#b3c5cd'); line(g, 43, 18, 42, 29, 1.2, '#b3c5cd');
-    bEyes(g, S, 27, 37, 20, 2.1);
-    // Tiny unlabeled team-number patch.
-    rrect(g, 29, 47, 7, 8, 1.4, '#c6e1d3'); txt(g, '7', 31, 48, 0.9, '#18375a');
-    if (S.atk) { glowRect(g, '#a4ff66', 1, 44 - up, 9, 13); glowRect(g, '#a4ff66', 53, 43 - up, 9, 13); }
-  });
-  reg2('bolt_linebacker', 22, 12, function (g) {
-    g.save(); g.translate(11, 6); g.rotate(-0.56);
-    ell(g, 0, 0, 8.8, 5.2, lg(g, -8, -5, 8, 5, [[0, '#c98c43'], [0.45, '#8a542b'], [1, '#4e2d27']]));
-    poly(g, [[-7, -1], [-10.2, -4.4], [-8.3, 0], [-10.1, 4.1], [-6.7, 1.4]], '#e4ba78');
-    line(g, -2.6, -3.4, -0.6, 3.3, 0.8, '#f4e2bd'); line(g, 1, -3.2, 2.6, 2.8, 0.8, '#f4e2bd');
-    ell(g, 5.2, -1.6, 1.1, 0.7, 'rgba(255,255,255,0.7)');
-    g.restore();
-    line(g, 1, 10, 21, 2, 0.6, 'rgba(161,247,111,0.75)');
-  }, Object.assign({ glow: '#9be85b' }, BOLT));
 
   reg2('prop_coffee', 26, 30, function (g) {
     glowRect(g, '#8ee2c1', 2, 2, 22, 25);
@@ -5124,30 +5504,6 @@ const CL = GEAR === 'clogs' ? (y0, y1) => lg(g, 0, y0, 0, y1, [[0, '#fff090'], [
   COINS[MX] = 'MX$';
   regCoins(MX);
 
-  bossReg('luchador',function(g,S){
-    const up=S.up;
-    hoverPlate(g,'#f7b84a','#9d3d5a','rgba(255,101,93,.62)');
-    poly(g,[[13,28],[30,34],[49,26],[60,68],[49,74],[16,71],[5,45]],lg(g,6,26,58,74,[[0,'#f33467'],[.42,'#e04b41'],[1,'#69254e']]));
-    for(let i=0;i<6;i++)line(g,10+i*8,40+i%2*4,14+i*6,67,.8,'rgba(255,208,91,.85)');
-    limb(g,22,58,19,70,10,SK.d,SK.m,SK.l);limb(g,42,58,45,70,10,SK.d,SK.m,SK.l);
-    rrect(g,13,68,17,6,2,'#2a2344');rrect(g,36,68,17,6,2,'#2a2344');
-    ell(g,32,49,21,17,lg(g,11,33,53,66,[[0,'#c9865f'],[.5,'#a95d43'],[1,'#67354a']]));
-    limb(g,15,38,8,47-up,8,'#6c3644','#e78c54','#f4bd6e');ell(g,7,50-up,7,7,'#d78b5c');
-    limb(g,49,38,57,47-up,8,'#6c3644','#e78c54','#f4bd6e');ell(g,58,50-up,7,7,'#d78b5c');
-    // iconic jaguar-style mask and crown crest
-    poly(g,[[15,26],[19,11],[26,5],[32,10],[38,5],[46,12],[49,27],[42,37],[22,37]],lg(g,14,8,50,37,[[0,'#ffd85c'],[.35,'#ed3d62'],[.7,'#11bdb1'],[1,'#8d2858']]));
-    poly(g,[[17,18],[25,17],[30,23],[26,27],[19,25]],'#251e3d');poly(g,[[47,18],[39,17],[34,23],[38,27],[45,25]],'#251e3d');
-    ell(g,24,21,2.1,1.5,S.stun?'#747486':S.eye);ell(g,40,21,2.1,1.5,S.stun?'#747486':S.eye);
-    poly(g,[[28,27],[32,25],[36,27],[34,32],[30,32]],'#fff0d0');line(g,29,34,35,34,1.2,'#4d203c');
-    poly(g,[[20,13],[26,3],[31,10],[36,2],[43,14],[37,12],[32,15],[26,12]],'#ffd24f');
-    if(S.atk){glowRect(g,'#ff523e',4,43-up,8,8);glowRect(g,'#2de1cc',52,43-up,8,8);}
-  });
-  reg2('bolt_luchador',22,12,function(g){
-    g.save();g.translate(11,7);g.rotate(-.16);
-    ell(g,0,0,9,2.5,'#6d354b');poly(g,[[-8,-1],[-5,-5],[4,-5],[8,-1]],lg(g,-8,-5,8,1,[[0,'#ffd963'],[.45,'#f09943'],[1,'#c94857']]));
-    g.fillStyle='#ffd15a';g.fillRect(-6,-1,12,1.1);g.fillStyle='#bb3d5b';g.fillRect(-2,-4,4,1.6);line(g,-1,-4,-1,-6,.8,'#fff0c1');line(g,2,-4,3,-6,.8,'#25d8c6');
-    for(let i=0;i<5;i++){const a=i*1.25;ell(g,Math.cos(a)*7,Math.sin(a)*3,1,1,['#25d8c6','#f04867','#ffd34e'][i%3]);}g.restore();
-  },Object.assign({glow:'#ff7458'},BOLT));
 
   reg2('adobe',32,32,function(g){
     const rows=[0,8,16,24];
@@ -5718,50 +6074,6 @@ const CL = GEAR === 'clogs' ? (y0, y1) => lg(g, 0, y0, 0, y1, [[0, '#fff090'], [
   regSkins(R);
   COINS[R] = '\u20AC'; regCoins(R);
 
-  // CHEF DE CHAOS, a hovering cyber-chef with a gold toque, chrome rolling pin and raised-attack pose.
-  bossReg('chef', function (g, S) {
-    const suit = '#342145', mid = '#75406e', pale = '#f6eadb';
-    limb(g, 23, 59, 21, 71, 11, '#241931', mid, '#dd9d7e');
-    limb(g, 41, 59, 43, 71, 11, '#241931', mid, '#dd9d7e');
-    poly(g, [[13, 70], [29, 70], [31, 79], [9, 79]], lg(g, 0, 68, 0, 80, [[0, '#a77b54'], [1, '#3d2849']]));
-    poly(g, [[34, 70], [51, 70], [56, 79], [32, 79]], lg(g, 0, 68, 0, 80, [[0, '#a77b54'], [1, '#3d2849']]));
-    ell(g, 32, 77, 23, 3.4, 'rgba(255,179,88,0.55)');
-    ell(g, 32, 73, 19, 3.4, lg(g, 13, 70, 51, 77, [[0, '#fff0b5'], [1, '#7a486d']]));
-    poly(g, [[12, 30], [52, 30], [49, 62], [16, 62]], lg(g, 12, 28, 52, 64, [[0, '#fff9ec'], [0.55, '#dac5c8'], [1, '#6d4a68']]));
-    rrect(g, 23, 36, 18, 18, 2, '#24172f');
-    ell(g, 32, 45, 8, 8, S.stun ? '#797783' : '#ff4770'); ell(g, 32, 45, 3, 3, '#fff7d8');
-    // apron, stitched hem and crossed cutlery insignia
-    poly(g, [[21, 42], [43, 42], [46, 61], [18, 61]], lg(g, 18, 42, 46, 62, [[0, '#ed7186'], [1, '#803c68']]));
-    line(g, 22, 59, 42, 59, 1, '#ffd27a');
-    line(g, 27, 48, 37, 55, 1.6, '#fff1c5'); line(g, 37, 48, 27, 55, 1.6, '#fff1c5');
-    // chrome rolling pin in the left hand
-    line(g, 8, 48 - S.up, 20, 43 - S.up, 5, '#563c54');
-    line(g, 8, 47 - S.up, 20, 42 - S.up, 2.4, '#f1d8a4');
-    ell(g, 7, 48 - S.up, 3, 3, '#e9bd73'); ell(g, 21, 42 - S.up, 3, 3, '#e9bd73');
-    limb(g, 51, 36, 57, 48 - S.up, 9, '#50334c', '#d38c75', '#f5d2b2'); ell(g, 58, 52 - S.up, 6, 6, '#e6ad89');
-    // moustached porcelain face and hooked nose
-    ell(g, 32, 23, 18, 15, lg(g, 16, 8, 47, 39, [[0, '#fff8e9'], [0.6, '#e8d2cd'], [1, '#a77d8d']]));
-    bEyes(g, S, 27, 37, 22, 2.1);
-    line(g, 27, 28, 32, 30, 1, '#94576a'); line(g, 32, 30, 31, 32, 1, '#94576a');
-    ell(g, 26, 32, 7, 3.2, '#392238'); ell(g, 38, 32, 7, 3.2, '#392238');
-    poly(g, [[31, 31], [30, 36], [34, 36]], '#9b5b69');
-    for (let i = 0; i < 5; i++) line(g, 25 + i * 3, 32, 22 + i * 3, 36, 0.6, '#e8c4ba');
-    // towering pleated toque
-    ell(g, 32, 8, 17, 7, '#fff9e9');
-    rrect(g, 21, 1, 22, 13, 8, lg(g, 21, 1, 43, 14, [[0, '#fffef5'], [0.65, '#e8d8d0'], [1, '#a78891']]));
-    ell(g, 32, 2, 10, 3.5, '#fffdf5');
-    line(g, 25, 4, 24, 12, 0.8, '#c4aab2'); line(g, 31, 3, 31, 12, 0.8, '#d9c2c2'); line(g, 38, 4, 40, 12, 0.8, '#b39aa8');
-    rrect(g, 16, 13, 32, 4, 1.6, '#d4a64e');
-    if (S.atk) { glowRect(g, '#ff684f', 51, 40, 14, 17); }
-  });
-  reg2('bolt_chef', 22, 12, function (g) {
-    // Golden baguette projectile with scoring cuts and a red-hot propulsion trail.
-    const tr = g.createLinearGradient(0, 0, 22, 0); tr.addColorStop(0, 'rgba(255,94,116,0)'); tr.addColorStop(0.55, 'rgba(255,122,127,0.62)'); tr.addColorStop(1, '#fff0a8');
-    poly(g, [[0, 6], [5, 3.4], [17, 2.2], [21, 5], [20, 8.5], [7, 10], [2, 8.5]], tr);
-    poly(g, [[4, 5], [7, 3.4], [8, 5.6], [11, 3], [12, 5.4], [16, 2.8], [17, 6], [15, 8.3], [6, 8.8]], '#e3a34b');
-    line(g, 8, 5, 9, 7, 0.8, '#fff0c1'); line(g, 13, 4, 14, 6.8, 0.8, '#fff0c1');
-    ell(g, 18, 5, 2, 1.4, '#fff3ba');
-  }, Object.assign({ glow: '#ff985f' }, BOLT));
 
   const props = {
     easel: [28, 38, function (g) {
@@ -6281,13 +6593,24 @@ const CL = GEAR === 'clogs' ? (y0, y1) => lg(g, 0, y0, 0, y1, [[0, '#fff090'], [
   /* national landmarks: australiaeast */
 {
   Object.assign(SC.australiaeast, {
-    sc_au_uluru: [240, 150, function (g, w, h, P) {
-      const rock = lg(g, 25, h - 110, 180, h, [[0, '#ffb36b'], [0.42, '#c45e59'], [1, '#5e3569']]);
-      g.beginPath(); g.moveTo(8, h); g.lineTo(21, h - 39); g.quadraticCurveTo(32, h - 67, 55, h - 82); g.quadraticCurveTo(72, h - 101, 100, h - 103); g.quadraticCurveTo(125, h - 100, 145, h - 94); g.quadraticCurveTo(171, h - 91, 185, h - 70); g.quadraticCurveTo(206, h - 54, 232, h - 39); g.lineTo(240, h); g.closePath(); g.fillStyle = rock; g.fill();
-      g.strokeStyle = P.accent; g.lineWidth = 1.3; g.beginPath(); g.moveTo(22, h - 43); g.quadraticCurveTo(62, h - 91, 101, h - 94); g.quadraticCurveTo(142, h - 88, 173, h - 67); g.stroke();
-      for (let i = 0; i < 7; i++) { const x = 48 + i * 22; line(g, x, h - 62 - (i % 2) * 8, x + 12, h - 12, 1.1, 'rgba(72,35,74,0.5)'); }
-      g.fillStyle = '#45345d'; g.fillRect(0, h - 8, w, 8); ell(g, 31, h - 11, 24, 5, '#c4865a'); ell(g, 207, h - 12, 29, 6, '#bd7955');
-      txt(g, 'ULURU', 96, h - 22, 1, '#ffe1a0', '#492957');
+    sc_au_uluru: [340, 210, function (g, w, h) {
+      g.beginPath(); g.moveTo(3, h - 8); g.lineTo(14, h - 62);
+      g.quadraticCurveTo(26, h - 118, 63, h - 143); g.quadraticCurveTo(99, h - 165, 165, h - 163);
+      g.quadraticCurveTo(233, h - 164, 270, h - 145); g.quadraticCurveTo(300, h - 126, 313, h - 91);
+      g.quadraticCurveTo(330, h - 67, 337, h - 10); g.closePath();
+      g.fillStyle = lg(g, 0, h - 165, 80, h, [[0, '#e3a06a'], [0.38, '#c46e49'], [1, '#894739']]); g.fill();
+      g.save(); g.clip();
+      const r = rng(1287);
+      for (let x = 22; x < w; x += 8) {
+        const top = h - 159 + r() * 18;
+        g.strokeStyle = x % 16 ? 'rgba(106,54,39,0.42)' : 'rgba(247,173,110,0.5)'; g.lineWidth = 1 + r() * 2;
+        g.beginPath(); g.moveTo(x, top); g.bezierCurveTo(x + 4, top + 32, x - 5, h - 54, x + 6, h - 12); g.stroke();
+      }
+      for (let y = h - 140; y < h - 15; y += 14) line(g, 10, y, w - 10, y + 9, 0.6, 'rgba(242,160,103,0.18)');
+      g.restore();
+      poly(g, [[0, h - 14], [75, h - 22], [167, h - 9], [268, h - 19], [340, h - 13], [340, h], [0, h]], '#bd7851');
+      for (let x = 7; x < w; x += 21) { ell(g, x, h - 7 - x % 5, 5, 1.4, '#88835c'); line(g, x, h - 9, x + 1, h - 13, 0.7, '#c1ad79'); }
+      txt(g, 'ULURU', 146, h - 9, 0.9, '#f3d09a', '#7f4e3a');
     }],
     sc_au_flinders: [220, 190, function (g, w, h, P) {
       const stone = lg(g, 0, h - 160, 0, h, [[0, '#d9c9c4'], [0.5, '#907a9d'], [1, '#3a315f']]);
@@ -6540,10 +6863,157 @@ const CL = GEAR === 'clogs' ? (y0, y1) => lg(g, 0, y0, 0, y1, [[0, '#fff090'], [
     }]
   });
 }
+  Object.assign(SC.westeurope, {
+    sc_nl_transit: [280, 150, function (g, w, h) {
+      g.fillStyle = '#af7558'; g.fillRect(22, 38, 236, 97);
+      for (let y = 42; y < 130; y += 6) for (let x = 25 + y % 12; x < 255; x += 16) line(g, x, y, x + 12, y, 0.6, '#d7ab84');
+      poly(g, [[15, 40], [62, 18], [113, 40]], '#624952'); poly(g, [[166, 40], [216, 18], [265, 40]], '#624952');
+      g.fillStyle = '#d7c3a0'; g.fillRect(120, 11, 40, 124);
+      poly(g, [[114, 13], [140, 0], [166, 13]], '#375968');
+      ell(g, 140, 32, 13, 13, '#efe2b7'); ell(g, 140, 32, 10, 10, '#334f5c');
+      line(g, 140, 32, 140, 24, 1, '#fff0bd'); line(g, 140, 32, 147, 35, 1, '#fff0bd');
+      for (let x = 33; x < 252; x += 28) {
+        rrect(g, x, 55, 17, 35, 7, '#324f62'); lit(g, x + 2, 60, 13, 25, '#dfd3a6'); line(g, x + 8.5, 58, x + 8.5, 88, 1, '#685655');
+      }
+      rrect(g, 63, 94, 155, 16, 2, '#1d5386'); txt(g, 'STATION SLOTERDIJK', 75, 99, 1, '#f5efcc');
+      g.fillStyle = '#555c61'; g.fillRect(0, 136, w, 14); line(g, 0, 137, w, 137, 1.5, '#d8d0b4');
+      [18, 262].forEach((x) => { line(g, x, 99, x, 136, 1.5, '#314556'); rrect(g, x - 8, 95, 16, 12, 1, '#1965a4'); txt(g, 'TRAM', x - 6, 99, 0.5, '#ffffff'); });
+    }],
+    sc_nl_canalcruise: [260, 115, function (g, w, h) {
+      g.fillStyle = '#497588'; g.fillRect(0, 54, w, 61);
+      for (let x = 0; x < w; x += 43) {
+        g.fillStyle = ['#875449', '#b2886e', '#665260'][x / 43 % 3 | 0]; g.fillRect(x + 2, 14, 37, 45);
+        poly(g, [[x, 14], [x + 20, 0], [x + 41, 14]], '#545365');
+        for (let y = 22; y < 54; y += 14) { lit(g, x + 9, y, 7, 9, '#dbc496'); lit(g, x + 25, y, 7, 9, '#b7ccd2'); }
+      }
+      g.fillStyle = '#b7b7a5'; g.fillRect(0, 57, w, 3);
+      for (let x = 8; x < w; x += 20) line(g, x, 63 + x % 9, x + 15, 63 + x % 9, 0.7, '#a3c8d0');
+      g.save(); g.translate(45, 65); canalBoat(g); g.restore();
+      txt(g, 'RONDVAART', 100, 49, 0.7, '#f9edd4');
+    }]
+  });
+  Object.assign(SC.japaneast, {
+    sc_jp_metro: [320, 180, function (g, w, h) {
+      g.fillStyle = '#4c626f'; g.fillRect(3, 73, 314, 75);
+      poly(g, [[0, 74], [36, 34], [282, 34], [320, 74]], lg(g, 0, 34, 0, 74, [[0, '#9aa9ae'], [1, '#3c5664']]));
+      for (let x = 20; x < 308; x += 24) { line(g, x, 48, x, 128, 2, '#c2c7bf'); line(g, x, 49, x + 18, 66, 0.8, '#d6d3c4'); }
+      g.fillStyle = '#202f40'; g.fillRect(15, 76, 290, 39);
+      for (let x = 25; x < 300; x += 29) lit(g, x, 79, 20, 3, '#f4dfb1');
+      rrect(g, 72, 43, 175, 23, 2, '#e3e5da');
+      ell(g, 86, 54, 8, 8, '#e9982e'); txt(g, 'G', 82.4, 50.3, 1, '#283d53');
+      txt(g, 'SHIBUYA - G01', 101, 48, 1.25, '#1e4057');
+      g.save(); g.translate(35, 83); commuterTrain(g, false); g.restore();
+      g.fillStyle = '#91a0a5'; g.fillRect(0, 127, 320, 6);
+      for (let x = 22; x < 314; x += 72) { g.fillStyle = '#606f79'; g.fillRect(x, 133, 12, 47); line(g, x + 2, 135, x + 2, 178, 1, '#a7b3b0'); }
+      rrect(g, 198, 139, 103, 17, 1, '#087caa'); txt(g, 'TOKYO METRO', 207, 144, 0.9, '#ffffff');
+      g.fillStyle = '#283b4c'; g.fillRect(0, 172, w, 8);
+      [51, 120, 184].forEach((x) => { ell(g, x, 161, 2, 2.5, '#caa18c'); line(g, x, 164, x, 171, 3, '#3f5b77'); });
+    }],
+    sc_jp_billboards: [300, 240, function (g, w, h) {
+      const ads = [['AZURE', '#147cb3'], ['COPILOT', '#5a589d'], ['GITHUB', '#255341'], ['XBOX', '#287647'], ['TEAMS', '#6555a3'], ['TOKYO', '#ad416c']];
+      [10, 110, 211].forEach((x, i) => {
+        const top = [22, 0, 35][i], bw = i === 1 ? 93 : 80;
+        g.fillStyle = lg(g, 0, top, 0, h, [[0, '#414f69'], [1, '#18283d']]); g.fillRect(x, top, bw, h - top - 26);
+        for (let y = top + 8; y < 198; y += 10) for (let wx = x + 5; wx < x + bw - 4; wx += 10) lit(g, wx, y, 5, 4, '#a9bdc8');
+        for (let ad = 0; ad < 2; ad++) {
+          const a = ads[i * 2 + ad], y = top + 12 + ad * 76;
+          rrect(g, x + 3, y, bw - 6, 62, 2, '#b4cccd');
+          g.fillStyle = lg(g, 0, y, 0, y + 60, [[0, a[1]], [1, '#152a42']]); g.fillRect(x + 5, y + 2, bw - 10, 58);
+          if (!i && !ad) msLogo(g, x + 26, y + 8, 22);
+          else { ell(g, x + bw / 2, y + 24, 15, 12, 'rgba(217,243,235,0.2)'); txt(g, ad ? 'CLOUD' : 'AI', x + 24, y + 18, 1, '#e6ece2'); }
+          txt(g, a[0], x + bw / 2 - txtW(a[0], 1.1) / 2, y + 43, 1.1, '#ffffff');
+        }
+      });
+      g.fillStyle = '#29364a'; g.fillRect(0, 215, w, 25);
+      for (let x = -20; x < 300; x += 22) poly(g, [[x, 240], [x + 13, 220], [x + 23, 220], [x + 10, 240]], '#c1c9c5');
+      const r = rng(754);
+      for (let i = 0; i < 29; i++) {
+        const x = 9 + r() * 280, y = 216 + r() * 14;
+        ell(g, x, y - 5, 1.5, 1.8, '#bfa493'); line(g, x, y - 3, x + 1, y + 1, 2.8, ['#314a66', '#a16b75', '#c4b397'][i % 3]);
+        line(g, x, y + 1, x - 1.5, y + 4, 0.7, '#1b293e'); line(g, x + 1, y + 1, x + 2.5, y + 4, 0.7, '#1b293e');
+      }
+      [4, 294].forEach((x) => { line(g, x, 193, x, 232, 1.3, '#58717c'); rrect(g, x - 3, 190, 6, 13, 1, '#193443'); ell(g, x, 199, 1.7, 1.7, '#7dbb89'); });
+    }],
+    sc_jp_sakura: [260, 160, function (g, w, h) {
+      const r = rng(912);
+      for (let t = 0; t < 3; t++) {
+        const x = 43 + t * 85, top = 33 + (t % 2) * 13;
+        limb(g, x, h, x - 5, top + 44, 7, '#644d5a', '#a6807a');
+        [[-30, 7], [24, -4], [-7, -15], [37, 21]].forEach(([dx, dy]) => {
+          line(g, x - 4, top + 52, x + dx, top + dy + 17, 2.4, '#725662');
+          for (let i = 0; i < 27; i++) {
+            const bx = x + dx + (r() - 0.5) * 45, by = top + dy + (r() - 0.5) * 24;
+            ell(g, bx, by, 4 + r() * 5, 2.6 + r() * 3, ['#d885b3', '#efb1ca', '#f7d4df', '#ffe6e7'][i % 4]);
+            ell(g, bx + 1, by - 1, 0.8, 0.7, '#fff0e6');
+          }
+        });
+      }
+      g.fillStyle = '#6e6667'; g.fillRect(0, h - 9, w, 9);
+      for (let i = 0; i < 60; i++) ell(g, r() * w, h - r() * 18, 1.5, 0.6, '#f3c9df');
+      line(g, 0, h - 10, w, h - 10, 1, '#c1bba7');
+    }]
+  });
+  Object.assign(SC.australiaeast, {
+    sc_au_beach: [360, 170, function (g, w, h) {
+      g.fillStyle = lg(g, 0, 30, 0, h, [[0, '#348baf'], [0.45, '#65becb'], [1, '#bcdfce']]); g.fillRect(0, 48, w, 122);
+      poly(g, [[0, 170], [0, 123], [64, 117], [147, 129], [227, 98], [300, 84], [360, 90], [360, 170]], lg(g, 0, 90, 0, 170, [[0, '#e9c78e'], [1, '#c19e79']]));
+      for (let wave = 0; wave < 4; wave++) {
+        g.strokeStyle = wave % 2 ? '#bde7df' : '#f1f5df'; g.lineWidth = wave % 2 ? 1 : 2;
+        g.beginPath(); g.moveTo(0, 66 + wave * 13); g.bezierCurveTo(120, 52 + wave * 16, 176, 113 + wave * 5, 360, 56 + wave * 7); g.stroke();
+      }
+      g.fillStyle = '#c9d6c6'; g.fillRect(263, 57, 91, 28); g.fillStyle = '#f0efda'; g.fillRect(265, 47, 87, 11);
+      for (let x = 270; x < 350; x += 13) lit(g, x, 61, 8, 12, '#7dadae');
+      txt(g, 'BONDI SURF', 273, 50, 0.8, '#226879');
+      palm(g, 336, 121, 106);
+      [[42, 137, '#d87b66'], [126, 145, '#598da6'], [219, 129, '#d9ac51']].forEach(([x, y, color]) => {
+        line(g, x, y, x, y - 22, 0.9, '#765d55');
+        poly(g, [[x - 16, y - 20], [x, y - 30], [x + 16, y - 20]], color);
+        ell(g, x + 10, y + 3, 12, 2, '#e8d8ae');
+      });
+      [181, 249].forEach((x) => { line(g, x, 143, x, 108, 1, '#e9dfc2'); poly(g, [[x, 108], [x + 14, 113], [x, 117]], '#cf4750'); poly(g, [[x, 117], [x + 14, 113], [x + 14, 120], [x, 124]], '#efc24c'); });
+      ell(g, 196, 146, 3, 17, '#e9d8ae', 0.24); line(g, 196, 131, 197, 160, 0.8, '#dc755c');
+      txt(g, 'SYDNEY BEACH', 16, 156, 0.85, '#5e6057');
+    }],
+    sc_au_outback: [340, 170, function (g, w, h) {
+      poly(g, [[0, 85], [35, 63], [76, 72], [122, 42], [162, 62], [211, 51], [257, 70], [298, 56], [340, 84], [340, 170], [0, 170]], lg(g, 0, 60, 0, 170, [[0, '#bc7159'], [1, '#b35c43']]));
+      g.fillStyle = '#d39365'; g.beginPath(); g.moveTo(86, 170); g.quadraticCurveTo(112, 132, 229, 97); g.quadraticCurveTo(165, 133, 154, 170); g.closePath(); g.fill();
+      const r = rng(303);
+      for (let i = 0; i < 70; i++) {
+        const x = r() * w, y = 97 + r() * 72; ell(g, x, y, 2 + r() * 5, 1, '#916e4b');
+        if (i % 5 === 0) { line(g, x, y, x - 2, y - 4, 0.6, '#a49a68'); line(g, x, y, x + 2, y - 6, 0.6, '#c8b47d'); }
+      }
+      [28, 284].forEach((x, i) => {
+        line(g, x, 133, x + 7, 50 + i * 18, 5, '#797264'); line(g, x + 5, 80, x - 17, 57, 2.2, '#87816c'); line(g, x + 6, 75, x + 26, 43, 2, '#87816c');
+        [[-15, 55], [8, 38], [30, 44], [11, 65]].forEach(([dx, y]) => ell(g, x + dx, y + i * 18, 22, 8, '#6d8068', -0.1));
+      });
+      g.fillStyle = '#e5cda4'; g.fillRect(185, 90, 93, 30); poly(g, [[179, 91], [193, 80], [271, 80], [284, 91]], '#81685c');
+      rrect(g, 193, 96, 77, 12, 1, '#66473e'); txt(g, 'OUTBACK ROADHOUSE', 197, 100, 0.65, '#ffe1a3');
+      g.save(); g.translate(188, 120); g.scale(0.9, 0.9); outback4x4(g); g.restore();
+      line(g, 163, 99, 163, 137, 1.6, '#625a4a'); rrect(g, 139, 94, 48, 16, 1, '#d3a442'); txt(g, 'ULURU', 148, 99, 0.9, '#4e4b3b');
+    }]
+  });
+
   /* @@REGION_FRAGMENTS@@ */
   const sceneryKeys = {};
   // Signature landmarks open the strip and appear about twice as often as other local pieces.
   const sceneryStars = { francecentral: ['sc_fr_eiffel', 'sc_fr_sacrecoeur', 'sc_fr_moulinrouge'] };
+  // Landmarks already painted in each bg_far_<region> panorama; the street strip skips these copies.
+  const panoramaLandmarks = {
+    westeurope: ['sc_we_mill', 'sc_we_kerk'],
+    uksouth: ['sc_uk_bigben', 'sc_uk_eye', 'sc_uk_tbridge', 'sc_uk_shard'],
+    japaneast: ['sc_jp_tower'],
+    australiaeast: ['sc_au_opera', 'sc_au_bridge', 'sc_au_tower'],
+    brazilsouth: ['sc_br_christ', 'sc_br_sugar'],
+    italynorth: ['sc_it_colosseum', 'sc_it_pisa', 'sc_it_milano', 'sc_it_firenze'],
+    westus2: ['sc_rd_rainier', 'sc_rd_needle'],
+    mexicocentral: ['sc_mx_pyramidsun', 'sc_mx_angel'],
+    francecentral: ['sc_fr_eiffel', 'sc_fr_sacrecoeur', 'sc_fr_arc']
+  };
+  const sceneryRoutes = {
+    westeurope: [[0, 'sc_we_centraal'], [0.18, 'sc_we_schiphol'], [0.36, 'sc_nl_canalcruise'], [0.52, 'sc_nl_transit', 270], [0.68, 'sc_we_centraal'], [0.84, 'sc_we_schiphol']],
+    japaneast: [[0, 'sc_jp_billboards'], [0.15, 'sc_jp_metro', 325], [0.34, 'sc_jp_sakura', 300], [0.56, 'sc_jp_shibuya'], [0.76, 'sc_jp_sakura', 300]],
+    australiaeast: [[0, 'sc_au_beach', 270], [0.23, 'sc_au_outback', 270], [0.42, 'sc_au_uluru', 260], [0.62, 'sc_au_outback', 270], [0.81, 'sc_au_beach', 270]]
+  };
   Object.keys(SC).forEach(function (r) {
     sceneryKeys[r] = Object.keys(SC[r]);
     Object.keys(SC[r]).forEach(function (k) { const d = SC[r][k]; reg2(k, d[0], d[1], function (g, w, h) { d[2](g, w, h, MP[r]); }, FLAT); });
@@ -6592,6 +7062,8 @@ const CL = GEAR === 'clogs' ? (y0, y1) => lg(g, 0, y0, 0, y1, [[0, '#fff090'], [
     obSize: obSize,
     sceneryKeys: sceneryKeys,
     sceneryStars: sceneryStars,
+    sceneryRoutes: sceneryRoutes,
+    panoramaLandmarks: panoramaLandmarks,
     billKeys: billKeys,
     buildCloudPlatform: function (scene, p) {
       const variant = Math.abs(Math.round(p.x / 100)) % 4;
@@ -6600,6 +7072,8 @@ const CL = GEAR === 'clogs' ? (y0, y1) => lg(g, 0, y0, 0, y1, [[0, '#fff090'], [
         if (!defs[key]) reg2(key, p.w, p.h, function (g) {
           if (p.cloudKind === 'metro') {
             if (p.h <= 24) metroDeck(g, p.w, p.h, p.lowTunnel); else metroBlock(g, p.w, p.h, variant);
+          } else if (p.cloudKind === 'tube') {
+            tubeBlock(g, p.w, p.h, p.lowTunnel);
           } else if (p.h <= 24) {
             cloudDeck(g, p.w, p.h, p.cloudKind, p.lowTunnel);
           } else if (p.cloudKind === 'docker' || p.cloudKind === 'aks') {

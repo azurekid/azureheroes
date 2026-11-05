@@ -34,19 +34,22 @@
 
   // Climb walls rise beyond double-jump height (about 160px) so they need wall jumps; TOP_Y keeps the hero below the HUD.
   const TOP_Y = 106, CLIMB_LOW = 150, CLIMB_MIN = 164, CLIMB_MAX = 186;
+  // Street walkways stay low (about one tile band above the water) so landmarks remain visible above them.
+  // Height comes from narrow climb towers and cloud stairways, not from tall solid ground blocks.
+  const STREET_Y = 300, GROUND_MIN_Y = 258, TOWER_W = [120, 160];
 
   // Terrain mixes plain gaps with steps (walls to jump up), drops, floating upper-tier platforms and stepping stones over wide gaps.
   function makeRun(m) {
     const o = m.opt;
-    const P = [{ x: 0, y: 270, w: 420, h: 130 }];
+    const P = [{ x: 0, y: STREET_Y, w: 420, h: 400 - STREET_Y }];
     const bridges = [], movers = [], ledges = [], span = {};
-    const wallRate = o.wallRate === undefined ? 0.22 : o.wallRate, stairRate = o.stairRate === undefined ? 0.14 : o.stairRate;
-    let y = 270, lastKind = '';
+    const wallRate = o.wallRate === undefined ? 0.16 : o.wallRate, stairRate = o.stairRate === undefined ? 0.1 : o.stairRate;
+    let y = STREET_Y, lastKind = '';
     for (let i = 1; i <= o.count; i++) {
       const prev = P[P.length - 1];
       const r = Math.random();
       let kind = i > 1 && r < Math.max(0.28, o.stepRate) ? 'step' : i > 1 && r < Math.max(0.28, o.stepRate) + Math.max(0.24, o.dropRate) ? 'drop' : 'gap';
-      if (i === 1) kind = 'step';
+      if (i === 1) kind = 'gap';
       if (o.water && i > 1 && i < o.count) {
         const r2 = Math.random();
         if (r2 < o.boatRate) kind = 'boat';
@@ -58,26 +61,29 @@
         if (r3 < wallRate && y - CLIMB_LOW >= TOP_Y) kind = 'wall';
         else if (r3 < wallRate + stairRate && y - 96 >= TOP_Y) kind = 'stairs';
       }
+      // after a climb the route drops back to the low street so walls stay features, not a raised walkway
+      if (lastKind === 'wall' || lastKind === 'stairs') kind = 'drop';
       let gap = 0, ny = y;
       if (kind === 'wall') ny = Math.max(TOP_Y, y - ri(CLIMB_MIN, CLIMB_MAX));
       if (kind === 'stairs') { gap = ri(160, 190); ny = Math.max(TOP_Y, y - ri(96, 124)); }
       if (kind === 'bridge') { gap = ri(120, 190); ny = y; }
       if (kind === 'boat') { gap = ri(240, 300); ny = clamp(y + ri(-20, 20), 250, 300); }
-      if (kind === 'step') { ny = y - (i === 1 ? ri(64, 68) : ri(42, 68)); if (ny < 178) kind = 'drop'; }
-      if (kind === 'drop') { gap = ri(50, 110); ny = y + ri(40, 90); if (ny > 300) kind = 'gap'; }
+      if (kind === 'step') { ny = y - ri(20, 36); if (ny < GROUND_MIN_Y) kind = 'drop'; }
+      if (kind === 'drop') { gap = ri(50, 110); ny = lastKind === 'wall' || lastKind === 'stairs' ? ri(282, STREET_Y) : Math.min(STREET_Y, y + ri(24, 42)); if (ny - y < 20) kind = 'gap'; }
       if (kind === 'gap') {
         gap = ri(o.gapMin, o.gapMax);
         const maxRise = gap > 140 ? 20 : 30;
-        ny = clamp(y + ri(-maxRise, 40), 178, 300);
+        ny = clamp(y + ri(-maxRise, 30), GROUND_MIN_Y, STREET_Y);
       }
       // the last rooftops come back down so the boss arena stays at street height
       if (i >= o.count - 1) ny = Math.max(ny, 200);
       const wallFrom = y;
       y = ny;
       lastKind = kind;
-      const w = i === o.count ? 480 : ri(o.minW, o.maxW);
+      const w = i === o.count ? 480 : kind === 'wall' || kind === 'stairs' ? ri(TOWER_W[0], TOWER_W[1]) : ri(o.minW, o.maxW);
       P.push({ x: prev.x + prev.w + gap, y: y, w: w, h: 400 - y });
       if (kind === 'wall') Object.assign(P[P.length - 1], { climb: true, wallFrom: wallFrom });
+      if (kind === 'wall' || kind === 'stairs') P[P.length - 1].tower = true;
       if (kind === 'stairs') {
         const gs = prev.x + prev.w;
         ledges.push({ x: gs + 18, y: wallFrom - 52, w: 52, h: 14, float: true, ledge: true },
@@ -107,7 +113,7 @@
     shuffle(free);
 
     const lasers = [], enemies = [], used = {}, hackerAt = {};
-    const hackerPlatforms = free.slice(0, Math.max(1, Math.floor(free.length / 9)));
+    const hackerPlatforms = free.filter((i) => P[i].w >= 200).slice(0, Math.max(1, Math.floor(free.length / 9)));
     hackerPlatforms.forEach((i) => {
       const p = P[i];
       hackerAt[i] = 1;
@@ -143,20 +149,26 @@
     });
     bridges.forEach((b) => { if (!b.draw && Math.random() < 0.5) enemies.push({ type: 'robot', x: Math.round(b.x + b.w / 2), y: b.y, range: Math.max(10, Math.round(b.w / 2 - 34)), shoot: shoot() }); });
 
-    // floating upper-tier platforms, stepping stones over wide gaps
-    const floaters = [], coins = [];
-    for (let i = 1; i < n - 1; i++) {
-      const p = P[i];
-      if (pipeAt[i] || lasered[i] || cpIdx.indexOf(i) >= 0 || p.w < 230 || (i % 3 !== 0 && Math.random() > o.floatRate)) continue;
-      const fw = ri(90, 130), fy = p.y - ri(70, 88);
-      if (fy < 90) continue;
-      const fx = Math.round(p.x + p.w * rnd(0.3, 0.45));
-      floaters.push({ x: fx, y: fy, w: fw, h: 14, float: true });
-      if (p.w >= 300 && Math.random() < 0.55) {
-        const x2 = fx + fw + ri(30, 55), y2 = fy - ri(52, 66), w2 = ri(60, 90);
-        if (y2 >= 110 && x2 + w2 < p.x + p.w - 50) floaters.push({ x: x2, y: y2, w: w2, h: 14, float: true });
+    // Azure cloud stairways: chains of cloud platforms rising from the street toward the sky, rewards on top
+    const floaters = [], coins = [], SKY = 'sky_cloud';
+    const stairway = (i) => {
+      const p = P[i], next = P[i + 1], limit = next.tower || pipeAt[i + 1] || lasered[i + 1] ? next.x - 24 : next.x + next.w * 0.6;
+      let cx = Math.round(p.x + p.w * rnd(0.12, 0.25)), cy = p.y - ri(62, 74), made = 0;
+      const steps = ri(2, 4);
+      for (let k = 0; k < steps && cy >= 104; k++) {
+        const top = k === steps - 1 || cy - 60 < 104, cw = top ? ri(110, 150) : ri(64, 90);
+        if (cx + cw > limit) break;
+        floaters.push({ x: cx, y: cy, w: cw, h: 14, float: true, cloud: SKY, sky: k + 1 });
+        made++;
+        cx += cw + ri(26, 50); cy -= ri(48, 60);
       }
-    }
+      return made > 1;
+    };
+    const skyBase = [];
+    for (let i = 1; i < n - 1; i++) if (!pipeAt[i] && !lasered[i] && cpIdx.indexOf(i) < 0 && !P[i].tower && P[i].w >= 180 && !P[i + 1].tower) skyBase.push(i);
+    let chains = 0;
+    skyBase.forEach((i, j) => { if ((j % 3 === 0 || Math.random() < o.floatRate) && (j === 0 || skyBase[j - 1] !== i - 1 || Math.random() < 0.5) && stairway(i)) chains++; });
+    shuffle(skyBase.slice()).forEach((i) => { if (chains < 3 && !floaters.some((f) => f.x >= P[i].x && f.x < P[i].x + P[i].w) && stairway(i)) chains++; });
     floaters.forEach((f) => { if (f.w >= 80 && Math.random() < (o.floatEnemyRate || 0)) enemies.push({ type: 'robot', x: Math.round(f.x + f.w / 2), y: f.y, range: Math.round(f.w / 2 - 22), shoot: shoot() }); });
     shuffle(free.filter((i) => !lasered[i] && !hackerAt[i])).slice(0, Math.ceil(free.length * 0.65) - hackerPlatforms.length).forEach((i, j) => {
       const p = P[i], type = ['bug', 'guest', 'rbac', 'endpoint', 'image'][j % 5];
@@ -165,7 +177,7 @@
     for (let i = 1; i < n; i++) {
       const gs = P[i - 1].x + P[i - 1].w, ge = P[i].x;
       if (span[i]) continue;
-      if (ge - gs > 140 && Math.random() < o.stoneRate) floaters.push({ x: Math.round((gs + ge) / 2 - 28), y: Math.min(P[i - 1].y, P[i].y) + ri(14, 30), w: 56, h: 14, float: true, stone: true });
+      if (ge - gs > 140 && Math.random() < o.stoneRate) floaters.push({ x: Math.round((gs + ge) / 2 - 30), y: Math.min(P[i - 1].y, P[i].y) + ri(14, 30), w: 60, h: 14, float: true, stone: true, cloud: SKY });
     }
     floaters.forEach((f) => { if (!f.stone) for (let c = 0; c < 3; c++) coins.push({ x: Math.round(f.x + f.w * (0.2 + c * 0.3)), y: f.y - 24 }); });
     for (let i = 1; i < n; i++) {
@@ -180,7 +192,7 @@
     const tokenIdx = shuffle(free.slice()).slice(0, Math.max(3, Math.round(n / 6)));
     const mfaTokens = tokenIdx.map((i) => ({ x: Math.round(P[i].x + P[i].w * rnd(0.15, 0.3)), y: P[i].y - 50 }));
 
-    const spots = shuffle(floaters.filter((f) => !f.stone).map((f) => ({ x: f.x + f.w / 2, y: f.y - 34 })));
+    const spots = shuffle(floaters.filter((f) => !f.stone).map((f) => ({ x: f.x + f.w / 2, y: f.y - 34 }))).sort((a, b) => a.y - b.y);
     shuffle(free.slice()).forEach((i) => spots.push({ x: Math.round(P[i].x + P[i].w * rnd(0.55, 0.8)), y: P[i].y - 44 }));
     const powerups = powerKinds(o.power, POWER_RUN).map((kind, i) => Object.assign({ kind: kind }, spots[i]));
 
@@ -260,7 +272,7 @@
     };
   }
 
-  const OB_SIZE = { bus: [96, 56], cab: [72, 42], flowers: [56, 34], bikes: [84, 34], herring: [88, 62], bakery: [88, 62], icecream: [64, 38], lifeguard: [34, 52], vespa: [68, 44], fiat: [78, 44], cafe: [78, 40], kiosk: [44, 64], gelato: [68, 38], pickup: [88, 44], schoolbus: [96, 56], taxi: [72, 42] };
+  const OB_SIZE = { bus: [96, 56], cab: [72, 42], flowers: [56, 34], bikes: [84, 34], herring: [88, 62], bakery: [88, 62], icecream: [64, 38], lifeguard: [34, 52], outback4x4: [88, 44], vespa: [68, 44], fiat: [78, 44], cafe: [78, 40], kiosk: [44, 64], gelato: [68, 38], pickup: [88, 44], schoolbus: [96, 56], taxi: [72, 42] };
 
   // Secret bonus room: one screen of floating platforms over a themed floor, packed with credits.
   // Themes: cloud (Bliss hill), retro (classic desktop), xbox (Game Pass arena).
@@ -289,7 +301,8 @@
     actions: { name: 'GITHUB ACTIONS', hint: 'RACE RUNNERS. REVIEW GUEST ACCESS.', stages: ['CHECKOUT', 'RUNNER', 'UNIT TEST', 'IDENTITY', 'RELEASE'], tips: ['REVIEW YOUR CODE', 'HOSTED RUNNERS', 'FIX FAILING TESTS', 'ENTRA ACCESS REVIEWS', 'DEPLOY TO AZURE'], threats: ['guest', 'bug', 'bug', 'rbac', 'endpoint'] },
     docker: { name: 'DOCKER IMAGE DOCK', hint: 'CLIMB CONTAINERS. PATCH UNSAFE IMAGES.', stages: ['DOCKERFILE', 'BUILD IMAGE', 'SCAN IMAGE', 'REGISTRY', 'CONTAINER APPS'], tips: ['SMALL TRUSTED BASE', 'REBUILD AND PATCH', 'DEFENDER FOR CLOUD', 'AZURE CONTAINER REGISTRY', 'RUN ON AZURE'], threats: ['image', 'bug', 'image', 'endpoint', 'rbac'] },
     entra: { name: 'ENTRA ACCESS VAULT', hint: 'VERIFY IDENTITIES. GRANT LEAST PRIVILEGE.', stages: ['SIGN IN', 'MFA', 'ACCESS POLICY', 'ROLE REVIEW', 'GUEST CLEANUP'], tips: ['VERIFY EVERY REQUEST', 'USE STRONG MFA', 'CONDITIONAL ACCESS', 'LEAST PRIVILEGE', 'REVIEW STALE GUESTS'], threats: ['guest', 'phish', 'endpoint', 'rbac', 'guest'] },
-    metro: { region: 'francecentral', name: 'PARIS METRO - LIGNE 14', hint: 'RIDE THE LINES. ROUTE TRAFFIC SAFELY.', stages: ['TICKET GATE', 'QUAI', 'CORRESPONDANCE', 'RUSH HOUR', 'SORTIE'], tips: ['FRONT DOOR WAF', 'LOAD BALANCE TRAFFIC', 'ROUTE WITH FRONT DOOR', 'DDOS PROTECTION', 'PRIVATE ENDPOINTS'], threats: ['guest', 'bug', 'endpoint', 'bug', 'rbac'] },
+    metro: { region: 'francecentral', music: 'metro', name: 'PARIS METRO - LIGNE 14', hint: 'RIDE THE LINES. ROUTE TRAFFIC SAFELY.', stages: ['TICKET GATE', 'QUAI', 'CORRESPONDANCE', 'RUSH HOUR', 'SORTIE'], tips: ['FRONT DOOR WAF', 'LOAD BALANCE TRAFFIC', 'ROUTE WITH FRONT DOOR', 'DDOS PROTECTION', 'PRIVATE ENDPOINTS'], threats: ['guest', 'bug', 'endpoint', 'bug', 'rbac'] },
+    tube: { region: 'uksouth', music: 'metro', name: 'LONDON UNDERGROUND', hint: 'MIND THE GAP. KEEP YOUR NETWORK PRIVATE.', stages: ['TICKET HALL', 'BAKER STREET', 'INTERCHANGE', 'WESTMINSTER', 'WAY OUT'], tips: ['ENTRA ACCESS REVIEWS', 'AZURE MONITOR', 'ROUTE WITH FRONT DOOR', 'PRIVATE ENDPOINTS', 'LEAST PRIVILEGE'], threats: ['guest', 'bug', 'endpoint', 'rbac', 'bug'] },
     functions: { name: 'AZURE FUNCTIONS REACTOR', hint: 'HANDLE EVENTS. SECURE EVERY TRIGGER.', stages: ['TRIGGER', 'BINDING', 'EXECUTE', 'RETRY', 'OBSERVE'], tips: ['VALIDATE INPUT EVENTS', 'USE MANAGED IDENTITY', 'KEEP FUNCTIONS SMALL', 'MAKE RETRIES SAFE', 'AZURE MONITOR'], threats: ['endpoint', 'rbac', 'bug', 'image', 'bug'] }
   };
   function makePipeZone(x0, theme) {
@@ -351,7 +364,7 @@
     });
     platforms.push({ x: x0 + W - 112, y: F - 46, w: 44, h: 46, pipe: true, theme });
     return {
-      x: x0, w: W, theme, name: C.name, hint: C.hint, stages, powerups,
+      x: x0, w: W, theme, music: C.music, name: C.name, hint: C.hint, stages, powerups,
       timeBonus: Math.ceil(W / 150) + 60, platforms, coins, enemies, lasers,
       token,
       entry: { x: x0 + 70, y: 250 }, exit: { x: x0 + W - 90, y: F - 46 }
@@ -489,22 +502,22 @@
   /* ---------------------------------------------------------------- WORLD TABLE */
   const WORLDS = [
     {
-      id: 1, region: 'westeurope', ambient: { sky: ['plane', 'plane', 'balloon'], birds: 'gull', road: ['tram', 'cyclist', 'cyclist', 'mini'] }, regionName: 'WEST EUROPE', city: 'AMSTERDAM', name: 'Amsterdam Canal Run', mode: 'run', theme: 'roof',
+      id: 1, region: 'westeurope', ambient: { sky: ['plane', 'plane', 'balloon'], birds: 'gull', road: ['tram', 'cyclist', 'cyclist', 'mini'], rail: ['nltrain'], railY: 234, water: ['canalboat'] }, regionName: 'WEST EUROPE', city: 'AMSTERDAM', name: 'Amsterdam Canal Run', mode: 'run', theme: 'roof',
       tint: 0xffc0a0, landmarks: 'AMSTERDAM - SCHIPHOL - MICROSOFT HQ - KINDERDIJK - ROTTERDAM - UTRECHT - THE HAGUE', hint: 'RIDE CANAL BOATS, MIND THE PULL-UP BRIDGES, GRAB THE AZURE BIKE', ground: 'quay', water: true, rail: 'quay',
-      boss: { kind: 'molen', name: 'WINDMILL TITAN', proj: 'molen' },
+      boss: { kind: 'kraker', name: 'DE KRAKER: ACCESS BROKER', proj: 'kraker' },
       opt: { count: 24, gapMin: 100, gapMax: 175, minW: 220, maxW: 340, cpEvery: 7, laserRate: 0.2, robotRate: 0.34, spiderRate: 0.24, droneRate: 0.16, stepRate: 0.14, dropRate: 0.12, floatRate: 0.55, stoneRate: 0.45, power: 4, props: ['tulips', 'bike'], water: true, bridgeRate: 0.2, drawRate: 0.6, boatRate: 0.14, obstacles: ['flowers', 'bikes'], stand: 'herring', obstacleRate: 0.3, bikes: 2, extraRate: 0.35, floatEnemyRate: 0.3, shootRate: 0.3 }
     },
     {
       id: 2, region: 'uksouth', ambient: { sky: ['plane', 'heli'], birds: 'pigeon', road: ['redbus', 'cab', 'cab', 'cyclist'] }, regionName: 'UK SOUTH', city: 'LONDON', name: 'London Thames Run', mode: 'run', theme: 'roof',
-      tint: 0xb4c8ff, landmarks: 'BIG BEN - THAMES - STONEHENGE - EDINBURGH - LIVERPOOL - BLACKPOOL - GLENFINNAN', hint: 'RUN THE THAMES EMBANKMENT. A RED PHONE BOX HIDES A SECRET LEVEL!', ground: 'embank', water: true, rail: 'embank',
-      boss: { kind: 'guard', name: 'BEARSKIN SENTINEL', proj: 'guard' },
-      opt: { count: 28, gapMin: 105, gapMax: 185, minW: 210, maxW: 330, cpEvery: 7, laserRate: 0.22, robotRate: 0.36, spiderRate: 0.25, droneRate: 0.2, stepRate: 0.16, dropRate: 0.12, floatRate: 0.55, stoneRate: 0.5, power: 5, props: ['postbox', 'phone'], water: true, bridgeRate: 0.12, boatRate: 0.14, obstacles: ['bus', 'cab', 'cab'], obstacleRate: 0.35, bikes: 1, secret: true, extraRate: 0.4, floatEnemyRate: 0.35, shootRate: 0.35 }
+      tint: 0xb4c8ff, landmarks: 'BIG BEN - THAMES - UNDERGROUND - STONEHENGE - EDINBURGH - LIVERPOOL - BLACKPOOL', hint: 'RIDE THE UNDERGROUND PIPES. THE RED PHONE BOX HIDES A SECRET!', ground: 'embank', water: true, rail: 'embank',
+      boss: { kind: 'kingpin', name: 'THE PHISHING KINGPIN', proj: 'kingpin' },
+      opt: { count: 28, gapMin: 105, gapMax: 185, minW: 210, maxW: 330, cpEvery: 7, laserRate: 0.22, robotRate: 0.36, spiderRate: 0.25, droneRate: 0.2, stepRate: 0.16, dropRate: 0.12, floatRate: 0.55, stoneRate: 0.5, power: 5, props: ['postbox', 'phone'], water: true, bridgeRate: 0.12, boatRate: 0.14, obstacles: ['bus', 'cab', 'cab'], obstacleRate: 0.35, bikes: 1, secret: true, pipeTheme: 'tube', extraRate: 0.4, floatEnemyRate: 0.35, shootRate: 0.35 }
     },
     {
       id: 3, region: 'francecentral', ambient: { sky: ['plane', 'balloon', 'heli'], birds: 'pigeon', road: ['citroen', 'vespa', 'cyclist', 'cab'], water: ['region'] }, regionName: 'FRANCE CENTRAL', city: 'PARIS', name: 'Paris Seine Run', mode: 'run', theme: 'roof',
       tint: 0xffc7d7, landmarks: 'EIFFEL TOWER - SACRE-COEUR - MOULIN ROUGE - LOUVRE - MONT-SAINT-MICHEL - CARCASSONNE',
       hint: 'RIDE THE METRO PIPES. A GHOST STATION HIDES A RETRO SECRET!', ground: 'quai_paris', water: true, rail: 'quai_paris',
-      boss: { kind: 'chef', name: 'CHEF DE CHAOS', proj: 'chef' },
+      boss: { kind: 'savate', name: 'MADAME SAVATE: SPOOFER', proj: 'savate' },
       opt: {
         count: 24, gapMin: 105, gapMax: 185, minW: 210, maxW: 330, cpEvery: 7,
         laserRate: 0.18, robotRate: 0.34, spiderRate: 0.24, droneRate: 0.2,
@@ -515,23 +528,23 @@
       }
     },
     {
-      id: 4, region: 'japaneast', ambient: { sky: ['plane', 'heli'], birds: 'crane', fx: 'petals' }, regionName: 'JAPAN EAST', city: 'TOKYO', name: 'Tokyo Skyway Pursuit', mode: 'fly', theme: 'neon',
+      id: 4, region: 'japaneast', ambient: { sky: ['plane', 'heli'], birds: 'crane', fx: 'petals', road: ['taxi', 'mini', 'cab', 'schoolbus', 'vespa'], roadY: 326, roadRate: 2.6, roadMax: 3, rail: ['tokyometro'], railY: 274 }, regionName: 'JAPAN EAST', city: 'TOKYO', name: 'Tokyo Skyway Pursuit', mode: 'fly', theme: 'neon',
       tint: 0xffffff, landmarks: 'MOUNT FUJI - TOKYO TOWER - HIMEJI - OSAKA CASTLE - MIYAJIMA - KYOTO - SHINKANSEN', hint: 'FLY WITH ARROWS / WASD. DODGE DRONES, FLY THROUGH GOLD RINGS. SHIFT = BOOST',
-      boss: { kind: 'sumo', name: 'SUMO SHOGUN', proj: 'sumo', air: true },
+      boss: { kind: 'ronin', name: 'RONIN ROOTKIT', proj: 'ronin', air: true },
       opt: { cols: 28, spaceMin: 260, spaceMax: 320, halfMin: 68, halfMax: 86, rings: 8, coins: 8, drones: 14, scroll: 100, cpEvery: 8, props: ['lantern', 'carp'] }
     },
     {
-      id: 5, region: 'australiaeast', ambient: { sky: ['plane', 'heli', 'balloon'], birds: 'cockatoo', road: ['pickup', 'muscle', 'mini'] }, regionName: 'AUSTRALIA EAST', city: 'SYDNEY', name: 'Sydney Harbour Run', mode: 'run', theme: 'roof',
-      tint: 0xffe0a0, landmarks: 'OPERA HOUSE - HARBOUR BRIDGE - ULURU - MELBOURNE - TWELVE APOSTLES - BRISBANE', hint: 'HOP THE FERRIES ALONG THE HARBOUR PIERS. ENEMIES SHOOT BACK!', ground: 'pier', water: true, rail: 'pier',
-      boss: { kind: 'roo', name: 'BOXING ROO', proj: 'roo' },
-      opt: { count: 34, gapMin: 110, gapMax: 195, minW: 200, maxW: 320, cpEvery: 8, laserRate: 0.22, robotRate: 0.38, spiderRate: 0.28, droneRate: 0.24, stepRate: 0.18, dropRate: 0.15, floatRate: 0.55, stoneRate: 0.5, power: 6, props: ['surf', 'sign'], water: true, bridgeRate: 0.1, boatRate: 0.16, obstacles: ['icecream', 'lifeguard'], obstacleRate: 0.3, extraRate: 0.45, floatEnemyRate: 0.4, shootRate: 0.4 }
+      id: 5, region: 'australiaeast', ambient: { sky: ['plane', 'heli', 'balloon'], birds: 'cockatoo', road: ['outback4x4', 'pickup', 'muscle', 'mini'] }, regionName: 'AUSTRALIA EAST', city: 'SYDNEY', name: 'Sydney Harbour Run', mode: 'run', theme: 'roof',
+      tint: 0xffe0a0, landmarks: 'SYDNEY BEACH - OPERA HOUSE - HARBOUR BRIDGE - OUTBACK - ULURU - TWELVE APOSTLES', hint: 'FROM SYDNEY SURF TO THE RED OUTBACK. HOP FERRIES AND EXPEDITION 4X4S!', ground: 'pier', water: true, rail: 'pier',
+      boss: { kind: 'brawler', name: 'THE BOTNET BRAWLER', proj: 'brawler' },
+      opt: { count: 34, gapMin: 110, gapMax: 195, minW: 200, maxW: 320, cpEvery: 8, laserRate: 0.22, robotRate: 0.38, spiderRate: 0.28, droneRate: 0.24, stepRate: 0.18, dropRate: 0.15, floatRate: 0.55, stoneRate: 0.5, power: 6, props: ['surf', 'sign'], water: true, bridgeRate: 0.1, boatRate: 0.16, obstacles: ['icecream', 'lifeguard', 'outback4x4'], stand: 'outback4x4', obstacleRate: 0.3, extraRate: 0.45, floatEnemyRate: 0.4, shootRate: 0.4 }
     },
     {
       id: 6, region: 'italynorth', ambient: { sky: ['plane', 'heli'], birds: 'pigeon', road: ['vespa', 'vespa', 'mini', 'citroen'] }, regionName: 'ITALY', city: 'VENICE', name: 'Venice Lagoon Run', mode: 'run', theme: 'roof',
       tint: 0xffc19b, landmarks: 'RIALTO - ST MARK\'S - GRAND CANAL - BURANO',
       hint: 'RACE VENICE TURQUOISE CANALS. SEEK THE TREVI PORTAL!',
       ground: 'itcanal', water: true, rail: 'itcanal',
-      boss: { kind: 'gladiator', name: 'GLADIATOR MAXIMUS', proj: 'gladiator' },
+      boss: { kind: 'gladiator', name: 'MAXIMUS THE RANSOMER', proj: 'gladiator' },
       opt: {
         count: 28, gapMin: 100, gapMax: 180, minW: 210, maxW: 320, cpEvery: 7,
         laserRate: 0.2, robotRate: 0.34, spiderRate: 0.24, droneRate: 0.2,
@@ -544,14 +557,14 @@
     {
       id: 7, region: 'brazilsouth', ambient: { sky: ['heli', 'balloon', 'plane'], birds: 'parrot', fx: 'confetti' }, regionName: 'BRAZIL SOUTH', city: 'RIO', name: 'Rio Sugarloaf Pursuit', mode: 'fly', theme: 'rock',
       tint: 0xb8ff9a, landmarks: 'CHRIST THE REDEEMER - SUGARLOAF - BRASILIA - IGUAZU - MANAUS - SAO PAULO', hint: 'NARROW PASSES AND MORE DRONES. KEEP YOUR BOOST METER READY. SHIFT = BOOST',
-      boss: { kind: 'samba', name: 'CARNAVAL REI', proj: 'samba', air: true },
+      boss: { kind: 'capoeira', name: 'CAPOEIRA CRYPTOJACKER', proj: 'capoeira', air: true },
       opt: { cols: 36, spaceMin: 250, spaceMax: 310, halfMin: 66, halfMax: 80, rings: 9, coins: 9, drones: 18, scroll: 110, cpEvery: 9, props: ['balloon', 'kite'] }
     },
     {
       id: 8, region: 'mexicocentral', ambient: { sky: ['balloon', 'balloon', 'balloon', 'plane'], birds: 'parrot', fx: 'confetti' }, regionName: 'MEXICO CENTRAL', city: 'MEXICO CITY', name: 'Mexico City Skyway', mode: 'fly', theme: 'adobe',
       tint: 0xffffff, landmarks: 'TEOTIHUACAN - CHICHEN ITZA - ANGEL - BELLAS ARTES - XOCHIMILCO',
       hint: 'SOAR ABOVE THE PYRAMIDS. THREAD THE ADOBE PILLARS!',
-      boss: { kind: 'luchador', name: 'EL LUCHADOR SUPREMO', proj: 'luchador', air: true },
+      boss: { kind: 'luchador', name: 'EL LUCHADOR ZERO-DAY', proj: 'luchador', air: true },
       opt: { cols: 32, spaceMin: 255, spaceMax: 310, halfMin: 68, halfMax: 84, rings: 9, coins: 9, drones: 16, scroll: 105, cpEvery: 8, props: ['pinata', 'papel'] }
     },
     {
@@ -559,7 +572,7 @@
       tint: 0x9bd5c7, landmarks: 'MICROSOFT CAMPUS - SPACE NEEDLE - MT RAINIER - SEATTLE',
       hint: 'RUN THE LAKEFRONT. AN XBOX-GREEN DOOR HIDES A BONUS.',
       ground: 'rd', water: true, rail: 'rd',
-      boss: { kind: 'linebacker', name: 'THE BLITZ LINEBACKER', proj: 'linebacker' },
+      boss: { kind: 'enforcer', name: 'THE DDOS ENFORCER', proj: 'enforcer' },
       opt: {
         count: 24, gapMin: 100, gapMax: 170, minW: 210, maxW: 290, cpEvery: 8,
         laserRate: 0.18, robotRate: 0.34, spiderRate: 0.24, droneRate: 0.2,

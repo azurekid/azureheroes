@@ -43,14 +43,28 @@ description: 'Create Azure Heroes code-drawn pixel art, duck/slide poses, cloud 
   Keep scenery lower-contrast than solid platforms, enemies and pickups.
 - Entra vault and Functions reactor art must be distinct from cargo docks/workshops;
   include matching cabinets, backgrounds, signs and floor textures.
-- Regional rooms (Paris `metro`) need the full set: floor, sign, far layer, three
+- Regional rooms (Paris `metro`, London `tube`) need the full set: floor, sign, far layer, three
   backgrounds, `buildCloudPlatform` branch, plus optional `pipe_<theme>` /
   `pipe_<theme>_top` entrances and `challenge_train_<theme>`. Keep painted plates and
   posters below y 150 clear of stage signs at y 98..134. Landmarks must read at
   strip scale: Eiffel lattice and galleries, Sacre-Coeur domes, Moulin Rouge sails.
+- Keep transit local: London's red roundels, deep Tube tunnels and red/white/blue
+  trains; Amsterdam's blue/white trams, yellow trains and glass-roof canal boats;
+  Tokyo's silver/orange metro, station wayfinding, busy billboard streets and sakura.
+  Australia needs visible surf/beach and red-earth outback scenery, Uluru and boxy
+  expedition 4x4s. Reserve important highlights through `sceneryRoutes`, not chance.
+- Landmarks take visual priority over decorative land transit. Keep road and rail
+  bands slim and low-contrast, with sparse viaduct supports; render them and their
+  traffic behind the landmark strip. Keep motion calm: one vehicle at level start, at most
+  two on screen (`roadMax`, busy Tokyo three), slow sky/bird/train spawns, soft road and rail bands. Check facades and signs at overlapping stops,
+  not just whether a train is visible. Do not shrink playable bikes or obstacles.
 - Weapon pickup icons and projectile silhouettes must distinguish spread from beam.
   Charge glow and green boss brackets are drawn here, never inline in gameplay.
-- Verify all six themes at entry and mid-room in desktop and forced-touch layouts.
+- Bosses use the shared fighter rig (`FIGHT_POSE`, `FIGHT_FRAMES`, `fighterReg`): set
+  skin, build, hair, outfit, gear and accent per fighter instead of drawing new bodies.
+  Every pose must read at 64x80 with distinct silhouettes; check a contact sheet of all
+  eight frames for every boss before shipping. Bolts are 22x12 and face left.
+- Verify all shared and regional themes at entry and mid-room in desktop and forced-touch layouts.
   Preserve collision geometry, low-duct clearance, font legibility and exit visibility.
 - Register text-bearing sprites only after the font/glyph cache is initialized.
 - Honor `AH.Art.D` texture density; keep physical obstacle sizes in `obSize` aligned with rendered dimensions. Check vehicles against the hero and local stands against the street.

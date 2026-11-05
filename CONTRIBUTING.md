@@ -25,6 +25,8 @@ it from the skills menu. Otherwise follow its checklist manually.
    documentation and tests. Do not copy behavior or draw sprites inline in scene logic.
 5. Run `npm test` and `node --check path/to/changed.js`. Start locally with `npm start`,
    then test the changed routes and controls in a browser. Use several generated layouts.
+   Keep temporary browser output out of the repository; `.playwright-mcp/` is ignored.
+   Add documentation screenshots only when they are current and referenced.
 6. Submit a focused PR with the checklist below. A maintainer must review the diff,
    including workflows, skills, tests, network access and any executable additions.
 

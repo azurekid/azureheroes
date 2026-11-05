@@ -24,7 +24,7 @@ description: 'Build Azure Heroes generated layouts, vertical streets, undergroun
 3. Keep underground zones disjoint, including their full width and any secret room.
 4. Preserve theme-specific routes and tips in `CHALLENGES`: Pipelines, AKS, Actions,
    Docker, Entra and Functions in the shared pool, plus regional rooms such as the Paris
-   Metro (`pipeTheme`, always the first pipe and never in the shared pool).
+   Metro and London Underground (`pipeTheme`, always the first pipe and never in the shared pool).
    New themes require matching tiles/backgrounds, safe entry/exit, rewards and time allowance.
    Shuffle distinct stage layouts and lesson order, varying geometry, encounters and
    rewards, not just decoration. Keep rooms within 3200..3840px and the reserved stride.

@@ -4,6 +4,8 @@
   const AH = (window.AH = window.AH || {});
 
   const KEY = 'azureheroes2027';
+  const MUSIC_KEY = 'azureheroes2027_music';
+  const MUSIC_STYLES = Object.freeze(['dance', 'jazz', 'country', 'blues', 'rock']);
   AH.Save = {
     data: { best: 0, unlocked: 1, bests: {}, muted: false, hero: 'm', resume: null, updated: 0 },
     load() {
@@ -15,7 +17,7 @@
     },
     save() {
       try { localStorage.setItem(KEY, JSON.stringify(this.data)); } catch (e) { /* ignore */ }
-      if (AH.Online) AH.Online.pushProgress();
+      if (AH.Online && !(AH.Gold && AH.Gold.run())) AH.Online.pushProgress();
     },
     // where CONTINUE picks the adventure back up: level id plus the score and lives carried into it
     setResume(id, score, lives) {
@@ -41,7 +43,7 @@
    * Melody tokens: note name (C5, F#4, Bb5), '-' hold, '.' rest. A bar may use any token
    * count that divides the song's step count (8 tokens on a 16 step bar = eighth notes).
    * Bass, chord voice and drums are generated from the chord and the song's patterns:
-   *   bass  R root, 3 third, 5 fifth, 8 octave, w chromatic approach to next bar's root
+   *   bass  R root, 3 third, 5 fifth, 6 sixth, 8 octave, w approach to next bar's root
    *   arp   digits = chord tone index (wraps up an octave), c = full chord stab
    *   drums x hit, X accent, '.' nothing. The last bar of the form plays the fill. */
   const PC = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
@@ -75,178 +77,132 @@
   }
 
   const DRUMS = {
-    pop: {
-      k: 'x.....x.x.......', s: '....x.......x...', h: 'X.x.X.x.X.x.X.x.',
-      fill: { k: 'x.....x.x.......', s: '....x.......xxxx', h: 'X.x.X.x.X.......' }
+    house: {
+      k: 'X...x...x...x...', s: '....x.......x...', h: 'x.x.x.x.x.x.x.x.', o: '..x...x...x...x.',
+      fill: { k: 'X...x...x...x...', s: '....x.......x.xx', h: 'x.x.x.x.x.x.xxx.', o: '..x...x...x.....' }
+    },
+    trance: {
+      k: 'X...x...x...x...', s: '....x.......x...', h: 'x.xx..xxx.xx..xx', o: '..x...x...x...x.',
+      fill: { k: 'X...x...x...x...', s: '....x...x.x.xxXX', h: 'x.x.x.x.x.x.xxxx', o: '..x...x.........' }
+    },
+    jazz: {
+      k: 'x.......x.......', s: '....x.......x...', h: 'x.x.x.xxX.x.x.xx',
+      fill: { k: 'x.......x.......', s: '....x.......x.x.', h: 'x.x.x.xxX.x.xxx.' }
+    },
+    country: {
+      k: 'X.......x.......', s: '....x.......x...', h: 'x.x.x.x.x.x.x.x.',
+      fill: { k: 'X.......x.......', s: '....x.......x.xx', h: 'x.x.x.x.x.x.x.x.' }
+    },
+    blues: {
+      k: 'X.......x...x...', s: '....x.......x...', h: 'x.x.x.x.x.x.x.x.',
+      fill: { k: 'X.......x...x...', s: '....x.......x.x.', h: 'x.x.x.x.x.x.xxx.' }
     },
     rock: {
-      k: 'x.......x.x.....', s: '....x.......x...', h: 'x.x.x.x.x.x.x.x.',
-      fill: { k: 'x.......x.......', s: '....x...x.xxXxXX', h: 'x.x.x.x.........' }
-    },
-    drive: {
-      k: 'x...x...x...x.x.', s: '....x.......x...', h: 'XxxxXxxxXxxxXxxx',
-      fill: { k: 'x...x...x.......', s: '....x...xxxxXXXX', h: 'XxxxXxxx........' }
-    },
-    techno: {
-      k: 'x...x...x...x...', s: '....x.......x...', h: 'xx.xxx.xxx.xxx.x', o: '..x...x...x...x.',
-      fill: { k: 'x...x...x...x...', s: '....x...x.x.xxXX', h: 'xxxxxxxxxxxxxxxx', o: '..x...x.........' }
-    },
-    march: {
-      k: 'x.......x.......', s: '....x..x....x.xx', h: 'x.x.x.x.x.x.x.x.',
-      fill: { k: 'x.......x.......', s: 'x.xxx.xxx.xxXXXX', h: '................' }
-    },
-    polka: {
-      k: 'x.......x.......', s: '....x.......x...', h: '..x...x...x...x.',
-      fill: { k: 'x.......x.......', s: '....x...x.x.x.xX', h: '..x...x.........' }
-    },
-    taiko: {
-      k: 'X.....x...x.....', s: '............x...', h: '..x.......x.....',
-      fill: { k: 'X.x.x.x.x.xXxXXX', s: '................', h: '................' }
-    },
-    brush: {
-      k: 'x.......', s: '..x...x.', h: 'X.xxX.xx',
-      fill: { k: 'x.......', s: '..x.x.xx', h: 'X.xx....' }
-    },
-    waltz: {
-      k: 'X.....', s: '......', h: '..x.x.',
-      fill: { k: 'X.....', s: '....xx', h: '..x...' }
+      k: 'X.....x.X.......', s: '....x.......X...', h: 'X.x.x.x.X.x.x.x.',
+      fill: { k: 'X.....x.X.....x.', s: '....x.......x.xx', h: 'X.x.x.x.X.x.xxxx' }
     }
   };
-
-  const RAW = {
-    title: {
-      name: 'HEROES RISE', bpm: 120, beats: 4, steps: 16, lead: 'pulse25', arp: 'pulse12', bass: 'tri', drums: 'rock',
-      bassPat: 'R-.R8-.RR-.R5-.5', arpPat: '0.1.2.1.0.1.2.1.', echo: 0.3,
+  const NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+  function degreeMelody(chord, pattern) {
+    const ch = chordOf(chord);
+    return pattern.split(' ').map((token) => {
+      if (token === '.' || token === '-') return token;
+      const m = /^([b#]?)(\d)$/.exec(token);
+      if (!m) throw new Error('bad melody degree ' + token);
+      const i = Number(m[2]), root = 60 + ch.pc - (ch.pc > 5 ? 12 : 0);
+      const n = root + ch.iv[i % ch.iv.length] + 12 * Math.floor(i / ch.iv.length)
+        + (m[1] === 'b' ? -1 : m[1] === '#' ? 1 : 0);
+      return NOTE_NAMES[n % 12] + (Math.floor(n / 12) - 1);
+    }).join(' ');
+  }
+  function danceSong(name, bpm, style, progression, hook, lift) {
+    const chords = progression.split(' ');
+    const melody = (pattern, bar) => degreeMelody(chords[bar], pattern);
+    return {
+      name, bpm, style, beats: 4, steps: 16, lead: style === 'house' ? 'keys' : 'supersaw',
+      arp: 'trancepluck', bass: 'club', drums: style,
+      bassPat: '..R-..R-..8-..5-', arpPat: style === 'house' ? '..c...c...c...c.' : '0.2.1.2.0.2.1.3.',
+      echo: 0.18, echoSteps: 3,
       sections: {
-        A: { chords: 'C G Am F C F G G', mel: [
-          'G4 - C5 - E5 - G5 -', 'F5 - E5 D5 - - B4 -', 'C5 - - E5 A5 - G5 -', 'F5 - - - E5 - C5 -',
-          'G4 - C5 - E5 - G5 -', 'A5 - - G5 F5 - A5 -', 'G5 - F5 - D5 - B4 -', 'D5 - - - G4 . . .'] },
-        B: { chords: 'Am F C G Am F G G', mel: [
-          'E5 - - - A5 - C6 -', 'C6 - B5 A5 - - F5 -', 'G5 - - - E5 - G5 -', 'D5 - - - - - . .',
-          'E5 - A5 - C6 - E6 -', 'D6 - C6 - A5 - F5 -', 'G5 - A5 - B5 - D6 -', 'D6 - - - B5 - G5 -'] }
+        A: { chords: progression, mel: chords.map((c, i) => melody(hook, i)) },
+        B: { chords: progression, mel: chords.map((c, i) => melody('0 - - . 2 - - .', i)) },
+        C: { chords: progression, mel: chords.map((c, i) => melody(i % 2 ? lift : hook, i)) }
       },
-      form: ['A', 'B']
+      form: ['A', 'B', 'A', 'C']
+    };
+  }
+  const BAND_STYLES = {
+    jazz: {
+      lead: 'jazzkeys', arp: 'jazzkeys', bass: 'upright',
+      bassPat: 'R---3---5---w---', arpPat: '..c.....c...c...',
+      swing: 0.32, swingEvery: 2,
+      motifs: ['. 0 1 b2 2 - 3 .', '2 . 1 0 b1 1 2 -', '3 . 2 1 0 - 1 .', '1 . b2 2 3 . 2 -',
+        '2 - 3 . 2 1 0 .', '. 1 2 3 2 - b1 1', '0 1 b2 2 . 3 2 .', '3 - 2 . 1 0 . -']
     },
-    main: {
-      name: 'CLOUD RUNNER', bpm: 150, beats: 4, steps: 16, lead: 'pulse25', arp: 'pulse12', bass: 'tri', drums: 'pop',
-      bassPat: 'R.R.8.R.R.R.8.5.', arpPat: '0.1.2.3.2.1.0.1.', echo: 0.22,
-      sections: {
-        A: { chords: 'G D Em C G D C D', mel: [
-          'D5 - G5 - B5 - A5 G5', 'A5 - F#5 - D5 - - .', 'E5 - G5 - B5 - G5 -', 'C6 - B5 - A5 - G5 -',
-          'D5 - G5 - B5 - D6 -', 'C6 - A5 - F#5 - A5 -', 'G5 - E5 - C5 - E5 -', 'D5 - - - F#5 - A5 -'] },
-        B: { chords: 'C D Bm Em C D G G', mel: [
-          'E5 . E5 - G5 - E5 -', 'F#5 . F#5 - A5 - F#5 -', 'D5 - F#5 - B5 - A5 -', 'G5 - - - E5 - - .',
-          'C5 - E5 - G5 - C6 -', 'D6 - C6 - A5 - F#5 -', 'G5 - - - D5 - B4 -', 'G4 - B4 - D5 - G5 -'] }
-      },
-      form: ['A', 'B']
+    country: {
+      lead: 'twang', arp: 'twang', bass: 'upright',
+      bassPat: 'R-------5-------', arpPat: '....c.......c...',
+      swing: 0.13, swingEvery: 2,
+      motifs: ['0 . 1 2 3 - 2 .', '1 2 1 0 . 1 2 -', '2 . 3 2 1 - 0 .', '1 0 1 2 . 0 - .',
+        '3 . 2 1 0 1 2 .', '1 - 2 3 2 . 1 .', '0 1 2 . 3 - 2 1', '2 1 0 . 1 - 0 -']
     },
-    boss: {
-      name: 'THREAT LEVEL', bpm: 172, beats: 4, steps: 16, lead: 'pulse25', arp: 'pulse12', bass: 'saw', drums: 'drive',
-      bassPat: 'R.RR8.RRR.RR8.5.', arpPat: '0102010201020102', echo: 0.18,
-      sections: {
-        A: { chords: 'Dm Dm Bb C Dm Dm Bb A', mel: [
-          'D5 - A4 - D5 - F5 E5', 'D5 - A4 - F5 - E5 -', 'F5 - D5 - Bb4 - D5 -', 'E5 - C5 - G5 - E5 -',
-          'A5 - - G5 F5 - E5 -', 'D5 - F5 - A5 - D6 -', 'C6 - Bb5 - A5 - G5 -', 'A5 - C#6 - E6 - - .'] },
-        B: { chords: 'Gm Gm Dm Dm Bb C A A', mel: [
-          'Bb5 - - - A5 - G5 -', 'D5 - G5 - Bb5 - D6 -', 'A5 - - - F5 - D5 -', 'A4 - D5 - F5 - A5 -',
-          'Bb5 - A5 - G5 - F5 -', 'G5 - F5 - E5 - C5 -', 'E5 - A5 - C#6 - E6 -', 'C#6 - - - A5 - E5 -'] }
-      },
-      form: ['A', 'B']
+    blues: {
+      lead: 'bluesguitar', arp: 'organ', bass: 'upright',
+      bassPat: 'R---5---6---5---', arpPat: '....c.......c...',
+      swing: 0.32, swingEvery: 2,
+      motifs: ['0 . b1 1 b2 2 - .', '2 b2 1 b1 0 - . .', '. 0 b1 1 2 . b2 1', '0 - . 1 b1 0 - .',
+        '2 . b2 1 b1 . 0 -', '. 0 b1 1 b2 2 3 .', '3 2 b2 1 0 . 1 .', 'b1 1 0 - . 2 1 -']
     },
-    pipe: {
-      name: 'DEPLOY PIPELINE', bpm: 132, beats: 4, steps: 16, lead: 'pulse12', arp: 'pulse12', bass: 'saw', drums: 'techno',
-      bassPat: '..R8..R8..R8..R5', arpPat: '0120120120120120', echo: 0.35,
-      sections: {
-        A: { chords: 'Am Am F G Am Am F E', mel: [
-          'A4 . A4 . C5 . E5 .', 'D5 - C5 - B4 - G4 -', 'A4 . A4 . C5 . F5 .', 'E5 - D5 - B4 - D5 -',
-          'A5 . A5 . G5 . E5 .', 'C5 - D5 - E5 - G5 -', 'A5 - G5 - F5 - C5 -', 'B4 - - - G#4 - E4 -'] },
-        B: { chords: 'Dm Dm Am Am F G E E', mel: [
-          'F5 - - - A5 - D5 -', 'F5 - A5 - D6 - A5 -', 'E5 - - - C5 - A4 -', 'E5 - A5 - C6 - A5 -',
-          'C6 - A5 - F5 - A5 -', 'B5 - G5 - D5 - G5 -', 'G#5 - - - B5 - - .', 'E5 . E5 . G#5 . B5 .'] }
-      },
-      form: ['A', 'B']
-    },
-    metro: {
-      name: 'METRO MANOUCHE', bpm: 180, beats: 4, steps: 8, swing: 0.33, lead: 'accordion', arp: 'guitar', bass: 'tri', drums: 'brush',
-      bassPat: 'R-3-5-w-', arpPat: '..c...c.', echo: 0.12,
-      sections: {
-        A: { chords: 'Dm6 Dm6 A7 A7 Dm6 Dm6 Gm6 A7', mel: [
-          'A4 - D5 - F5 - A5 -', 'G#5 A5 - F5 D5 - - .', 'E5 - G5 - C#5 - E5 -', 'Bb5 A5 G5 E5 C#5 - A4 -',
-          'D5 - F5 A5 D6 - C#6 -', 'D6 - A5 - F5 - D5 -', 'G5 - Bb5 - D6 - E5 -', 'C#5 - E5 - G5 - Bb5 -'] },
-        B: { chords: 'Gm6 Gm6 Dm6 Dm6 E7 A7 Dm6 A7', mel: [
-          'D6 - - Bb5 G5 - D5 -', 'E5 - G5 - Bb5 - - .', 'A5 - - F5 D5 - B4 -', 'D5 - F5 - A5 - - .',
-          'G#5 - B5 - D6 - - B5', 'C#6 - - A5 G5 - E5 -', 'F5 - D5 - A4 - D5 -', 'E5 F5 E5 D5 C#5 - A4 -'] }
-      },
-      form: ['A', 'B']
-    },
-    bonus: {
-      name: 'BONUS ROUND', bpm: 160, beats: 4, steps: 16, lead: 'pulse25', arp: 'pulse12', bass: 'tri', drums: 'pop',
-      bassPat: 'R.8.R.8.R.8.5.8.', arpPat: '0123012301230123', echo: 0.25,
-      sections: {
-        A: { chords: 'F C Dm Bb F C Bb C', mel: [
-          'C5 - F5 - A5 - C6 -', 'E5 - G5 - C6 - - .', 'D5 - F5 - A5 - D6 -', 'D6 - C6 - Bb5 - F5 -',
-          'A5 - C6 - F6 - C6 -', 'G5 - C6 - E6 - C6 -', 'D6 - Bb5 - F5 - D5 -', 'E5 - G5 - Bb5 - C6 -'] },
-        B: { chords: 'Bb C Am Dm Gm C F C', mel: [
-          'F5 . F5 . D5 - F5 -', 'G5 . G5 . E5 - G5 -', 'A5 - C6 - E6 - C6 -', 'D6 - - - A5 - F5 -',
-          'Bb5 - A5 - G5 - D5 -', 'E5 - G5 - C6 - E6 -', 'F6 - - - C6 - A5 -', 'G5 - E5 - C5 - G4 -'] }
-      },
-      form: ['A', 'B']
-    },
-    paris: {
-      name: 'VALSE DE PARIS', bpm: 170, beats: 3, steps: 6, lead: 'accordion', arp: 'accordion', bass: 'tri', drums: 'waltz',
-      bassPat: ['R-....', '5-....'], arpPat: '..c-c-', echo: 0.1,
-      sections: {
-        A: { chords: 'Am Am E7 E7 E7 E7 Am Am', mel: [
-          'E5 - - - A5 -', 'C6 - B5 - A5 -', 'G#5 - - - B5 -', 'D6 - C6 - B5 -',
-          'B5 - A5 - G#5 -', 'D5 - E5 - G#5 -', 'A5 - - - E5 -', 'C5 - B4 - A4 -'] },
-        B: { chords: 'Dm Dm Am Am E7 E7 Am A7', mel: [
-          'F5 - - - A5 -', 'D6 - C6 - A5 -', 'C6 - - - E5 -', 'A5 - G#5 - A5 -',
-          'B5 - - - G#5 -', 'E5 - F5 - G#5 -', 'A5 - - - - -', 'C#5 - E5 - G5 -'] },
-        C: { chords: 'Am Am E7 E7 E7 E7 Am Am', mel: [
-          'E5 - - - A5 -', 'C6 - B5 - A5 -', 'G#5 - - - B5 -', 'D6 - C6 - B5 -',
-          'B5 - A5 - G#5 -', 'D5 - E5 - G#5 -', 'E5 - A5 - C6 -', 'A5 - - - . .'] }
-      },
-      form: ['A', 'B', 'C']
-    },
-    amsterdam: {
-      name: 'DRAAIORGEL', bpm: 132, beats: 4, steps: 16, lead: 'organ', arp: 'organ', bass: 'tri', drums: 'polka',
-      bassPat: 'R-......5-......', arpPat: '....c-......c-..', echo: 0.15,
-      sections: {
-        A: { chords: 'F Bb F C7 F Bb C7 F', mel: [
-          'C5 - F5 - A5 - F5 -', 'D5 - F5 - Bb5 - - .', 'A5 - G5 - F5 - C5 -', 'E5 - G5 - Bb5 - G5 -',
-          'A5 - C6 - F6 - C6 -', 'D6 - Bb5 - F5 - D5 -', 'C5 - E5 - G5 - Bb5 -', 'A5 - - - F5 . . .'] },
-        B: { chords: 'Bb Bb F F C7 C7 F C7', mel: [
-          'F5 G5 A5 Bb5 - - D6 -', 'C6 - Bb5 - F5 - - .', 'A5 G5 F5 A5 - - C6 -', 'A5 - F5 - C5 - - .',
-          'G5 - E5 - C5 - E5 -', 'G5 - Bb5 - C6 - E5 -', 'F5 - A5 - C6 - A5 -', 'G5 - - - E5 - C5 -'] }
-      },
-      form: ['A', 'B']
-    },
-    london: {
-      name: 'LONDON CALLING CLOUD', bpm: 126, beats: 4, steps: 16, lead: 'pulse50', arp: 'pulse12', bass: 'tri', drums: 'march',
-      bassPat: 'R-R-5-R-R-R-5-8-', arpPat: '..c...c...c...c.', echo: 0.2,
-      sections: {
-        A: { chords: 'D A Bm G D A G A', mel: [
-          'F#5 - - E5 D5 - A4 -', 'C#5 - E5 - A5 - - .', 'B5 - A5 - F#5 - D5 -', 'G5 - - - B4 - D5 -',
-          'F#5 - A5 - D6 - - C#6', 'C#6 - B5 - A5 - E5 -', 'D5 - G5 - B5 - A5 -', 'A5 - - - E5 - C#5 -'] },
-        B: { chords: 'Em G D A Em G A A7', mel: [
-          'B5 - - - G5 - E5 -', 'D5 - G5 - B5 - - .', 'A5 - - - F#5 - D5 -', 'E5 - A5 - C#6 - - .',
-          'G5 - F#5 - E5 - B4 -', 'D5 - E5 - G5 - B5 -', 'A5 - C#6 - E6 - - .', 'C#6 - B5 - A5 - G5 -'] }
-      },
-      form: ['A', 'B']
-    },
-    japan: {
-      name: 'SAKURA EDGE', bpm: 100, beats: 4, steps: 16, lead: 'pluck', arp: 'pluck', bass: 'tri', drums: 'taiko',
-      bassPat: 'R-------R---5---', arpPat: '0.1.2.1.0.1.2.3.', echo: 0.4, echoSteps: 4,
-      sections: {
-        A: { chords: 'Am Am G Am Dm Dm Em Am', mel: [
-          'A4 - C5 - D5 - E5 -', 'G5 - E5 - - - D5 -', 'D5 - - - C5 - D5 -', 'E5 - - - - - . .',
-          'D5 - E5 - G5 - A5 -', 'C6 - A5 - - - G5 -', 'E5 - G5 - D5 - E5 -', 'A4 - - - . . . .'] },
-        B: { chords: 'F G Am Am F G Em Em', mel: [
-          'C6 - - - A5 - C6 -', 'D6 - - - G5 - - .', 'E6 - D6 - C6 - A5 -', 'G5 - A5 - - - . .',
-          'A5 - C6 - A5 - G5 -', 'E5 - D5 - - - G5 -', 'E5 - - - D5 - C5 -', 'D5 - - - E5 - G5 -'] }
-      },
-      form: ['A', 'B']
+    rock: {
+      lead: 'rockguitar', arp: 'rockguitar', bass: 'electric',
+      bassPat: 'R-R-5-R-R-R-5-8-', arpPat: 'c...c.c...c.c...',
+      swing: 0, swingEvery: 2, powerChord: true,
+      motifs: ['0 0 . 2 0 1 2 -', '2 . 3 2 1 0 1 .', '0 0 2 . 3 2 1 -', '2 1 0 . 1 2 0 -',
+        '3 2 . 2 1 0 2 .', '0 1 2 3 2 . 1 -', '2 . 2 3 4 3 2 .', '1 2 0 . 2 1 0 -']
     }
+  };
+  function bandSong(name, bpm, style, progression, variant) {
+    const cfg = BAND_STYLES[style], chords = progression.split(' ');
+    const section = (offset) => ({
+      chords: progression,
+      mel: chords.map((chord, i) => degreeMelody(chord, cfg.motifs[(i + offset + variant) % cfg.motifs.length]))
+    });
+    return {
+      name, bpm, style, beats: 4, steps: 16, lead: cfg.lead, arp: cfg.arp,
+      bass: cfg.bass, drums: style, bassPat: cfg.bassPat, arpPat: cfg.arpPat,
+      swing: cfg.swing, swingEvery: cfg.swingEvery, powerChord: cfg.powerChord,
+      fillEvery: chords.length,
+      echo: style === 'blues' ? 0.12 : 0.08, echoSteps: 3,
+      sections: { A: section(0), B: section(4) }, form: ['A', 'B']
+    };
+  }
+  const RAW = {
+    title: danceSong('HORIZON CLUB', 126, 'house', 'Am7 Am7 Fmaj7 Fmaj7 Cmaj7 Cmaj7 G G', '0 . 2 - . 1 . 2', '2 - 3 . 2 . 1 -'),
+    main: danceSong('CLOUD NINE', 134, 'trance', 'Am Am F F C C G G', '0 . 2 3 . 2 1 -', '3 2 1 . 2 - 0 .'),
+    boss: danceSong('THREAT PULSE', 138, 'trance', 'Dm Dm Bb Bb Gm Gm C A', '0 0 . 2 0 . 1 2', '3 . 2 1 0 1 2 -'),
+    pipe: danceSong('DEPLOY AFTER DARK', 130, 'house', 'Em7 Em7 Cmaj7 Cmaj7 Am7 Am7 Bm7 Bm7', '. 0 . 2 - . 1 .', '2 . 3 - 1 . 0 .'),
+    metro: danceSong('UNDERGROUND FREQUENCY', 132, 'trance', 'Dm Dm Bb Bb F F C C', '0 . 1 2 . 3 2 .', '3 - 2 . 1 2 0 -'),
+    bonus: danceSong('GOLDEN HOUR', 128, 'house', 'Fmaj7 Fmaj7 Am7 Am7 Dm7 Dm7 G G', '2 . 0 - 1 . 2 .', '3 . 2 . 1 - 0 .'),
+    paris: danceSong('SEINE AFTER HOURS', 126, 'house', 'Am7 Am7 Dm7 Dm7 Fmaj7 Fmaj7 Em7 Em7', '. 2 . 1 0 - . 2', '3 . 2 - . 1 2 .'),
+    amsterdam: danceSong('CANAL LIGHTS', 136, 'trance', 'F#m F#m D D A A E E', '0 2 . 3 2 . 1 .', '3 . 4 2 . 1 2 -'),
+    london: danceSong('NIGHT LINE', 128, 'house', 'Bm7 Bm7 Gmaj7 Gmaj7 Dmaj7 Dmaj7 A A', '0 . . 2 1 . 0 -', '2 . 3 . 1 - 2 .'),
+    japan: danceSong('NEON BLOSSOM', 136, 'trance', 'Em Em C C G G D D', '0 . 2 . 3 2 . 1', '3 2 . 1 2 . 0 -'),
+    jazz_title: bandSong('BLUE CLOUD LOUNGE', 108, 'jazz', 'Dm7 G7 Cmaj7 Am7 Fmaj7 Bm7 E7 Am7', 0),
+    jazz_main: bandSong('SKYLINE SWING', 132, 'jazz', 'Am7 D7 Gmaj7 Em7 Am7 D7 Gmaj7 E7', 1),
+    jazz_pipe: bandSong('MIDNIGHT TERMINAL', 124, 'jazz', 'Fm7 Bb7 Ebmaj7 Cm7 Fm7 Bb7 Gm7 C7', 2),
+    jazz_boss: bandSong('HOTFIX HORNS', 156, 'jazz', 'Dm7 G7 Cmaj7 A7 Dm7 G7 Em7 A7', 3),
+    country_title: bandSong('CLOUD TRAIL', 104, 'country', 'G C G D G C D G', 0),
+    country_main: bandSong('OPEN ROAD', 140, 'country', 'D G D A D G A D', 1),
+    country_pipe: bandSong('DEPOT PICKERS', 130, 'country', 'C F C G C F G C', 2),
+    country_boss: bandSong('HIGH NOON DEPLOY', 160, 'country', 'A D A E A D E A', 3),
+    blues_title: bandSong('EVENING CLOUD BLUES', 96, 'blues', 'A7 A7 A7 A7 D7 D7 A7 A7 E7 D7 A7 E7', 0),
+    blues_main: bandSong('THE DEPLOYMENT BLUES', 120, 'blues', 'E7 E7 E7 E7 A7 A7 E7 E7 B7 A7 E7 B7', 1),
+    blues_pipe: bandSong('DOWN IN THE STACK', 110, 'blues', 'G7 G7 G7 G7 C7 C7 G7 G7 D7 C7 G7 D7', 2),
+    blues_boss: bandSong('THREAT BLUES', 146, 'blues', 'D7 D7 D7 D7 G7 G7 D7 D7 A7 G7 D7 A7', 3),
+    rock_title: bandSong('HEROES ON AIR', 128, 'rock', 'E A E B E A B E', 0),
+    rock_main: bandSong('AZURE HIGHWAY', 148, 'rock', 'E G A E D A B E', 1),
+    rock_pipe: bandSong('CONTAINER CRUNCH', 142, 'rock', 'A C D A G D E A', 2),
+    rock_boss: bandSong('FIREWALL BREAKER', 170, 'rock', 'D F G D C G A D', 3)
   };
 
   const REGION_SONG = { francecentral: 'paris', westeurope: 'amsterdam', uksouth: 'london', japaneast: 'japan' };
@@ -272,10 +228,13 @@
       let mid = 60 + ch.pc;
       if (mid > 66) mid -= 12;
       b.tones = ch.iv.map((iv) => mid + iv);
-      // lead
+      const dance = raw.style === 'house' || raw.style === 'trance';
+      const breakdown = dance && b.section === 'B' && bi % 8 < 2;
+      const intro = dance && bi < 4;
+      // Start with the groove; bring in the hook, then a short breakdown and drop.
       for (let s = 0; s < steps; s++) {
         const n = b.mel[s];
-        if (n <= 0) continue;
+        if (n <= 0 || intro) continue;
         let len = 1;
         while (len < total && flat[(bi * steps + s + len) % total] === -1) len++;
         ev[s].push(['lead', n, len, 1]);
@@ -284,11 +243,13 @@
       // bass
       const bp = Array.isArray(raw.bassPat) ? raw.bassPat[bi % raw.bassPat.length] : raw.bassPat;
       for (let s = 0; s < steps; s++) {
+        if (breakdown) continue;
         const c = bp[s];
         let n = 0;
         if (c === 'R') n = root;
         else if (c === '3') n = root + ch.iv[1];
         else if (c === '5') n = root + ch.iv[2];
+        else if (c === '6') n = root + 9;
         else if (c === '8') n = root + 12;
         else if (c === 'w') { let r = 36 + next.pc; if (r > 44) r -= 12; n = r - 1; }
         if (n) ev[s].push(['bass', n, span(bp, s), s === 0 ? 1 : 0.85]);
@@ -296,25 +257,34 @@
       // chord voice
       const ap = raw.arpPat;
       for (let s = 0; s < steps; s++) {
+        if (breakdown && s % 4 !== 2) continue;
         const c = ap[s];
-        if (c === 'c') b.tones.slice(0, 4).forEach((n) => ev[s].push(['arp', n, span(ap, s), 0.55]));
+        if (c === 'c') {
+          const tones = raw.powerChord ? [b.tones[0], b.tones[2]] : b.tones.slice(0, 4);
+          tones.forEach((n) => ev[s].push(['arp', n, span(ap, s), 0.55]));
+        }
         else if (c >= '0' && c <= '9') {
           const i = +c;
           ev[s].push(['arp', b.tones[i % b.tones.length] + 12 * Math.floor(i / b.tones.length), span(ap, s), 1]);
         }
       }
-      // drums (fill on the last bar of the loop)
-      const d = bi === bars.length - 1 ? drums.fill : drums;
+      if (dance) b.tones.forEach((n) => ev[0].push(['pad', n - 12, steps, 0.6]));
+      const fillEvery = raw.fillEvery || 8;
+      const d = bi % fillEvery === fillEvery - 1 ? drums.fill : drums;
       ['k', 's', 'h', 'o'].forEach((v) => {
         const p = d[v];
         if (!p) return;
-        for (let s = 0; s < steps; s++) if (p[s] === 'x' || p[s] === 'X') ev[s].push([v, 0, 1, p[s] === 'X' ? 1 : 0.7]);
+        for (let s = 0; s < steps; s++) {
+          if (breakdown && (v !== 'h' || s % 4)) continue;
+          if (p[s] === 'x' || p[s] === 'X') ev[s].push([v, 0, 1, p[s] === 'X' ? 1 : 0.7]);
+        }
       });
       b.ev = ev;
     });
     return {
       key: key, name: raw.name, bpm: raw.bpm, beats: raw.beats, steps: steps, swing: raw.swing || 0,
-      lead: raw.lead, arp: raw.arp, bass: raw.bass, drums: raw.drums, echo: raw.echo || 0.2, echoSteps: raw.echoSteps || 3,
+      swingEvery: raw.swingEvery || 1, style: raw.style, lead: raw.lead, arp: raw.arp, bass: raw.bass,
+      drums: raw.drums, echo: raw.echo === undefined ? 0.2 : raw.echo, echoSteps: raw.echoSteps || 3,
       sections: raw.form.slice(), bars: bars,
       stepDur: (60 / raw.bpm) * raw.beats / steps
     };
@@ -324,7 +294,7 @@
   Object.keys(RAW).forEach((k) => { SONGS[k] = buildSong(k, RAW[k]); });
 
   const LOOKAHEAD = 0.15, TICK_MS = 25, MUSIC_VOL = 0.28;
-  const VOL = { lead: 0.3, arp: 0.1, bass: 0.42, k: 0.85, s: 0.32, h: 0.09, o: 0.1 };
+  const VOL = { lead: 0.19, arp: 0.095, pad: 0.055, bass: 0.42, k: 0.85, s: 0.28, h: 0.055, o: 0.075 };
 
   const A = (AH.Audio = {
     ctx: null,
@@ -332,12 +302,43 @@
     sfx: null,
     musicBus: null,
     muted: false,
+    style: 'dance',
     musicTimer: null,
     musicKind: null,
     musicRegion: null,
     seq: null,
     SONGS: SONGS,
     REGION_SONG: REGION_SONG,
+    STYLES: MUSIC_STYLES,
+
+    loadStyle() {
+      let stored;
+      try { stored = localStorage.getItem(MUSIC_KEY); }
+      catch (e) {
+        console.warn('Music preference is unavailable; using dance for this session.');
+        this.style = 'dance';
+        return this.style;
+      }
+      if (stored !== null && !MUSIC_STYLES.includes(stored)) {
+        console.warn('Invalid music preference; using dance.');
+      }
+      this.style = MUSIC_STYLES.includes(stored) ? stored : 'dance';
+      return this.style;
+    },
+
+    setStyle(style) {
+      if (!MUSIC_STYLES.includes(style)) throw new Error('Unsupported music style');
+      if (this.style === style) return this.style;
+      this.style = style;
+      try { localStorage.setItem(MUSIC_KEY, style); }
+      catch (e) { console.warn('Music preference could not be saved; selection is for this session only.'); }
+      if (this.musicKind) this.music(this.musicKind, this.musicRegion);
+      return this.style;
+    },
+
+    nextStyle() {
+      return this.setStyle(MUSIC_STYLES[(MUSIC_STYLES.indexOf(this.style) + 1) % MUSIC_STYLES.length]);
+    },
 
     init() {
       if (this.ctx) {
@@ -471,6 +472,10 @@
         case 'boss': this.tone(110, 0.6, 'sawtooth', 0.22, 50); this.tone(165, 0.6, 'square', 0.1, 70, 0.1); break;
         case 'bossHit': this.noise(0.25, 0.3); this.tone(180, 0.3, 'sawtooth', 0.22, 50); break;
         case 'stun': this.tone(1000, 0.1, 'square', 0.14, 300); this.tone(700, 0.2, 'square', 0.14, 200, 0.1); break;
+        case 'punch': this.noise(0.09, 0.24); this.tone(150, 0.1, 'square', 0.16, 55); break;
+        case 'swing': this.noise(0.12, 0.08); this.tone(700, 0.1, 'sine', 0.06, 240); break;
+        case 'bell': this.tone(1320, 0.6, 'triangle', 0.18); this.tone(1980, 0.45, 'sine', 0.1, null, 0.02); this.tone(1320, 0.5, 'triangle', 0.14, null, 0.22); break;
+        case 'ko': this.noise(0.3, 0.28); [392, 330, 262, 196].forEach((f, i) => this.tone(f, 0.22, 'square', 0.16, null, 0.1 + i * 0.12)); break;
         case 'hack': this.tone(1200 + Math.random() * 600, 0.04, 'square', 0.06); break;
         case 'unlock': [523, 659, 784, 1046].forEach((f, i) => this.tone(f, 0.12, 'square', 0.14, null, i * 0.07)); break;
         case 'checkpoint': this.tone(600, 0.1, 'triangle', 0.2); this.tone(900, 0.2, 'triangle', 0.2, null, 0.1); break;
@@ -485,9 +490,15 @@
     },
 
     /* ================================================================ MUSIC ENGINE */
-    // Song key actually used for a music kind; region themes only replace 'main'.
+    // Dance keeps regional tracks; the other styles follow the same scene contexts.
     songFor(kind, region) {
       if (!kind) return null;
+      if (this.style !== 'dance') {
+        const context = kind === 'boss' ? 'boss'
+          : kind === 'pipe' || kind === 'metro' ? 'pipe'
+            : kind === 'title' || kind === 'bonus' ? 'title' : 'main';
+        return this.style + '_' + context;
+      }
       if (kind === 'main') return REGION_SONG[region] || 'main';
       return SONGS[kind] ? kind : 'main';
     },
@@ -505,23 +516,16 @@
 
     startSong(key) {
       const ctx = this.ctx, song = SONGS[key], t = ctx.currentTime;
-      const out = ctx.createGain(), echo = ctx.createGain(), trem = ctx.createGain();
+      const out = ctx.createGain(), echo = ctx.createGain(), synth = ctx.createGain();
       out.gain.setValueAtTime(0, t);
       out.gain.linearRampToValueAtTime(1, t + 0.05);
       out.connect(this.musicBus);
       echo.gain.value = song.echo;
       echo.connect(this.delay);
       this.delay.delayTime.setValueAtTime(Math.min(0.9, song.stepDur * song.echoSteps), t);
-      // shared tremolo for the accordion and street organ (bellows wobble)
-      trem.gain.value = 0.8;
-      trem.connect(out);
-      const lfo = ctx.createOscillator(), depth = ctx.createGain();
-      lfo.frequency.value = song.lead === 'organ' ? 7 : 5.5;
-      depth.gain.value = 0.2;
-      lfo.connect(depth);
-      depth.connect(trem.gain);
-      lfo.start(t);
-      this.seq = { key: key, song: song, out: out, echo: echo, trem: trem, lfo: lfo, bar: 0, step: 0, next: t + 0.06 };
+      synth.gain.value = 1;
+      synth.connect(out);
+      this.seq = { key: key, song: song, out: out, echo: echo, synth: synth, bar: 0, step: 0, next: t + 0.06 };
       this.musicTimer = setInterval(() => this.tick(), TICK_MS);
       this.tick();
     },
@@ -539,8 +543,7 @@
         p.setValueAtTime(p.value, t);
         p.linearRampToValueAtTime(0, t + 0.08);
       });
-      s.lfo.stop(t + 0.4);
-      setTimeout(() => { s.out.disconnect(); s.echo.disconnect(); s.trem.disconnect(); s.lfo.disconnect(); }, 600);
+      setTimeout(() => { s.out.disconnect(); s.echo.disconnect(); s.synth.disconnect(); }, 600);
     },
 
     // lookahead scheduler: queue every step that starts within LOOKAHEAD seconds
@@ -551,7 +554,8 @@
       if (s.next < now - 0.2) s.next = now + 0.05; // throttled tab: skip ahead instead of bursting
       while (s.next < now + LOOKAHEAD) {
         if (!this.muted) {
-          const t = s.next + (song.swing && s.step % 2 ? song.stepDur * song.swing : 0);
+          const offbeat = Math.floor(s.step / song.swingEvery) % 2;
+          const t = s.next + (offbeat ? song.stepDur * song.swingEvery * song.swing : 0);
           const ev = song.bars[s.bar].ev[s.step];
           for (let i = 0; i < ev.length; i++) this.voice(s, ev[i], t);
         }
@@ -564,8 +568,14 @@
       const song = s.song, kind = e[0], dur = e[2] * song.stepDur, vel = e[3];
       if (kind === 'lead') return this.inst(song.lead, e[1], t, dur * 0.92, VOL.lead * vel, s, true);
       if (kind === 'arp') return this.inst(song.arp, e[1], t, Math.min(dur, song.stepDur * 1.6) * 0.8, VOL.arp * vel, s, false);
-      if (kind === 'bass') return this.bassNote(song.bass, e[1], t, dur * 0.85, VOL.bass * vel, s.out);
-      return this.drum(kind, t, vel, s.out);
+      if (kind === 'pad') return this.inst('pad', e[1], t, dur * 0.92, VOL.pad * vel, s, false);
+      if (kind === 'bass') return this.bassNote(song.bass, e[1], t, dur * 0.85, VOL.bass * vel, s.synth);
+      if (kind === 'k' && (song.style === 'house' || song.style === 'trance')) {
+        s.synth.gain.setValueAtTime(1, t);
+        s.synth.gain.linearRampToValueAtTime(0.24, t + 0.004);
+        s.synth.gain.linearRampToValueAtTime(1, t + song.stepDur * 2.8);
+      }
+      return this.drum(kind, t, vel, s.out, song.style);
     },
 
     osc(type, freq, t) {
@@ -591,8 +601,51 @@
     inst(type, n, t, dur, vol, s, lead) {
       const ctx = this.ctx, f = NOTE(n), g = ctx.createGain();
       const reed = type === 'accordion' || type === 'organ';
-      g.connect(reed ? s.trem : s.out);
+      g.connect(s.synth);
       if (lead) g.connect(s.echo);
+      if (type === 'jazzkeys' || type === 'twang' || type === 'bluesguitar' || type === 'rockguitar') {
+        const jazz = type === 'jazzkeys', twang = type === 'twang', rock = type === 'rockguitar';
+        const lp = ctx.createBiquadFilter(), mix = ctx.createGain();
+        lp.type = 'lowpass'; lp.Q.value = 0.8;
+        lp.frequency.setValueAtTime(jazz ? 1800 : twang ? 3200 : 2400, t);
+        lp.frequency.exponentialRampToValueAtTime(jazz ? 750 : twang ? 850 : 1100, t + Math.max(0.12, dur));
+        mix.gain.value = rock ? 0.32 : 0.45;
+        mix.connect(lp); lp.connect(g);
+        const oscs = jazz
+          ? [this.osc('sine', f, t), this.osc('triangle', f * 2, t)]
+          : [this.osc(twang ? 'triangle' : 'sawtooth', f, t), this.osc(rock ? 'sawtooth' : 'pulse25', f, t)];
+        if (rock) { oscs[0].detune.value = -6; oscs[1].detune.value = 6; }
+        else if (!jazz) { oscs[0].detune.setValueAtTime(-30, t); oscs[0].detune.linearRampToValueAtTime(0, t + 0.06); }
+        let end;
+        if (jazz || twang) {
+          end = t + Math.max(dur, 0.16) + 0.12;
+          g.gain.setValueAtTime(0, t);
+          g.gain.linearRampToValueAtTime(vol, t + 0.004);
+          g.gain.setTargetAtTime(vol * 0.2, t + 0.004, twang ? 0.09 : 0.14);
+          g.gain.setTargetAtTime(0, end - 0.12, 0.025);
+        } else end = this.env(g, t, 0.008, vol, dur, 0.12);
+        oscs.forEach((o) => { o.connect(mix); o.start(t); o.stop(end); });
+        this.cleanup(oscs[0], oscs.concat([mix, lp, g]));
+        return;
+      }
+      if (type === 'supersaw' || type === 'keys' || type === 'trancepluck' || type === 'pad') {
+        const pad = type === 'pad', keys = type === 'keys', saw = type === 'supersaw';
+        const lp = ctx.createBiquadFilter(), mix = ctx.createGain();
+        lp.type = 'lowpass'; lp.Q.value = saw ? 0.7 : 1;
+        const cutoff = pad ? 1100 : keys ? 2400 : saw ? 2200 : 2000;
+        lp.frequency.setValueAtTime(cutoff, t);
+        lp.frequency.exponentialRampToValueAtTime(pad ? 750 : 650, t + Math.max(0.12, dur));
+        mix.gain.value = saw ? 0.3 : 0.45;
+        mix.connect(lp); lp.connect(g);
+        const oscs = saw
+          ? [-9, 0, 9].map((detune) => { const o = this.osc('sawtooth', f, t); o.detune.value = detune; return o; })
+          : [this.osc(keys || pad ? 'sine' : 'sawtooth', f, t), this.osc('triangle', f * (keys ? 2 : 1), t)];
+        if (pad) oscs[1].detune.value = 5;
+        const end = this.env(g, t, pad ? 0.16 : 0.008, vol, dur, pad ? 0.3 : 0.16);
+        oscs.forEach((o) => { o.connect(mix); o.start(t); o.stop(end); });
+        this.cleanup(oscs[0], oscs.concat([mix, lp, g]));
+        return;
+      }
       if (reed) {
         const lp = ctx.createBiquadFilter();
         lp.type = 'lowpass';
@@ -648,17 +701,24 @@
     },
 
     bassNote(type, n, t, dur, vol, out) {
-      const ctx = this.ctx, g = ctx.createGain(), o = this.osc(type === 'saw' ? 'sawtooth' : 'triangle', NOTE(n), t);
+      const ctx = this.ctx, g = ctx.createGain(), o = this.osc(type === 'saw' || type === 'electric' ? 'sawtooth' : 'triangle', NOTE(n), t);
       const nodes = [o, g];
-      if (type === 'saw') {
+      if (type === 'club') {
+        const sub = this.osc('sine', NOTE(n), t), lp = ctx.createBiquadFilter(), mix = ctx.createGain();
+        o.type = 'sawtooth'; lp.type = 'lowpass'; lp.Q.value = 0.7;
+        lp.frequency.setValueAtTime(650, t); lp.frequency.exponentialRampToValueAtTime(140, t + Math.max(0.06, dur));
+        mix.gain.value = 0.25; o.connect(mix); mix.connect(lp); sub.connect(lp); lp.connect(g);
+        nodes.push(sub, lp, mix); vol *= 0.65;
+        sub.start(t); sub.stop(t + Math.max(dur, 0.015) + 0.03);
+      } else if (type === 'saw' || type === 'upright' || type === 'electric') {
         const lp = ctx.createBiquadFilter();
         lp.type = 'lowpass';
-        lp.Q.value = 6;
-        lp.frequency.setValueAtTime(1400, t);
-        lp.frequency.exponentialRampToValueAtTime(260, t + Math.max(0.06, dur));
+        lp.Q.value = type === 'saw' ? 6 : 0.8;
+        lp.frequency.setValueAtTime(type === 'upright' ? 850 : 1400, t);
+        lp.frequency.exponentialRampToValueAtTime(type === 'electric' ? 500 : 260, t + Math.max(0.06, dur));
         o.connect(lp); lp.connect(g);
         nodes.push(lp);
-        vol *= 0.55;
+        vol *= type === 'saw' ? 0.55 : 0.8;
       } else o.connect(g);
       g.connect(out);
       const end = this.env(g, t, 0.005, vol, dur, 0.03);
@@ -667,17 +727,20 @@
       this.cleanup(o, nodes);
     },
 
-    drum(kind, t, vel, out) {
+    drum(kind, t, vel, out, style) {
       const ctx = this.ctx, g = ctx.createGain();
+      const dance = style === 'house' || style === 'trance';
       g.connect(out);
       if (kind === 'k') {
         const o = ctx.createOscillator();
         o.type = 'sine';
-        o.frequency.setValueAtTime(155, t);
-        o.frequency.exponentialRampToValueAtTime(42, t + 0.11);
-        g.gain.setValueAtTime(VOL.k * vel, t);
-        g.gain.exponentialRampToValueAtTime(0.001, t + 0.2);
-        o.connect(g); o.start(t); o.stop(t + 0.22);
+        o.frequency.setValueAtTime(dance ? 135 : 105, t);
+        o.frequency.exponentialRampToValueAtTime(48, t + 0.09);
+        const len = dance ? 0.28 : 0.16;
+        const level = dance ? 1 : style === 'jazz' ? 0.38 : style === 'country' ? 0.48 : 0.62;
+        g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(VOL.k * vel * level, t + 0.003);
+        g.gain.exponentialRampToValueAtTime(0.001, t + len);
+        o.connect(g); o.start(t); o.stop(t + len + 0.02);
         this.cleanup(o, [o, g]);
         return;
       }
@@ -686,21 +749,18 @@
       src.connect(f); f.connect(g);
       let len;
       if (kind === 's') {
-        f.type = 'bandpass'; f.frequency.value = 1800; f.Q.value = 0.8;
-        len = 0.15;
-        const o = ctx.createOscillator(), og = ctx.createGain();
-        o.type = 'triangle';
-        o.frequency.setValueAtTime(190, t);
-        o.frequency.exponentialRampToValueAtTime(140, t + 0.07);
-        og.gain.setValueAtTime(VOL.s * vel * 0.8, t);
-        og.gain.exponentialRampToValueAtTime(0.001, t + 0.08);
-        o.connect(og); og.connect(out); o.start(t); o.stop(t + 0.1);
-        this.cleanup(o, [o, og]);
+        f.type = 'bandpass'; f.frequency.value = 1500; f.Q.value = 0.7;
+        len = dance ? 0.17 : 0.11;
+        for (let i = 0; i < (dance ? 3 : 1); i++) {
+          const hit = t + i * 0.012;
+          g.gain.setValueAtTime(VOL.s * vel * (style === 'jazz' ? 0.4 : 1), hit);
+          g.gain.exponentialRampToValueAtTime(0.02, hit + 0.01);
+        }
       } else {
-        f.type = 'highpass'; f.frequency.value = 7000;
+        f.type = 'highpass'; f.frequency.value = dance ? 7000 : 5000;
         len = kind === 'o' ? 0.18 : 0.035;
       }
-      g.gain.setValueAtTime(VOL[kind] * vel, t);
+      if (kind !== 's') g.gain.setValueAtTime(VOL[kind] * vel, t);
       g.gain.exponentialRampToValueAtTime(0.001, t + len);
       src.start(t, Math.random() * 0.5, len + 0.02);
       this.cleanup(src, [src, f, g]);

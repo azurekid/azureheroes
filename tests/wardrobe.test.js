@@ -334,7 +334,7 @@ test('wardrobe labels and reward messages fit the pixel-font charset', () => {
   }
 });
 
-test('Gold Mode easter egg is a sandbox: 30 lives, gold suit, nothing saved or submitted', () => {
+test('Gold Mode easter egg is a sandbox: 30 lives, gold suit, no run progress saved or submitted', () => {
   const writes = [];
   const AH = {
     Levels: { ids: ['amsterdam'] }, Art: A, Audio: { play() {} },
