@@ -92,6 +92,7 @@ test('songFor picks region themes for main and falls back to main', () => {
   assert.equal(A.songFor('main', 'westeurope'), 'amsterdam');
   assert.equal(A.songFor('main', 'uksouth'), 'london');
   assert.equal(A.songFor('main', 'japaneast'), 'japan');
+  assert.equal(A.songFor('main', 'eastus2'), 'newyork');
   assert.equal(A.songFor('main', 'brazilsouth'), 'main');
   assert.equal(A.songFor('main', 'nowhere'), 'main');
   assert.equal(A.songFor('main'), 'main');

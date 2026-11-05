@@ -178,6 +178,11 @@ Touch run controls include DUCK, SHIELD, PAUSE and HELP. On the title screen E o
   all three reward names. Labels use the existing pixel-font charset.
 
 ### Regional rooms, street stands and music
+- New York is appended as world 11 (`eastus2`, a hosting-region mapping, not a New York
+  datacenter). Its map pin uses New York's city coordinates, offset from Virginia.
+  Its optional street stand `hotdog` is 64x52 in both obstacle-size registries; local
+  props are `hydrant` and `newsbox`. The `broker` boxer uses the existing fighter API.
+  Regional wardrobe rewards use index 10 and append entries without shifting saved indexes.
 - London uses regional room `tube` (UK South only); Paris keeps `metro`. Both
   have optional zone `music: 'metro'`; rooms omitting it use `pipe` music.
 - Optional `ambient.rail: [kind]` uses `amb_train_<kind>` and `amb_rail` behind

@@ -187,6 +187,7 @@
     amsterdam: danceSong('CANAL LIGHTS', 136, 'trance', 'F#m F#m D D A A E E', '0 2 . 3 2 . 1 .', '3 . 4 2 . 1 2 -'),
     london: danceSong('NIGHT LINE', 128, 'house', 'Bm7 Bm7 Gmaj7 Gmaj7 Dmaj7 Dmaj7 A A', '0 . . 2 1 . 0 -', '2 . 3 . 1 - 2 .'),
     japan: danceSong('NEON BLOSSOM', 136, 'trance', 'Em Em C C G G D D', '0 . 2 . 3 2 . 1', '3 2 . 1 2 . 0 -'),
+    newyork: danceSong('HUDSON HOUSE', 128, 'house', 'Dm7 Dm7 G7 G7 Cmaj7 Cmaj7 Am7 Am7', '. 0 . 2 1 . 2 -', '3 . 2 . 1 2 0 -'),
     jazz_title: bandSong('BLUE CLOUD LOUNGE', 108, 'jazz', 'Dm7 G7 Cmaj7 Am7 Fmaj7 Bm7 E7 Am7', 0),
     jazz_main: bandSong('SKYLINE SWING', 132, 'jazz', 'Am7 D7 Gmaj7 Em7 Am7 D7 Gmaj7 E7', 1),
     jazz_pipe: bandSong('MIDNIGHT TERMINAL', 124, 'jazz', 'Fm7 Bb7 Ebmaj7 Cm7 Fm7 Bb7 Gm7 C7', 2),
@@ -205,7 +206,7 @@
     rock_boss: bandSong('FIREWALL BREAKER', 170, 'rock', 'D F G D C G A D', 3)
   };
 
-  const REGION_SONG = { francecentral: 'paris', westeurope: 'amsterdam', uksouth: 'london', japaneast: 'japan' };
+  const REGION_SONG = { francecentral: 'paris', westeurope: 'amsterdam', uksouth: 'london', japaneast: 'japan', eastus2: 'newyork' };
 
   // Expands RAW into per-bar, per-step event lists so the scheduler never parses at play time.
   function buildSong(key, raw) {

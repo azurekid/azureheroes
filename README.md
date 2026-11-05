@@ -39,6 +39,10 @@ The game remembers where you left off. **C: Continue** on the title screen or ma
 | 8 | `mexicocentral` | Mexico City Skyway: Teotihuacan, Chichen Itza, Angel of Independence, hot air balloons | El Luchador Zero-Day (hovering) | Flight |
 | 9 | `westus2` | Redmond Campus Lake Run: Microsoft campus, Space Needle, Mt Rainier, an Xbox bonus door | The DDoS Enforcer | Run |
 | 10 | `eastus` | Virginia Data Center: Capitol, Washington Monument, hack terminals, Sec Gates | High-Risk CyberGuardian | Data center |
+| 11 | `eastus2` | New York Hudson Run: Statue of Liberty, Empire State, Chrysler Building, Brooklyn Bridge, Times Square, brownstones, hot dog carts, yellow cabs, rats and pigeons | Zero Day Boxer | Run |
+
+New York uses East US 2 as its Azure hosting-region mapping; this does not imply a
+New York datacenter. Its map pin marks the city, with an offset to keep Virginia tappable.
 
 Levels are generated at random each time a level starts, so platforms, lasers, enemies, coins, power-ups and MFA tokens land in new places on every run. Run levels mix gaps, steps up, drops and floating platforms at different heights, and every region has its own coins, enemy skins, scenery props, traffic, birds and sky objects (planes, balloons, blimps, helicopters). Outdoor worlds also get a random time of day, from sunrise to night; Virginia's data center uses indoor lighting.
 

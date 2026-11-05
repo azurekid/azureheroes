@@ -272,7 +272,7 @@
     };
   }
 
-  const OB_SIZE = { bus: [96, 56], cab: [72, 42], flowers: [56, 34], bikes: [84, 34], herring: [88, 62], bakery: [88, 62], icecream: [64, 38], lifeguard: [34, 52], outback4x4: [88, 44], vespa: [68, 44], fiat: [78, 44], cafe: [78, 40], kiosk: [44, 64], gelato: [68, 38], pickup: [88, 44], schoolbus: [96, 56], taxi: [72, 42] };
+  const OB_SIZE = { bus: [96, 56], cab: [72, 42], flowers: [56, 34], bikes: [84, 34], herring: [88, 62], bakery: [88, 62], hotdog: [64, 52], icecream: [64, 38], lifeguard: [34, 52], outback4x4: [88, 44], vespa: [68, 44], fiat: [78, 44], cafe: [78, 40], kiosk: [44, 64], gelato: [68, 38], pickup: [88, 44], schoolbus: [96, 56], taxi: [72, 42] };
 
   // Secret bonus room: one screen of floating platforms over a themed floor, packed with credits.
   // Themes: cloud (Bliss hill), retro (classic desktop), xbox (Game Pass arena).
@@ -587,6 +587,24 @@
       tint: 0xffffff, landmarks: 'CAPITOL - WASHINGTON MONUMENT - LINCOLN MEMORIAL', hint: 'STAND ON HACK TERMINALS TO OPEN SEC GATES. HOLD E TO RAISE THE MFA SHIELD',
       boss: { kind: 'guardian', name: 'HIGH-RISK CYBERGUARDIAN' },
       opt: { sections: 4 }
+    },
+    {
+      id: 11, region: 'eastus2', regionName: 'EAST US 2', city: 'NEW YORK', name: 'New York Hudson Run', mode: 'run', theme: 'roof',
+      ambient: { sky: ['heli', 'plane'], birds: 'pigeon', road: ['taxi', 'taxi', 'mtabus'], roadRate: 6.5, roadMax: 2, rail: ['nycmetro'], railY: 238, water: ['region'] },
+      tint: 0xffe6c6, landmarks: 'STATUE OF LIBERTY - EMPIRE STATE - CHRYSLER - BROOKLYN BRIDGE - TIMES SQUARE',
+      hint: 'NEW YORK CITY - HOSTED IN AZURE EAST US 2. DEFEND THE HUDSON CLOUD ROUTE!',
+      ground: 'quay', water: true, rail: 'quay',
+      boss: { kind: 'broker', name: 'ZERO DAY BOXER', proj: 'broker' },
+      opt: {
+        count: 28, gapMin: 100, gapMax: 180, minW: 220, maxW: 320, cpEvery: 7,
+        laserRate: 0.18, robotRate: 0.3, spiderRate: 0.32, droneRate: 0.24,
+        stepRate: 0.16, dropRate: 0.14, wallRate: 0.16, stairRate: 0.14,
+        floatRate: 0.55, stoneRate: 0.5, power: 6, props: ['hydrant', 'newsbox'],
+        water: true, bridgeRate: 0.12, boatRate: 0.14,
+        obstacles: ['taxi', 'hotdog'], stand: 'hotdog', obstacleRate: 0.34, bikes: 1,
+        secret: 'cloud', secretName: 'SKYLINE CLOUD', extraRate: 0.4,
+        floatEnemyRate: 0.35, shootRate: 0.3
+      }
     }
   ];
 

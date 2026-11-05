@@ -384,7 +384,8 @@
   const GEO = {
     westeurope: [4.9, 52.4, 7, -9], uksouth: [-0.1, 51.5, -10, -4], francecentral: [2.35, 48.86, -7, 8], italynorth: [12.3, 45.4, 10, 6],
     japaneast: [139.7, 35.7, 0, 0], australiaeast: [151.2, -33.9, 0, 0], brazilsouth: [-43.2, -22.9, 0, 0],
-    mexicocentral: [-99.1, 19.4, 0, 0], westus2: [-122.1, 47.7, 0, 0], eastus: [-78, 37.5, 0, 0]
+    mexicocentral: [-99.1, 19.4, 0, 0], westus2: [-122.1, 47.7, 0, 0], eastus: [-78, 37.5, 0, 0],
+    eastus2: [-74.006, 40.7128, 16, -12]
   };
   const MAP_Y = 30;
 
