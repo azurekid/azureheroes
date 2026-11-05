@@ -92,13 +92,15 @@
   };
 
   AH.ArtModules.stages['worlds.amsterdam.scenery.83'] = function (C) {
-    const { ell, lit, poly, rng, rrect, silFill } = C;
+    const { ell, lg, line, lit, poly, rng, rrect, silFill } = C;
 
     Object.assign(C, { gracht, grachtRow, bikeSil, plane });
     const GRACHT_COLS = ['#8a3a5a', '#5a2a6a', '#3a4a7a', '#6a3a4a', '#cfc0ec', '#2a4a5a', '#7a4a3a', '#4a2a4a'];
 
     function gracht(g, x, base, w, h, type, col, P, r) {
         const top = base - h, trim = '#f4ecff';
+        const depth = 5;
+        poly(g, [[x, top], [x + depth, top - 5], [x + w, top - 5], [x + w, top]], '#9a8295');
         g.fillStyle = silFill(g, top, base, col, P.bot); g.fillRect(x, top, w, h);
         g.fillStyle = 'rgba(0,0,12,0.22)'; g.fillRect(x + w - 3, top, 3, h);
         const gw = type === 'cornice' ? w : w * 0.7, gx = x + (w - gw) / 2;
@@ -142,16 +144,28 @@
         g.fillStyle = trim; g.fillRect(dx - 1, base - 13, 8, 1); lit(g, dx + 1, base - 12, 4, 2, '#ffe9a0');
         g.fillStyle = '#4a3a5a'; g.fillRect(dx - 3, base - 2, 12, 2); g.fillRect(dx - 2, base - 4, 10, 2);
         if (r() < 0.5) { g.fillStyle = '#3a8a3a'; g.fillRect(x + 3, base - 18, 6, 2); ell(g, x + 4, base - 19, 1, 1, '#ff5a8a'); ell(g, x + 7, base - 19, 1, 1, '#ffe14a'); }
+        poly(g, [[x + w - depth, top], [x + w, top + 5], [x + w, base], [x + w - depth, base]], 'rgba(20,19,38,0.65)');
+        line(g, x, base - 0.5, x + w, base - 0.5, 1.5, '#241c33');
+        for (let y = top + 12; y < base - 12; y += 18) {
+          line(g, x + w - depth + 1, y + 2, x + w - 1, y + 5, 0.6, '#6d6177');
+        }
       }
 
     const GTYPES = ['step', 'bell', 'neck', 'spout', 'cornice', 'clock'];
 
     function grachtRow(g, x0, x1, base, seed, P, hmin, hmax) {
+        const feet = base - 12;
+        g.fillStyle = lg(g, x0, feet, x0, base, [[0, '#9b8594'], [0.35, '#6a596e'], [1, '#3a304a']]);
+        g.fillRect(x0, feet, x1 - x0, 12);
+        line(g, x0, feet, x1, feet, 1, '#ddc5bc');
+        for (let x = x0; x < x1; x += 16) line(g, x, feet, x + 9, base - 4, 0.6, '#43384f');
+        line(g, x0, base - 4, x1, base - 4, 1.2, '#c3a9a0');
+        g.fillStyle = '#36273d'; g.fillRect(x0, base - 3, x1 - x0, 3);
         const r = rng(seed); let x = x0, last = -1;
         while (x < x1 - 18) {
           const w = Math.min(x1 - x, 22 + Math.floor(r() * 12)), h = hmin + Math.floor(r() * (hmax - hmin));
           let t; do { t = Math.floor(r() * GTYPES.length); } while (t === last); last = t;
-          gracht(g, x, base, w, h, GTYPES[t], GRACHT_COLS[Math.floor(r() * GRACHT_COLS.length)], P, r);
+          gracht(g, x, feet, w, h, GTYPES[t], GRACHT_COLS[Math.floor(r() * GRACHT_COLS.length)], P, r);
           x += w + 0.6;
         }
       }
@@ -413,11 +427,11 @@
     const { bikeSil, ell, glowRect, grachtRow, lamp, lg, line, lit, msLogo, plane, poly, rng, silFill, tree, txt } = C;
 
     return {
-          sc_we_row1: [170, 150, function (g, w, h, P) { grachtRow(g, 0, w, h, 301, P, 80, 120); for (let x = 22; x < w; x += 52) tree(g, x, h, 48, '#3a7a4a'); bikeSil(g, 40, h, '#14082a'); bikeSil(g, 120, h, '#14082a'); }],
-          sc_we_row2: [150, 160, function (g, w, h, P) { grachtRow(g, 0, w, h, 302, P, 90, 132); lamp(g, 30, h, 34, '#ffd070'); lamp(g, 115, h, 34, '#ffd070'); }],
-          sc_we_row3: [200, 140, function (g, w, h, P) { grachtRow(g, 0, w, h, 303, P, 74, 112); for (let x = 36; x < w; x += 64) tree(g, x, h, 42, '#4a8a3a'); }],
-          sc_we_row4: [180, 150, function (g, w, h, P) { grachtRow(g, 0, w, h, 304, P, 84, 128); for (let x = 8; x < w - 14; x += 26) bikeSil(g, x, h, '#1a0a3a'); }],
-          sc_we_row5: [130, 160, function (g, w, h, P) { grachtRow(g, 0, w, h, 305, P, 96, 140); lamp(g, 64, h, 36, '#ffd070'); }],
+          sc_we_row1: [170, 174, function (g, w, h, P) { grachtRow(g, 0, w, h, 301, P, 80, 120); for (let x = 22; x < w; x += 52) tree(g, x, h - 5, 48, '#3a7a4a'); bikeSil(g, 40, h - 4, '#14082a'); bikeSil(g, 120, h - 4, '#14082a'); }],
+          sc_we_row2: [150, 184, function (g, w, h, P) { grachtRow(g, 0, w, h, 302, P, 90, 132); lamp(g, 30, h - 5, 34, '#ffd070'); lamp(g, 115, h - 5, 34, '#ffd070'); }],
+          sc_we_row3: [200, 164, function (g, w, h, P) { grachtRow(g, 0, w, h, 303, P, 74, 112); for (let x = 36; x < w; x += 64) tree(g, x, h - 5, 42, '#4a8a3a'); }],
+          sc_we_row4: [180, 174, function (g, w, h, P) { grachtRow(g, 0, w, h, 304, P, 84, 128); for (let x = 8; x < w - 14; x += 26) bikeSil(g, x, h - 4, '#1a0a3a'); }],
+          sc_we_row5: [130, 184, function (g, w, h, P) { grachtRow(g, 0, w, h, 305, P, 96, 140); lamp(g, 64, h - 5, 36, '#ffd070'); }],
           sc_we_centraal: [290, 175, function (g, w, h, P) {
             g.fillStyle = 'rgba(200,210,255,0.35)'; g.beginPath(); g.ellipse(150, h - 50, 150, 40, 0, Math.PI, 0); g.fill();
             g.strokeStyle = 'rgba(40,30,80,0.6)'; g.lineWidth = 0.8; for (let k = 0; k < 14; k++) { g.beginPath(); g.moveTo(10 + k * 20, h - 50); g.lineTo(10 + k * 20, h - 50 - Math.sqrt(Math.max(0, 1 - Math.pow((k * 20 - 140) / 150, 2))) * 40); g.stroke(); }

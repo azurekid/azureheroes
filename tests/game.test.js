@@ -59,6 +59,43 @@ test('city catalogue fixes world order, stable ids and per-world map coordinates
   assert.deepEqual(Array.from(AH.Levels.ids), worlds.map((world) => world.id));
 });
 
+test('New York perspective skyscrapers stay grounded and preserve scenic width and route', () => {
+  const Art = artwork(), canvas = Art.textureCanvas('sc_ny_times');
+  assert.equal(canvas.width, 300 * Art.D);
+  assert.equal(canvas.height, 330 * Art.D);
+  for (const x of [0, 119, 246]) {
+    assert.ok(canvas.ops.some((op) => op[0] === 'fillRect' && op[1] === x &&
+      op[2] < 0 && op[2] + op[4] === 232), 'tower front reaches the plaza: ' + x);
+  }
+  assert.ok(canvas.ops.some((op) => op[0] === 'fillRect' && op[1] === 0 &&
+    op[2] === 145 && op[3] === 300 && op[4] === 87), 'continuous ground backs every building');
+  assert.equal(Art.textureCanvas('sc_ny_midtown').height, 330 * Art.D);
+  const angledSigns = canvas.ops.filter((op) => op[0] === 'transform' && op[2] !== 0);
+  assert.equal(angledSigns.length, 2, 'billboards wrap both inward-facing building sides');
+  assert.ok(canvas.ops.some((op) => op[0] === 'moveTo' && op[1] === 153 && op[2] === 151),
+    'plaza perspective lines share a vanishing point');
+  assert.ok(canvas.ops.filter((op) => op[0] === 'stop').length >= 20,
+    'facades, plaza and screens have independent light gradients');
+  assert.deepEqual(Array.from(Art.sceneryRoutes.eastus2.find((stop) => stop[1] === 'sc_ny_times')),
+    [0.1, 'sc_ny_times']);
+});
+
+test('Amsterdam perspective rows retain gables and sit on continuous paved quays', () => {
+  const Art = artwork();
+  let curvedGables = 0;
+  for (const [i, width, height] of [[1, 170, 174], [2, 150, 184], [3, 200, 164], [4, 180, 174], [5, 130, 184]]) {
+    const canvas = Art.textureCanvas('sc_we_row' + i);
+    assert.equal(canvas.width, width * Art.D, 'unchanged spacing width');
+    assert.equal(canvas.height, height * Art.D);
+    assert.ok(canvas.ops.some((op) => op[0] === 'fillRect' && op[1] === 0 &&
+      op[2] === height - 12 && op[3] === width && op[4] === 12), 'continuous quay supports row ' + i);
+    assert.ok(canvas.ops.some((op) => op[0] === 'lineTo' && op[2] === height - 12),
+      'side walls meet quay, not empty sky');
+    curvedGables += canvas.ops.filter((op) => op[0] === 'bezierCurveTo' || op[0] === 'quadraticCurveTo').length;
+  }
+  assert.ok(curvedGables > 0, 'ornamental Dutch gables remain alongside stepped and pointed roofs');
+});
+
 test('challenge platforms use finite exact-size art without changing collision geometry', () => {
   const calls = [], zones = [];
   const display = { setOrigin() { return this; }, setDepth() { return this; } };

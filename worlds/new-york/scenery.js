@@ -108,32 +108,96 @@
           sc_ny_empire: [100, 194, function (g, w, h, P) { nyEmpire(g, 50, h - 4, 1.18, P); }],
           sc_ny_chrysler: [80, 188, function (g, w, h, P) { nyChrysler(g, 40, h - 4, 1.1, P); }],
           sc_ny_brooklynbridge: [300, 126, function (g, w, h, P) { nyBridge(g, 8, h - 4, 1.02, P); }],
-          sc_ny_times: [300, 235, function (g, w, h, P) {
-            const base = h - 3;
-            const tower = function (x, width, tall, wall) {
-              g.fillStyle = silFill(g, base - tall, base, wall, '#202a4a'); g.fillRect(x, base - tall, width, tall);
-              g.fillStyle = '#d6c6a9'; g.fillRect(x, base - tall, width, 3); g.fillRect(x, base - 25, width, 2);
-              for (let y = base - tall + 9; y < base - 28; y += 14) {
-                for (let wx = x + 7; wx < x + width - 6; wx += 13) {
-                  g.fillStyle = '#24324e'; g.fillRect(wx, y, 7, 9);
-                  lit(g, wx + 1, y + 1, 5, 6, P.win[((wx + y) / 13 | 0) % 3]);
+          sc_ny_times: [300, 330, function (g, w, h, P) {
+            g.save();
+            g.translate(0, h - 235);
+            const base = 232;
+            // A painted street canyon: all perspective remains behind the playable plane.
+            g.fillStyle = '#34384b'; g.fillRect(0, 145, w, base - 145);
+            poly(g, [[100, 145], [204, 145], [297, base], [3, base]], lg(g, 150, 145, 150, base, [[0, '#4b5571'], [1, '#1b263b']]));
+            poly(g, [[105, 155], [149, 151], [115, base], [18, base]], '#555267');
+            poly(g, [[160, 151], [197, 155], [284, base], [203, base]], '#4c4a60');
+            for (const x of [30, 78, 118, 190, 235, 280]) line(g, 153, 151, x, base, 0.6, '#8a7e8d');
+            for (let y = 172; y < base; y += 13) line(g, 10, y, 290, y, 0.5, 'rgba(191,169,177,0.22)');
+            poly(g, [[143, 166], [149, 166], [140, 191], [130, 191]], '#ddcfa9');
+            poly(g, [[133, 201], [141, 201], [134, 220], [123, 220]], '#ddcfa9');
+            // Distant frontage is quieter than the illuminated, close building faces.
+            for (let i = 0; i < 5; i++) {
+              const x = 81 + i * 27, top = -20 - (i % 3) * 18;
+              g.fillStyle = i % 2 ? '#4b4c6a' : '#414663'; g.fillRect(x, top, 24, 192 - top);
+              for (let y = top + 8; y < 183; y += 10) {
+                for (let wx = x + 4; wx < x + 21; wx += 7) {
+                  g.fillStyle = '#8f97af'; g.fillRect(wx, y, 2, 4);
+                }
+              }
+            }
+            const facade = function (x, y, width, height, side, wall) {
+              const inset = side < 0 ? 20 : -20;
+              poly(g, [[x, y], [x + width, y], [x + width + inset, y + 12], [x + inset, y + 12]], '#a8979d');
+              poly(g, [[side < 0 ? x + width : x, y], [side < 0 ? x + width + inset : x + inset, y + 12],
+                [side < 0 ? x + width + inset : x + inset, y + height - 14], [side < 0 ? x + width : x, y + height]], '#252c47');
+              g.fillStyle = lg(g, x, y, x + width, y + height, [[0, wall], [1, '#32334e']]);
+              g.fillRect(x, y, width, height);
+              line(g, x, y, x + width, y, 2, '#c6b1a3');
+              for (let wy = y + 9; wy < y + height - 9; wy += 11) {
+                line(g, x, wy + 7, x + width, wy + 7, 0.6, '#252a43');
+                for (let wx = x + 5; wx < x + width - 4; wx += 9) {
+                  g.fillStyle = (wx + wy | 0) % 3 ? '#8f8ba0' : P.win[0];
+                  g.fillRect(wx, wy, 3, 5);
                 }
               }
             };
-            tower(0, 76, 158, '#68496f'); tower(225, 75, 181, '#4b4c73');
-            g.fillStyle = '#1e2844'; g.fillRect(81, base - 196, 140, 193); g.fillRect(84, base - 200, 134, 5);
-            g.fillStyle = '#19223e'; g.fillRect(87, base - 184, 127, 61);
-            const neon = lg(g, 90, base - 184, 90, base - 123, [[0, '#173d79'], [0.5, '#126eaa'], [1, '#1a2647']]);
-            g.fillStyle = neon; g.fillRect(90, base - 184, 121, 61); g.strokeStyle = '#56d9ff'; g.lineWidth = 1.3; g.strokeRect(90, base - 184, 121, 61);
-            g.globalAlpha = 0.18; msLogo(g, 113, base - 177, 42); g.globalAlpha = 1;
-            msLogo(g, 103, base - 168, 18); txt(g, 'AZURE', 130, base - 163, 1.8, '#d6f8ff');
-            txt(g, 'CLOUD FOR ALL', 106, base - 135, 0.62, '#ffe9a0');
-            g.fillStyle = '#1a2340'; g.fillRect(83, base - 112, 137, 83);
-            g.fillStyle = '#df3e66'; g.fillRect(88, base - 104, 126, 28); txt(g, 'NEW YORK', 115, base - 95, 1.3, '#fff0d6');
-            g.fillStyle = '#202642'; g.fillRect(0, base - 24, 300, 24);
-            for (let x = 4; x < 298; x += 16) { lit(g, x, base - 21, 7, 12, P.win[(x / 16 | 0) % 3]); }
-            [24, 269].forEach((x) => lamp(g, x, base, 32, '#ffc969'));
-            line(g, 2, base - 2, 296, base - 2, 1, '#f4bd78');
+            facade(0, -62, 62, base + 62, -1, '#8f6c77');
+            facade(246, -84, 54, base + 84, 1, '#657389');
+            facade(119, -51, 43, base + 51, -1, '#91808c');
+            g.fillStyle = '#d6c5a6'; g.fillRect(128, -58, 26, 7);
+            line(g, 141, -58, 141, -72, 1.2, '#e5d7ba');
+            ell(g, 141, -72, 3, 3, '#fff0be');
+            line(g, 141, -76, 141, -68, 0.6, '#98d9ff');
+            [[0, 62], [119, 43], [246, 54]].forEach(([x, width]) => {
+              g.fillStyle = '#1c2438'; g.fillRect(x, 205, width, base - 205);
+              line(g, x, 205, x + width, 205, 2, '#aaa0a0');
+              for (let door = x + 5; door < x + width - 6; door += 12) {
+                g.fillStyle = '#648090'; g.fillRect(door, 211, 7, 17);
+                line(g, door + 3, 212, door + 3, 227, 0.7, '#c2c4b8');
+              }
+              line(g, x, base - 1, x + width, base - 1, 2, '#101a2d');
+            });
+            const screen = function (x, y, width, height, skew, top, bottom, title, scale) {
+              g.save(); g.translate(x, y); g.transform(1, skew, 0, 1, 0, 0);
+              g.fillStyle = '#121c32'; g.fillRect(-2, -2, width + 4, height + 5);
+              g.fillStyle = lg(g, 0, 0, width, height, [[0, top], [1, bottom]]); g.fillRect(0, 0, width, height);
+              line(g, 0, 0, width, 0, 1, '#f1ecdf'); line(g, width, 0, width, height, 1, '#77d7e8');
+              for (let sy = 3; sy < height; sy += 4) line(g, 1, sy, width - 1, sy, 0.35, 'rgba(255,255,255,0.13)');
+              txt(g, title, 4, 6, scale, '#f4fbff');
+              g.restore();
+            };
+            screen(4, 64, 56, 46, 0, '#c34975', '#58244e', 'BROADWAY', 0.93);
+            screen(5, 123, 52, 48, 0, '#c08036', '#693e54', 'NEW YORK', 0.87);
+            screen(64, 83, 18, 45, 0.44, '#137dac', '#183a70', 'NY', 0.8);
+            screen(121, 41, 39, 42, 0, '#178ab9', '#21336b', 'AZURE', 1);
+            msLogo(g, 131, 61, 13);
+            screen(121, 90, 39, 31, 0, '#b74273', '#542b59', 'TIMES', 1);
+            txt(g, 'SQUARE', 123, 107, 0.9, '#ffe4ba');
+            screen(249, 47, 48, 68, 0, '#246e92', '#172e5c', 'COPILOT', 0.87);
+            poly(g, [[257, 78], [275, 68], [290, 83], [274, 103]], '#6bd6d6');
+            poly(g, [[257, 78], [272, 83], [274, 103], [262, 94]], '#9a82ea');
+            screen(249, 128, 48, 35, 0, '#986d3a', '#623d53', 'LIVE NYC', 0.85);
+            screen(225, 89, 19, 53, -0.5, '#be497d', '#452b62', '365', 0.75);
+            // Receding red steps, street furniture and reflected sign light anchor the plaza.
+            for (let i = 0; i < 6; i++) {
+              const y = 164 + i * 3, half = 13 + i * 2;
+              poly(g, [[184 - half, y], [184 + half, y], [187 + half, y + 2], [181 - half, y + 2]], i % 2 ? '#c76073' : '#963d5c');
+            }
+            poly(g, [[30, 175], [49, 175], [106, 220], [55, 215]], 'rgba(239,111,163,0.15)');
+            poly(g, [[251, 170], [269, 170], [239, 218], [201, 218]], 'rgba(87,201,232,0.16)');
+            [90, 212].forEach((x) => lamp(g, x, 190, 29, '#ffdc9b'));
+            for (const x of [101, 114, 204, 217]) {
+              line(g, x, 199, x, 207, 1.6, '#28354b');
+              ell(g, x, 199, 1.6, 1.1, '#e5c4a6');
+            }
+            line(g, 4, base, 296, base, 1, '#c9b0a0');
+            g.restore();
           }],
           sc_ny_brownstones: [250, 188, function (g, w, h, P) {
             const base = h - 3;
@@ -198,8 +262,8 @@
             g.fillStyle = '#d1be92'; g.fillRect(5, base - 17, 240, 2);
             txt(g, 'CENTRAL PARK', 81, base - 11, 0.76, '#e8e4c4');
           }],
-          sc_ny_midtown: [230, 224, function (g, w, h, P) {
-            const base = h - 3, buildings = [[2, 61, 142], [68, 65, 183], [140, 86, 164], [192, 38, 207]];
+          sc_ny_midtown: [230, 330, function (g, w, h, P) {
+            const base = h - 3, buildings = [[2, 61, 262], [68, 65, 291], [140, 86, 276], [192, 38, 310]];
             buildings.forEach(function (b, i) {
               const x = b[0], width = b[1], tall = b[2], top = base - tall;
               g.fillStyle = silFill(g, top, base, ['#3d5272', '#4b526d', '#3b465f', '#59495e'][i], '#202942'); g.fillRect(x, top, width, tall);
@@ -210,6 +274,8 @@
                 for (let wx = x + 7; wx < x + width - 6; wx += 9) lit(g, wx, y + 1, 4, 5, P.win[(wx + y + i) % 3]);
               }
               for (let y = top + 2; y < base - 4; y += 20) line(g, x + 2, y, x + width - 2, y, 0.55, 'rgba(200,218,222,0.35)');
+              poly(g, [[x + width - 12, top], [x + width, top + 10], [x + width, base], [x + width - 12, base]], 'rgba(8,15,32,0.6)');
+              g.fillStyle = '#141e31'; g.fillRect(x, base - 4, width, 4);
             });
             g.fillStyle = '#20283f'; g.fillRect(0, base - 3, w, 3);
             [28, 211].forEach((x) => lamp(g, x, base - 2, 38, '#ffc978'));

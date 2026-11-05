@@ -104,3 +104,11 @@ description: 'Create Azure Heroes code-drawn pixel art, duck/slide poses, cloud 
 - Keep bottom-anchored flags, terminals and solid pipe textures free of transparent
   glow padding; visible feet/bases must meet the collision surface. Friendly
   checkpoint guides are non-solid, visually distinct from enemies and grounded.
+- For visual-only 2.5D scenery, keep perspective faces, vanishing-point paving and
+  lighting inside the city's declared scenery bounds. Taller art may extend upward
+  but must preserve width/route spacing and a bottom-aligned foundation. Every
+  facade and side face must meet painted ground; avoid disconnected floating slabs.
+  New York uses skyscraper scale; Amsterdam retains narrow, ornate Dutch gables.
+  Do not change collision,
+  generation, random consumption or route spacing. Capture matching seed, camera,
+  time-of-day and viewport before/after; obtain review before extending the style.

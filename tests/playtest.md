@@ -1,5 +1,50 @@
 # Playtest report - Microsoft Azure Heroes 2027
 
+## Grounded New York and Amsterdam city depth
+
+- Times Square's previously disconnected central tower now extends to the same
+  solid street foundation as its neighbors. Times Square and Midtown canvases
+  are 330px high; their unchanged widths keep scenic spacing intact. Taller
+  windowed facades, street-level entrances and dark contact edges replace the
+  floating appearance. No terrain was moved to hide the problem.
+- Amsterdam's five canal-house rows have 24px more headroom, shallow roof/side
+  returns and continuous paved quays. Narrow facades, ornate gables, window
+  mullions, hoists and original seeded random consumption remain intact.
+- PASS actual isolated Chrome, one process per world, seed 2027, 1280x720:
+  New York Times Square/Midtown (sunset) and Amsterdam two canal rows/Centraal
+  (night). Reviewed captures for visible foundations, skyline height and local
+  identity. No runtime exceptions; full generated layout JSON unchanged.
+  Camera/player positioning was assisted and scenes paused, not full playthroughs.
+- Automated coverage checks facade-to-ground contact, continuous quays, preserved
+  scenery widths/routes and the existing all-world seeded terrain digest.
+  All 92 tests, city JavaScript syntax and diff whitespace checks pass.
+  No physics, objectives, audio, dependency, save or account changes.
+- Real-device touch appearance and user visual approval remain pending.
+  New York's phone booth and additional requested landmarks remain outside this
+  art correction.
+
+## Initial Times Square painted 2.5D pilot (historical)
+
+- Changed only New York's existing `sc_ny_times` drawing: shaded facade returns,
+  billboards on angled sides, atmospheric distant frontage, a vanishing-point
+  plaza, red steps, lamps and restrained reflected sign light. TIMES SQUARE and
+  BROADWAY signs add place identity alongside Azure/Copilot screens.
+- Existing 300x235 logical size, 0.1 scenic-route stop, script registration and
+  parallax remain unchanged. No engine/dependency, gameplay, physics, layout,
+  music, save or other-city changes are part of this pilot. The New York phone
+  booth and additional requested landmarks are not included in this trial.
+- PASS isolated Chrome A/B: seed 2027, 1280x720, sunset, camera x=924.
+  The original callback was replayed in the paused comparison scene for the
+  before image; only its texture changed. Frozen camera fade was cleared for
+  both shots. The complete layout JSON stayed equal; no runtime exceptions.
+  Reviewed both captures for depth, sign legibility and unobscured gameplay.
+- Both views use identical assisted camera/player positioning and paused scenes;
+  this is visual evidence, not an unassisted playthrough or performance benchmark.
+- 91 integrated tests pass, including the original terrain digest and a focused
+  perspective/footprint/route regression. Changed JavaScript syntax and
+  whitespace checks pass. Mobile-device appearance and user approval are pending;
+  this initial result predates the taller, grounded city treatment above.
+
 ## Grounded checkpoints, guides and Konami map access
 
 - Removed transparent glow padding from flags, terminals and the standard pipe.

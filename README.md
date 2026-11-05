@@ -82,6 +82,12 @@ Run levels are not just rooftops. The ground matches the city: canal quays and b
 - **Tokyo street life**: moving silver/orange metro trains on elevated tracks, a Shibuya station, denser road traffic, pedestrian crossings and Azure/Copilot/GitHub/Xbox billboards. Detailed sakura groves and falling petals accompany the existing flight controls; the metro is scenery, not a ground-mode room.
 - **Australian coast and outback**: guaranteed Sydney surf/beach, red-earth roadhouses and Uluru highlights, plus roof-rack expedition 4x4 traffic and jumpable vehicles. Harbour ferries, routes and the Boxing Roo remain.
 - **Paris street life**: boulangerie stalls on the quays, Haussmann zinc rooftops, bateaux-mouches on the Seine and Guimard Metro entrances. The Eiffel Tower, Sacre-Coeur and Moulin Rouge appear more often than other local landmarks.
+- **Grounded city depth**: New York's Times Square and Midtown have much taller
+  skyscrapers, shaded sides and visible street foundations. Times Square retains
+  angled billboards, receding paving and reflected sign light. Amsterdam's canal
+  houses gain subtle side faces and paved quay foundations while keeping their
+  distinctive gables and windows. This is painted 2.5D, not a new movement mode:
+  scenery widths/routes, platforms, combat and objectives are unchanged.
 - **No repeats**: a scenery strip of local landmarks and Microsoft billboards scrolls behind the street. The same landmark never shows twice on screen.
 - **Landmarks first**: decorative roads, slim rail decks, trains and trams sit behind
   the landmark strip, with more space between arrivals. Facades and signs stay
