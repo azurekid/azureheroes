@@ -143,6 +143,15 @@ description: Use before any game code change. Defines the shared interfaces for 
   consumes no random numbers. Collision tops, controls, route widths, IDs, saves,
   room generation and music remain unchanged.
 
+### Optional close-range foreground layer
+
+- A city may register `bg_fore_<region>` (width a multiple of 640, bottom-aligned,
+  drawn without random numbers). Run levels tile it at scroll factor 0.75, depth
+  -17.4: in front of the scenery strip, behind every platform, hazard, pickup and
+  character. It fades out under `environments_<region>` sections and takes the
+  outdoor tint. Purely visual: no collision, route, RNG, save or music change.
+  New York is the first adopter (rooftops, water towers, neon signs, palms).
+
 ### City-owned secret rooms
 
 - Optional city `.bonus` describes `{theme, floor, platform, width, title, y,

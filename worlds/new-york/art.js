@@ -45,7 +45,7 @@
 
   content.parts['SKIES_eastus2'] = function (C) {
 
-    return { stops: [[0, '#090d2c'], [0.3, '#253b77'], [0.56, '#94618d'], [0.78, '#ef8b73'], [1, '#ffd19a']], sun: { x: 405, y: 208, r: 56, c: ['#fff8d8', '#ffc56e', '#eb6370'] }, halo: ['rgba(255,201,138,0.48)', 'rgba(255,112,139,0.18)'], cl: ['rgba(49,62,126,0.48)', 'rgba(207,133,156,0.48)', 'rgba(255,220,180,0.35)'], hz: 'rgba(255,167,133,0.42)', stars: 75, seed: 29, stripes: false };
+    return { stops: [[0, '#090d2c'], [0.3, '#253b77'], [0.56, '#94618d'], [0.78, '#ef8b73'], [1, '#ffd19a']], sun: { x: 405, y: 208, r: 56, c: ['#fff8d8', '#ffc56e', '#eb6370'] }, halo: ['rgba(255,201,138,0.48)', 'rgba(255,112,139,0.18)'], cl: ['rgba(88,70,160,0.5)', 'rgba(255,146,196,0.58)', 'rgba(255,214,226,0.42)'], hz: 'rgba(255,167,133,0.42)', stars: 140, seed: 29, stripes: false };
   };
 
   content.parts['PAL_eastus2'] = function (C) {

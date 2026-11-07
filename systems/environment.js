@@ -47,6 +47,7 @@
       const coverage = Math.min(1, total);
       this.sections.forEach((section, i) => section.image.setAlpha(weights[i] / Math.max(1, total)));
       s.far.setAlpha(1 - coverage); s.near.setAlpha(1 - coverage);
+      if (s.fore) s.fore.setAlpha(1 - coverage);
       this.strip.forEach((o) => o.setAlpha(this.replacedKeys.has(o.texture.key) ? 0 : 1 - coverage));
       if (s.road) s.road.setAlpha(0.55 * (1 - coverage));
       if (s.railLine) s.railLine.setAlpha(0.7 * (1 - coverage));
@@ -58,6 +59,7 @@
       if (this.skyBlend.texture.key !== sky(state.to)) this.skyBlend.setTexture(sky(state.to));
       this.skyBlend.setAlpha(t);
       s.far.setTint(mix(a.far, b.far, t)); s.near.setTint(mix(a.near, b.near, t));
+      if (s.fore) s.fore.setTint(mix(a.near, b.near, t));
       const tint = mix(a.strip, b.strip, t);
       this.strip.forEach((o) => o.setTint(tint));
       this.sections.forEach((section) => section.image.setTint(tint));

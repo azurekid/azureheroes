@@ -287,6 +287,7 @@
   AH.ArtModules.stages['worlds.amsterdam.scenery.87'](C);
   AH.ArtModules.stages['worlds.tokyo.scenery.88'](C);
   AH.ArtModules.stages['worlds.new-york.scenery.89'](C);
+  AH.ArtModules.stages['worlds.new-york.scenery.90'](C);
   AH.ArtModules.stages['art.ambient.90'](C);
   AH.ArtModules.stages['worlds.venice.art.91'](C);
   AH.ArtModules.stages['worlds.venice.scenery.92'](C);

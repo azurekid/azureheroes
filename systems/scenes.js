@@ -674,6 +674,12 @@
       this.far = this.add.tileSprite(0, 360 - (L.mode === 'run' ? 54 : 0) - this.textures.get(bg[1]).getSourceImage().height / AH.Art.D, 640, this.textures.get(bg[1]).getSourceImage().height / AH.Art.D, bg[1]).setOrigin(0).setScrollFactor(0).setDepth(-20);
       this.near = this.add.tileSprite(0, 360 - this.textures.get(bg[2]).getSourceImage().height / AH.Art.D, 640, this.textures.get(bg[2]).getSourceImage().height / AH.Art.D, bg[2]).setOrigin(0).setScrollFactor(0).setDepth(-19);
 
+      // Optional close-range layer (bg_fore_<region>) in front of the strip, behind all gameplay.
+      const foreKey = 'bg_fore_' + L.region;
+      this.fore = L.mode === 'run' && L.theme !== 'rack' && this.textures.exists(foreKey)
+        ? this.add.tileSprite(0, 360 - this.textures.get(foreKey).getSourceImage().height / AH.Art.D, 640, this.textures.get(foreKey).getSourceImage().height / AH.Art.D, foreKey).setOrigin(0).setScrollFactor(0).setDepth(-17.4)
+        : null;
+
       this.solids = this.physics.add.staticGroup();
       this.rects = []; // solid / hazard rectangles used for blasts and rock damage
       L.platforms.forEach((p) => this.addPlatform(p));
@@ -1950,6 +1956,7 @@
       }
       this.far.tilePositionX = cam.scrollX * 0.15 * AH.Art.D;
       this.near.tilePositionX = cam.scrollX * 0.35 * AH.Art.D;
+      if (this.fore) this.fore.tilePositionX = cam.scrollX * 0.75 * AH.Art.D;
       if (this.water) { this.water.tilePositionX = (cam.scrollX + this.time.now * 0.012) * AH.Art.D; this.water.tilePositionY = Math.sin(this.time.now / 600) * 2 * AH.Art.D; }
 
       if (this.state === 'dying') { this.hud.update(this.snapshot(), dt); return; }
