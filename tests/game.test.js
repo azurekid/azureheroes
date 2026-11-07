@@ -92,6 +92,9 @@ test('New York birds and neighborhood scenery retain local identity and register
   }
   const near = Art.textureCanvas('bg_near_eastus2');
   assert.ok(near.ops.filter((op) => op[0] === 'lineTo').length > 150, 'brownstone fire escapes populate near layer');
+  const brownstones = Art.textureCanvas('sc_ny_brownstones');
+  assert.ok(brownstones.ops.some((op) => op[0] === 'fillStyle' && op[1] === '#35c9df'), 'street-facing brownstone mural uses bright spray paint');
+  assert.ok(brownstones.ops.some((op) => op[0] === 'fillStyle' && op[1] === '#f04f91'), 'mural layers distinct neighborhood colors');
   const park = Art.textureCanvas('sc_ny_centralpark');
   assert.ok(park.ops.filter((op) => op[0] === 'quadraticCurveTo').length >= 4, 'arched Bow Bridge and park paths');
   for (const key of ['sc_ny_brownstones', 'sc_ny_centralpark']) {
