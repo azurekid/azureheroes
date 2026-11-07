@@ -198,6 +198,28 @@ test('house and trance keep offbeat bass and club groove with a real breakdown',
   }
 });
 
+test('house develops four-bar grooves and distinct original lounge scene hooks', () => {
+  const { A } = setup();
+  for (const song of Object.values(A.SONGS).filter(song => song.production && song.style === 'house')) {
+    const lounge = ['title', 'pipe', 'bonus'].includes(song.production.energy);
+    assert.equal(song.production.lounge, lounge);
+    assert.equal(song.bpm, { title: 104, main: 134, pipe: 108, bonus: 112, boss: 142 }[song.production.energy]);
+    assert.equal(song.arp, lounge ? 'keys' : 'trancepluck');
+    assert.equal(song.bass, lounge ? 'round' : 'club');
+    const chorus = song.bars.slice(8, 12);
+    assert.ok(new Set(chorus.map(bar => positions(bar, 'arp').join(','))).size >= 3, 'developed chord rhythm');
+    assert.ok(new Set(chorus.map(bar => positions(bar, 'h').join(','))).size >= 2, 'changing hats');
+    if (lounge) {
+      assert.ok(chorus.every(bar => positions(bar, 'h').length <= 2 && positions(bar, 'o').length === 0));
+      assert.ok(chorus.flatMap(bar => eventsOf(bar, 'lead')).every(e => e[3] <= 0.57));
+    }
+    assert.ok(chorus.every(bar => bar.chord.iv.length === 4), 'warm seventh chords');
+  }
+  const hooks = ['title', 'main', 'pipe', 'boss', 'bonus'].map(kind =>
+    A.SONGS['house_' + kind].bars.slice(8, 12).map(bar => bar.mel.join(',')).join('|'));
+  assert.equal(new Set(hooks).size, 5, 'new scene tunes are not one melody at different tempos');
+});
+
 test('arrangements phrase in a stable tonic, leave rests and resolve cleanly at the loop', () => {
   const { A } = setup();
   for (const song of Object.values(A.SONGS).filter((song) => song.production)) {

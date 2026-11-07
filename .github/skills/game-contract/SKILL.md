@@ -155,8 +155,17 @@ description: Use before any game code change. Defines the shared interfaces for 
 
 ### Optional close-range foreground layer
 
-- A city may register `bg_fore_<region>` (horizontally repeating, bottom-aligned,
-  drawn without random numbers). Run levels tile it at scroll factor 0.75, depth
+- City art `foreground_<region>` optionally returns `{roof,wall,light,accent,
+  shape,detail}` for shared `C.registerForeground`, a deterministic 960x200
+  near-building layer. City descriptors select local facade silhouettes and props;
+  no city switches in shared drawing/runtime. Registered `bg_fore_<region>`
+  works in street, flight and data-center worlds. `AH.Art.foregrounds` exposes
+  the optional descriptors; these shared layers use depth -18.2, behind landmark
+  facades (-18), with unchanged parallax, lighting and section/room suppression.
+  New York's hand-drawn layer
+  is retained. This is drawing only; no routes, physics or music changes.
+- A city may directly register `bg_fore_<region>` (horizontally repeating, bottom-aligned,
+  drawn without random numbers). Levels tile it at scroll factor 0.75, depth
   -17.4: in front of the scenery strip, behind every platform, hazard, pickup and
   character. It fades out under `environments_<region>` sections and takes the
   outdoor tint. Purely visual: no collision, route, RNG, save or music change.
@@ -167,6 +176,23 @@ description: Use before any game code change. Defines the shared interfaces for 
   Cities without it retain their original ground face.
 - Shared drawing-only `C.sprayTag(g,text,x,y,scale,paint,outline)` draws original
   painted lettering, deterministic overspray and drips without consuming RNG.
+- City art part `graffiti_<region>` returns `{tags:[string,string,string],paint,
+  accent,glyphs?}`. Shared `C.registerGraffiti` creates three 320x64 transparent
+  painted decals containing AZUREKID, AZURE HEROES and an Octocat, plus local tags.
+  Each key also has a 320x24 `_front` variant with side-by-side lettering above
+  the bottom HUD. Faces at least 200px wide receive a complete decal, fitted to
+  the face width without cropping any brand, local phrase or figure; smaller
+  ledges, cloud silhouettes, pipes and bridges retain their original art.
+  Variants use rounded bubble letters, cut stencil letters and angular wildstyle
+  lettering. Main-world fronts cycle variants without RNG; the entry tag reads
+  AZURE HEROES, followed by AZUREKID. These are decorative styles, not UI fonts.
+  Copilot figures join Octocats on the stencil variant. Decal offsets, later-face
+  selection and flight panel placement are hashed from generated geometry, giving
+  each randomized layout different decoration without consuming gameplay RNG.
+  `AH.Art.graffiti[region]` lists their texture keys. Solid fronts receive decals
+  without changing collision; flight worlds use non-solid wall panels between
+  columns. Decorative glyphs may be city-owned pixel arrays (Tokyo Japanese,
+  explicitly approved); the UI font and supported gameplay strings are unchanged.
 
 ### City-owned secret rooms
 
@@ -194,6 +220,13 @@ description: Use before any game code change. Defines the shared interfaces for 
   must not activate main-world checkpoints. Flight retains its airborne markers.
 
 ### Electronic soundtrack policy
+
+- House arrangements use 134 BPM main routes and 142 BPM bosses; title, pipe and
+  bonus contexts use gentler 104/108/112 BPM lounge arrangements. Original city
+  hooks and legacy compositions remain intact. Optional composition arrays
+  `arpPat` and `drumPatterns` develop four-bar grooves; `production.lounge` marks
+  quieter keys, seventh chords and sparse hats, without adding a selectable style.
+  Music changes require actual renders and human listening approval.
 
 - The only selectable styles are `trance`, `house` and `pop`, default `trance`.
   Legacy `dance` preferences migrate to `trance`; removed jazz/country/blues/rock
@@ -330,7 +363,8 @@ Touch run controls include DUCK, SHIELD, PAUSE and HELP. On the title screen E o
 ### Cloud challenge and low combat revision
 - Additional two-hit enemy types: `bug` (pipeline hopper), `image` (vulnerable container charger),
   `rbac` (overprivileged role shooter), `endpoint` (stationary exposed-endpoint turret),
-  `guest` (stale guest-account crawler). Shared textures/animations use the type as prefix.
+  `guest` (unreviewed or stale account shooter; see the charged weapons revision).
+  Shared textures/animations use the type as prefix.
 - Player additions: `ducking`, `sliding` booleans. Ducking shrinks the collision body while
   preserving feet position; standing is blocked under solid ceilings. Slides hit each low
   enemy once per slide; F fires at feet height while ducking.
@@ -353,8 +387,11 @@ Touch run controls include DUCK, SHIELD, PAUSE and HELP. On the title screen E o
 - Optional enemy `appearance:'detective'` renders a trench-coated, fedora-wearing
   rogue investigator using the hacker's existing two-hit patrol/shooter behavior;
   its nameplate identifies it as a SNOOPING DETECTIVE, not a friendly guide.
-  Stale guest art is a crouched person with an expired-access badge; retain the
-  existing low collision/slide behavior and remediation message.
+  Guest/stale-user enemies use hacker-sized 32x37 art and 20x34 collision bodies,
+  existing robot patrol/shoot behavior and two-hit/one-credit rules. Optional
+  `appearance:'stale-user'` selects a rifle and STALE USER label; other guests
+  carry a compact pistol. Both fire existing shield-blockable energy bolts.
+  They are now tall targets, not low slide targets; low worms/bugs remain.
 - Input adds `fireHeld` alongside `fire` (press). Tap fires on release; hold up to 1.2s
   for a charged shot, then release. Cancel charge on hurt, shield, pause/help and warp.
   Keyboard F and the touch BLAST button share these rules.

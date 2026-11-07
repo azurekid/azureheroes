@@ -177,25 +177,13 @@
 
     function registerCloudEnemies() {
         ['bug', 'image', 'rbac', 'endpoint', 'guest'].forEach(function (kind, ki) {
-          const height = kind === 'rbac' ? 37 : kind === 'guest' || kind === 'bug' ? 24 : 28;
+          const height = kind === 'rbac' || kind === 'guest' ? 37 : kind === 'bug' ? 24 : 28;
           for (let f = 0; f < 2; f++) reg2(kind + '_' + f, 32, height, function (g, w, h) {
             const col = ['#ff7a50', '#f0b040', '#c090ff', '#ff507a', '#70e0c0'][ki];
             if (kind === 'bug') { bugFrame(f)(g, w, h); return; }
             if (kind === 'endpoint') { laptopFrame(f)(g, w, h); return; }
             if (kind === 'guest') {
-              limb(g, 13, 17, 6 + f * 2, 22, 4, '#334c68', '#1b2940');
-              limb(g, 19, 17, 26 - f * 2, 22, 4, '#334c68', '#1b2940');
-              rrect(g, 3, 21, 9, 3, 1, '#192238'); rrect(g, 22, 21, 7, 3, 1, '#192238');
-              poly(g, [[9, 9], [23, 9], [27, 19], [7, 19]], '#4b9b95');
-              rrect(g, 12, 2, 10, 8, 2, '#dbaf8d');
-              poly(g, [[11, 4], [12, 1], [22, 1], [23, 5], [19, 3]], '#49353e');
-              line(g, 13, 6, 16, 6, 0.7, '#34364c'); line(g, 13, 8, 17, 8, 0.5, '#986b63');
-              limb(g, 10, 11, 4, 17, 3, '#4b9b95', '#dbaf8d');
-              limb(g, 23, 11, 28, 17, 3, '#4b9b95', '#dbaf8d');
-              line(g, 15, 10, 18, 16, 0.7, '#dceee7');
-              rrect(g, 16, 14, 6, 5, 0.5, '#eee5cc');
-              line(g, 17, 15, 21, 18, 1, '#e53a60');
-              line(g, 21, 15, 17, 18, 1, '#e53a60');
+              guestFrame(f, false)(g);
               return;
             }
             if (kind === 'rbac') {
@@ -218,6 +206,37 @@
             }
           }, { shade: 0.4 });
         });
+        for (let f = 0; f < 2; f++) reg2('stale_user_' + f, 32, 37, guestFrame(f, true), { shade: 0.4 });
+      }
+
+    function guestFrame(f, stale) {
+        return function (g) {
+          const coat = stale ? '#75638d' : '#4b9b95', skin = '#dbaf8d', stride = f ? 2 : -1;
+          limb(g, 13, 25, 11 + stride, 34, 4, '#24334c', '#465b75');
+          limb(g, 21, 25, 23 - stride, 34, 4, '#24334c', '#465b75');
+          rrect(g, 7 + stride, 34, 8, 3, 1, '#192238');
+          rrect(g, 19 - stride, 34, 8, 3, 1, '#192238');
+          rrect(g, 9, 11, 17, 17, 2, coat);
+          poly(g, [[11, 12], [17, 17], [21, 12]], '#dddcc8');
+          line(g, 17, 17, 17, 27, 0.7, '#26334b');
+          rrect(g, 12, 2, 10, 9, 2, skin);
+          poly(g, [[11, 4], [12, 0], [22, 0], [23, 5], [19, 3]], stale ? '#a8a5b2' : '#49353e');
+          line(g, 12, 6, 16, 6, 0.7, '#34364c'); line(g, 13, 9, 17, 9, 0.5, '#986b63');
+          limb(g, 11, 15, 6, 20, 4, coat, skin);
+          limb(g, 24, 15, 18, 23, 4, coat, skin);
+          rrect(g, 21, 21, 5, 6, 0.5, '#eee5cc');
+          line(g, 22, 22, 25, 26, 1, '#e53a60'); line(g, 25, 22, 22, 26, 1, '#e53a60');
+          if (stale) {
+            poly(g, [[1, 15], [19, 15], [22, 18], [17, 20], [12, 19], [10, 24], [7, 24], [8, 19], [1, 19]], '#333d5a');
+            line(g, 1, 16, 18, 16, 1, '#adb6d3');
+            rrect(g, 0, 14, 6, 5, 0.5, '#6dcde2');
+          } else {
+            rrect(g, 1, 14, 10, 5, 1, '#313e53');
+            poly(g, [[6, 18], [10, 18], [9, 24], [6, 24]], '#465b75');
+            line(g, 2, 15, 9, 15, 1, '#f5c575');
+            rrect(g, 0, 14, 2, 4, 0.5, '#f5c575');
+          }
+        };
       }
 
     function droneFrame(f) {

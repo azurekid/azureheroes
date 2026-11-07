@@ -6,6 +6,13 @@
   const world = AH.Worlds['sydney'] = AH.Worlds['sydney'] || {};
   const content = world.art = world.art || { parts: {} };
   AH.ArtModules.regions['australiaeast'] = content;
+  content.parts.foreground_australiaeast = () => ({
+    shape: 'terrace', detail: 'balcony', roof: '#31434f', wall: '#74665e',
+    light: '#c9b89b', accent: '#849b94'
+  });
+  content.parts.graffiti_australiaeast = () => ({
+    tags: ['GDAY SYDNEY', 'COAST TO CLOUD', 'MAKE WAVES'], paint: '#85e2de', accent: '#ffbd7d'
+  });
 
   AH.ArtModules.stages['worlds.sydney.art.70'] = function (C) {
     const { ell, lg, line, lit, rrect, txt, wheels } = C;

@@ -6,9 +6,16 @@
   const world = AH.Worlds['london'] = AH.Worlds['london'] || {};
   const content = world.art = world.art || { parts: {} };
   AH.ArtModules.regions['uksouth'] = content;
+  content.parts.foreground_uksouth = () => ({
+    shape: 'terrace', detail: 'balcony', roof: '#29334a', wall: '#665257',
+    light: '#c2ad86', accent: '#7b8390'
+  });
+  content.parts.graffiti_uksouth = () => ({
+    tags: ['LONDON CALLING', 'THAMES FLOW', 'CREATE TOGETHER'], paint: '#f29bce', accent: '#78dbea'
+  });
 
   AH.ArtModules.stages['worlds.london.art.75'] = function (C) {
-    const { ell, lg, line, lit, reg2, rrect, shade, sprayTag, txt } = C;
+    const { ell, lg, line, lit, reg2, rrect, shade, txt } = C;
 
     reg2('ground_face_uksouth', 320, 64, function (g) {
       g.fillStyle = '#45404b'; g.fillRect(0, 0, 320, 64);
@@ -22,9 +29,6 @@
         for (let y = 12; y < 47; y += 5) line(g, x + 2, y, x + 41, y, 1, '#636c75');
         line(g, x - 1, 49, x + 44, 49, 3, '#c3b7a2');
       }
-      sprayTag(g, 'LDN', 59, 14, 3, '#f684b7', '#49354d');
-      sprayTag(g, 'THAMES', 126, 26, 2.2, '#71d9ec', '#293b58');
-      sprayTag(g, 'A', 226, 11, 3, '#ffd370', '#674655');
     }, { shade: 0, noOutline: true });
     content.parts.groundFace_uksouth = () => 'ground_face_uksouth';
 

@@ -19,6 +19,9 @@
     if (m.opt.skyClimb) G.addSkyRoute(L);
     const detective = L.enemies.find(enemy => enemy.type === 'hacker' && !enemy.skyCarrier);
     if (detective) detective.appearance = 'detective';
+    L.enemies.filter(enemy => enemy.type === 'guest').forEach((enemy, i) => {
+      if (i % 2 === 0) enemy.appearance = 'stale-user';
+    });
     L.enemies.forEach((enemy) => { enemy.skin = m.region; });
     L.time = m.mode === 'fly' ? Math.round(L.width / L.scroll + 90) : Math.round(L.width / 1000 * (m.theme === 'rack' ? 30 : 26) + 110);
     G.addMission(L);

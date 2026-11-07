@@ -6,6 +6,13 @@
   const world = AH.Worlds['mexico-city'] = AH.Worlds['mexico-city'] || {};
   const content = world.art = world.art || { parts: {} };
   AH.ArtModules.regions['mexicocentral'] = content;
+  content.parts.foreground_mexicocentral = () => ({
+    shape: 'terrace', detail: 'lantern', roof: '#493e53', wall: '#8e625f',
+    light: '#d3ae82', accent: '#998b78'
+  });
+  content.parts.graffiti_mexicocentral = () => ({
+    tags: ['HOLA MEXICO', 'ARTE EN LA CALLE', 'JUNTOS CREAMOS'], paint: '#6fe0cd', accent: '#ffc370'
+  });
 
   AH.ArtModules.stages['worlds.mexico-city.art.105'] = function (C) {
     const { FLAT, MP, PAL, SKIES, ell, lg, line, lit, makeSky, poly, reg2, skyline } = C;

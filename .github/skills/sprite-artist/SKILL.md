@@ -84,9 +84,18 @@ description: 'Create Azure Heroes code-drawn pixel art, duck/slide poses, cloud 
   Its laptop port aligns with shooter bolts; its nameplate identifies it as an enemy.
   Reuse its hood, visor and terminal art for the playable Cloud Hacker where practical.
 - `appearance:'detective'` uses shared `detective_*` trench-coat/fedora art with
-  unchanged hacker collisions and shooter behavior. Guest threats are crouched
-  people with expired badges, retaining low slideable bodies. `C.sprayTag` paints
+  unchanged hacker collisions and shooter behavior. Guest/stale threats are
+  hacker-sized people with expired badges, compact pistols or long rifles.
+  `C.sprayTag` paints
   city-owned ground faces with deterministic overspray, slanted letters and drips.
+- City `graffiti_<region>` descriptors own localized tags and optional pixel
+  glyphs. Shared `C.registerGraffiti` adds AZUREKID, AZURE HEROES and Octocat art;
+  decorative Japanese glyphs never extend the UI font or change gameplay text.
+  Bubble, stencil and wildstyle variants include Copilot figures and compact
+  fronts above the HUD. Fit complete tags to faces; do not crop words or figures.
+  Hash offsets/selection from generated geometry without consuming gameplay RNG.
+  Shared near buildings render behind landmarks (-18.2 versus -18); New York
+  retains its authored foreground. Check Centraal Station and Erasmus Bridge.
 - Faces stay natural at hi-res: subtle mouth lines and soft blush, no glossy or saturated lips.
 - Climb walls use `climb_face` (tiling grip rail) and `climb_sign` (up arrow) so wall-jump spots read at a glance.
 - Challenge art must match regional-world detail: recognizable shipping containers

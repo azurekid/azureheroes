@@ -6,6 +6,13 @@
   const world = AH.Worlds['redmond'] = AH.Worlds['redmond'] || {};
   const content = world.art = world.art || { parts: {} };
   AH.ArtModules.regions['westus2'] = content;
+  content.parts.foreground_westus2 = () => ({
+    shape: 'flat', detail: 'balcony', roof: '#293e4d', wall: '#556b68',
+    light: '#b2c8b7', accent: '#7d9890'
+  });
+  content.parts.graffiti_westus2 = () => ({
+    tags: ['REDMOND BUILDS', 'PACIFIC IDEAS', 'CODE TOGETHER'], paint: '#73e0af', accent: '#a7c8fa'
+  });
 
   AH.ArtModules.stages['worlds.redmond.art.99'] = function (C) {
     const { FLAT, PAL, SKIES, ell, glowRect, lg, line, lit, makeSky, poly, reg2, rng, shade, skyline } = C;

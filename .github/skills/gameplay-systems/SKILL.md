@@ -30,6 +30,10 @@ description: 'Build Azure Heroes movement, charged shots, duck/slide combat, clo
 - Slides hit each low enemy once per slide; low blasts originate near the feet.
 - Cloud threats reuse shared AI behaviors without changing the two-hit/one-credit invariant.
   Keep remediation tips educational: fix insecure configuration, do not portray guest access itself as malicious.
+- Guest/stale-user shooters share hacker-sized collision bodies and robot patrol/
+  firing, not low crawling/slide behavior. Distinct guns are visual; both use the
+  existing energy bolt speed, damage and shield blocking. `appearance:'stale-user'`
+  selects the rifle texture/nameplate; default guest uses a compact pistol.
 - The ground `hacker` is a rogue shooter using the existing robot patrol and bolt logic;
   its identity-category defeat tip recommends Entra MFA. Do not change the playable
   Cloud Hacker's abilities or add account permissions for either character.

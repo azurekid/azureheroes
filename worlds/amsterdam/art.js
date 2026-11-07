@@ -6,9 +6,16 @@
   const world = AH.Worlds['amsterdam'] = AH.Worlds['amsterdam'] || {};
   const content = world.art = world.art || { parts: {} };
   AH.ArtModules.regions['westeurope'] = content;
+  content.parts.foreground_westeurope = () => ({
+    shape: 'gable', detail: 'balcony', roof: '#28354b', wall: '#665052',
+    light: '#caa57d', accent: '#778c88'
+  });
+  content.parts.graffiti_westeurope = () => ({
+    tags: ['SAMEN STERK', 'VRIJE GEEST', 'GROETEN UIT AMS'], paint: '#67e9da', accent: '#ffc179'
+  });
 
   AH.ArtModules.stages['worlds.amsterdam.art.68'] = function (C) {
-    const { ell, lg, line, lit, poly, reg2, rrect, shade, sprayTag, txt } = C;
+    const { ell, lg, line, lit, poly, reg2, rrect, shade, txt } = C;
 
     reg2('ground_face_westeurope', 320, 64, function (g) {
       g.fillStyle = '#4b3a39'; g.fillRect(0, 0, 320, 64);
@@ -23,9 +30,6 @@
         line(g, x + 2, 25, x + 26, 25, 2, '#71888c');
         line(g, x - 2, 44, x + 30, 44, 3, '#d1b997');
       }
-      sprayTag(g, 'AMS', 52, 14, 2.6, '#49dccc', '#254154');
-      sprayTag(g, 'CANAL', 130, 23, 2.5, '#ffbc70', '#704456');
-      sprayTag(g, 'A', 231, 10, 3.2, '#e982bf', '#453857');
       line(g, 0, 59, 320, 59, 3, '#314853');
     }, { shade: 0, noOutline: true });
     content.parts.groundFace_westeurope = () => 'ground_face_westeurope';

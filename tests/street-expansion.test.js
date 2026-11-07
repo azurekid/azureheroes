@@ -125,8 +125,9 @@ test('spray walls and human enemy appearances use real registered drawing module
   for (const region of ['westeurope', 'uksouth', 'eastus2']) {
     const face = A.textureCanvas(A.groundFaces[region]);
     assert.deepEqual([face.width, face.height], [640, 128]);
-    assert.ok(face.ops.some(op => op[0] === 'shadowBlur' && op[1] === 5));
-    assert.ok(face.ops.filter(op => op[0] === 'ellipse').length >= 200, 'visible paint speckles and drips');
+    const tag = A.textureCanvas(A.graffiti[region][0] + '_front');
+    assert.ok(tag.ops.some(op => op[0] === 'shadowBlur' && op[1] === 5));
+    assert.ok(tag.ops.filter(op => op[0] === 'ellipse').length >= 200, 'visible paint speckles and drips');
   }
   for (const key of ['guest_0', 'guest_1', 'detective_0', 'detective_1']) {
     const art = A.textureCanvas(key);
@@ -198,11 +199,13 @@ test('human guest faces its movement and detective appearance keeps hacker comba
   const AH = loadScripts(localScripts().filter(f => f === 'systems/enemies.js'),
     { AH: { Art: { D: 2 }, PixelText } });
   const scene = { anims: { exists() { return false; } },
+    time: { delayedCall() {} },
     physics: { add: { sprite(x, y, key) { sprite.key = key; return sprite; }, collider() {} } } };
   const guest = new AH.Enemy(scene, { type: 'guest', x: 200, y: 300, range: 24 });
   guest.update(1 / 60, { x: 100, y: 300 });
   assert.ok(body.velocity.x < 0);
   assert.equal(sprite.flipX, false, 'left-facing person walks left without mirroring');
+  sprite.x = 160;
   guest.update(1 / 60, { x: 300, y: 300 });
   assert.ok(body.velocity.x > 0);
   assert.equal(sprite.flipX, true);
@@ -216,4 +219,123 @@ test('human guest faces its movement and detective appearance keeps hacker comba
   assert.equal(detective.tag.text, 'SNOOPING DETECTIVE');
   assert.deepEqual(body.size, [40, 68]);
   assert.deepEqual(body.offset, [12, 6]);
+});
+
+test('every city owns localized graffiti, distinct lettering and landmark-safe building depth', () => {
+  const AH = loadScripts(artScripts(), { globals: { document: recordingDocument() } });
+  const A = AH.Art, C = AH.ArtModules.context;
+  const descriptions = C.sceneryRegistry('graffiti');
+  assert.equal(Object.keys(descriptions).length, 11);
+  const expected = { japaneast: ['トウキョウ', 'ミライ', 'アート'],
+    mexicocentral: ['HOLA MEXICO', 'ARTE EN LA CALLE', 'JUNTOS CREAMOS'],
+    brazilsouth: ['SALVE RIO', 'ARTE NA RUA', 'JUNTOS SOMOS MAIS'],
+    francecentral: ['BONJOUR PARIS', 'LIBERTE', 'REVONS ENSEMBLE'] };
+  for (const [region, tags] of Object.entries(expected)) assert.deepEqual(Array.from(descriptions[region].tags), tags);
+  for (const slug of AH.WorldOrder) {
+    const region = AH.Worlds[slug].world.region, tags = A.graffiti[region];
+    assert.equal(tags.length, 3);
+    for (const [i, key] of tags.entries()) {
+      const full = A.textureCanvas(key), front = A.textureCanvas(key + '_front');
+      assert.deepEqual([full.width, full.height, front.width, front.height], [640, 128, 640, 48]);
+      assert.ok(full.ops.some(op => op[0] === 'bezierCurveTo'), 'Octocat tail');
+      assert.ok(front.ops.some(op => op[0] === 'bezierCurveTo'), 'compact Octocat above HUD');
+      assert.ok(full.ops.some(op => op[0] === 'shadowBlur' && op[1] === 5), 'spray overshoot');
+      if (i === 0) assert.ok(full.ops.some(op => op[0] === 'arcTo'), 'rounded bubble lettering');
+      if (i === 1) assert.ok(full.ops.some(op => op[0] === 'fillRect' && op.at(-1) === 2.17), 'cut stencil strokes');
+      if (i === 2) assert.ok(full.ops.some(op => op[0] === 'rotate' && op[1] === 0.08), 'wildstyle letter angles');
+    }
+    const fore = A.textureCanvas('bg_fore_' + region);
+    assert.ok(fore, region);
+    assert.equal(fore.height, 400);
+    assert.equal(fore.width, 1920);
+    if (region !== 'eastus2') assert.ok(A.foregrounds[region], 'shared layer renders behind landmarks');
+    else assert.equal(A.foregrounds[region], undefined, 'New York keeps its authored layer');
+  }
+  const japanese = descriptions.japaneast;
+  for (const ch of japanese.tags.join('')) {
+    assert.equal(japanese.glyphs[ch].length, 9);
+    assert.ok(japanese.glyphs[ch].every(row => /^[01]{9}$/.test(row)));
+  }
+  assert.deepEqual(Array.from(C.glyph('ト')), Array.from(C.glyph('?')), 'decorative glyphs do not extend UI font');
+  const before = A.textureCanvas(A.graffiti.japaneast[2]).ops;
+  C.registerGraffiti('japaneast', japanese);
+  assert.equal(JSON.stringify(A.textureCanvas(A.graffiti.japaneast[2]).ops), JSON.stringify(before));
+});
+
+test('randomized complete street tags preserve collision bounds and guarantee both brands', () => {
+  const AH = loadScripts(localScripts().filter(f => f === 'systems/scenes.js'),
+    { AH: { Levels: { ids: [1] }, Art: { D: 2, graffiti: {} } },
+      globals: { Phaser: { Scene: class {} } } });
+  const spots = new Set();
+  for (let seed = 1; seed <= 20; seed++) {
+    const levels = loadScripts(levelScripts(), { seed }).Levels;
+    for (const id of levels.ids) {
+      const L = levels.make(id);
+      if (L.mode === 'fly') continue;
+      AH.Art.graffiti[L.region] = [0, 1, 2].map(i => `graffiti_${L.region}_${i}`);
+      const scene = new AH.Scenes[5](), decals = [], zones = [];
+      const display = { setOrigin() { return this; }, setDepth() { return this; },
+        setDisplaySize() { return this; }, setTint() { return this; },
+        setFlipY() { return this; }, setAlpha() { return this; } };
+      Object.assign(scene, { L: { region: L.region, theme: L.theme, width: L.width }, mode: 'run',
+        rects: [], solids: { add() {} }, add: {
+          tileSprite() { return display; },
+          image(x, y, key) { if (key.startsWith('graffiti_')) decals.push({ x, y, key }); return display; },
+          zone(...args) { zones.push(args); return {}; }
+        } });
+      const eligible = L.platforms.filter(p => p.w >= 200 && p.h >= 64 && !p.ceil &&
+        !p.pipe && !p.cloud && !p.bridge);
+      for (const p of eligible) scene.addPlatform({ x: p.x, y: p.y, w: p.w, h: p.h });
+      assert.ok(decals.some(p => p.key.endsWith('_0_front')), `Azure Heroes in ${id}`);
+      assert.ok(decals.some(p => p.key.endsWith('_1_front')), `Azurekid/Copilot in ${id}`);
+      assert.ok(decals.some(p => p.key.endsWith('_2_front')), `wildstyle in ${id}`);
+      for (const decal of decals) assert.ok(eligible.some(p =>
+        decal.x >= p.x && decal.x + Math.min(320, p.w) <= p.x + p.w && decal.y === p.y + 8));
+      assert.ok(decals.filter(d => d.x < L.boss.left).length >= 3, `main-route graffiti in ${id}, seed ${seed}`);
+      assert.deepEqual(zones, Array.from(eligible, p => [p.x + p.w / 2, p.y + p.h / 2, p.w, p.h]));
+      spots.add(decals[0].x);
+    }
+  }
+  assert.ok(spots.size > 20, 'placement varies with randomized geometry, not fixed stamps');
+});
+
+test('guest and stale-user guns fire real bolts with hacker-sized bodies and two-hit defeat', () => {
+  class PixelText {
+    constructor(scene, x, y, text) { this.text = text; }
+    setDepth() { return this; } setVisible() { return this; } setPosition() { return this; }
+    destroy() { this.destroyed = true; }
+  }
+  const AH = loadScripts(localScripts().filter(f => f === 'systems/enemies.js'),
+    { AH: { Art: { D: 2 }, PixelText, Audio: { play() {} } } });
+  const bolts = [], kills = [];
+  const scene = { anims: { exists() { return false; } }, time: { delayedCall() {} },
+    burst() {}, spawnEnemyBolt(...args) { bolts.push(args); }, onEnemyKilled(e) { kills.push(e); },
+    physics: { add: {
+      sprite(x, y, key) {
+        return { x, y, key, displayHeight: 37, body: { velocity: {}, blocked: {},
+          setSize(...args) { this.size = args; }, setOffset(...args) { this.offset = args; },
+          setAllowGravity() {}, setVelocityX(v) { this.velocity.x = v; }, setVelocityY(v) { this.velocity.y = v; } },
+          setOrigin() { return this; }, setDepth() { return this; }, play(key) { this.animation = key; },
+          setFlipX(v) { this.flipX = v; }, setTint() {}, setTintFill() {}, clearTint() {}, destroy() { this.destroyed = true; } };
+      }, collider() {}
+    } } };
+  for (const appearance of [undefined, 'stale-user']) {
+    const e = new AH.Enemy(scene, { type: 'guest', appearance, x: 500, y: 300, range: 24 });
+    assert.deepEqual(Array.from(e.spec.body), Array.from(AH.Enemy.SPEC.hacker.body));
+    assert.deepEqual(e.sprite.body.size, [40, 68]);
+    assert.deepEqual(e.sprite.body.offset, [12, 6]);
+    assert.equal(e.sprite.key, appearance ? 'stale_user_0' : 'guest_0');
+    assert.equal(e.tag.text, appearance ? 'STALE USER' : 'UNREVIEWED GUEST');
+    assert.equal(e.health, 2); assert.equal(e.shoot, true);
+    e.shootCd = 0; e.update(1 / 60, { x: 600, y: 280 });
+    assert.deepEqual(bolts.at(-1), [514, 278, 1]);
+    assert.ok(e.shootCd >= 2.2 && e.shootCd <= 3);
+    const count = bolts.length;
+    e.update(1 / 60, { x: 600, y: 280 }); assert.equal(bolts.length, count, 'no automatic rapid enemy fire');
+    e.hit(1); assert.equal(e.health, 1); assert.equal(e.dead, false);
+    e.hit(1); assert.equal(e.dead, true); assert.equal(kills.at(-1), e);
+    assert.equal(e.tag.destroyed, true);
+    assert.equal(e.sprite.destroyed, true);
+  }
+  assert.equal(AH.Enemy.SPEC.spider.body[1], 12, 'worms remain low slide targets');
 });

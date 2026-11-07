@@ -137,9 +137,24 @@ Amsterdam, London and New York include six/seven-step cloud climbs with an MFA
 token and a required token carrier at the summit. Follow the CLOUD TOKENS sign;
 the camera follows upward and you can descend the same platforms. These existing
 worlds retain their regional music. Fallen unfinished carriers return to their
-posts instead of permanently removing a boss requirement. Street walls in all
-three cities have spray-painted tags. Stale guests now look like crouching people
-with expired badges; trench-coated snooping detectives reuse rogue-shooter behavior.
+posts instead of permanently removing a boss requirement. Trench-coated snooping
+detectives reuse rogue-shooter behavior.
+
+Every world has localized spray tags alongside AZUREKID, AZURE HEROES, Octocats
+and Copilot figures in bubble, stencil and angular wildstyle lettering. Their
+positions and later-wall selection vary with generated layouts without changing
+gameplay randomness. Compact street tags sit above the HUD and fit narrower
+walls without cropping. Tokyo uses a small code-drawn Japanese graffiti glyph set, separate from the
+UI font; Mexico City uses Spanish, Rio Brazilian Portuguese and Paris French.
+The other worlds use local phrases and palettes. Ground/room fronts carry painted
+decals; flight routes have non-solid wall panels between rock columns. Regional
+near-building layers add depth behind landmark facades, keeping Centraal Station,
+Erasmus Bridge and other highlights visible. New York retains its authored art.
+
+Stale users and unreviewed guests are now the same size as rogue hackers. Stale
+users carry long energy rifles; guests carry compact energy pistols. Both patrol
+and fire shield-blockable bolts. They are tall targets: blast, shield or stomp them
+instead of relying on a low slide attack. Worms and bugs retain their low silhouettes.
 The touch BLAST button works the same way. The HUD shows the weapon, remaining pickup
 time and charge; a glowing muzzle signals charge readiness. Charged Azure/Cosmos shots
 deal up to three normal hits and use up to 20 extra Boost. Spread pellets each deal one
@@ -306,7 +321,9 @@ selection lasts for the current session.
 
 The original soundtrack is synthesised locally with Web Audio; no audio files are
 downloaded. **Trance** is the default: melodic arpeggios, builds and drops.
-**House** uses warm keys, four-on-the-floor grooves and offbeat bass. **Pop** uses
+**House** uses warm keys, four-on-the-floor grooves and offbeat bass, with
+faster street/boss beats and quieter lounge arrangements for menus and rooms.
+**Pop** uses
 original repeated hooks, verse/chorus contrast and a straight backbeat.
 All 11 cities retain local motifs through streets, underground rooms and boss
 fights. We no longer offer simulated rock, jazz, blues or country.

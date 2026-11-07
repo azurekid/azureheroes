@@ -1,5 +1,52 @@
 # Playtest report - Microsoft Azure Heroes 2027
 
+## Worldwide street art, armed guests and house arrangements
+
+- Scope: localized city tags in all eleven worlds, Japanese decorative glyphs,
+  AZURE HEROES/AZUREKID lettering, Octocats and Copilot figures in three spray
+  styles. Compact decals fit eligible walking-path fronts; flight worlds use
+  non-solid wall panels. Geometry-based placement does not consume gameplay RNG.
+  Shared city facades render behind landmark strips; New York keeps its authored
+  foreground. Guests and stale users are hacker-sized shooters with distinct
+  pistol/rifle art. House has faster main/boss grooves and softer menu/room
+  arrangements; regional hooks, styles and audio preferences remain in place.
+- Automated: focused tests exercise the real ordered modules, all city
+  descriptors/variants, decorative glyph coverage, collision rectangles and
+  visible-width placements across 20 seeded layouts per world. Both variants
+  fire, retain hacker-sized bodies, take two hits and clean up correctly. Audio
+  tests check house tempos, seventh chords, sparse lounge percussion, varied
+  rhythms, distinct scene hooks, regional routing, mute and persistence.
+- Visual integration: separate bounded Chrome processes opened each of eleven
+  worlds with seed 2027; desktop screenshots used assisted camera repositioning,
+  clock changes and paused physics. Inspected entry/day and later/night views.
+  All registered regions had three decal variants and a foreground; Centraal
+  Station is visible in the Amsterdam entry screenshot. Virginia's rack uses
+  its real gameplay layer. All eleven worlds were rechecked after the 200px
+  fitting change.
+  Eight synthetic generated challenge themes, three sections each, and cloud,
+  retro, Xbox and sewer secrets were inspected in New York with assisted camera
+  placement. They are art/composition checks, not room traversal or warp tests.
+- Enemy integration: in Amsterdam actual Arcade world stepping verified both
+  guest appearances have 32x37 art and 20x34 bodies, fire bolts, take 10 damage
+  unshielded and are blocked by a correctly facing shield, and die on two hits.
+  Fourteen guests were spawned into synthetic rooms across the eight themes;
+  after 60 physics steps their bodies were clear of solids. This is assisted,
+  stationary integration, not unassisted combat or all possible patrol routes.
+- Audio: actual OfflineAudioContext renders contain two loops and a loop join,
+  with coin/blast/hit SFX, for shared house title/main/pipe/boss/bonus, London
+  house main/pipe/boss, and unchanged London trance/pop main. All samples were
+  finite; peaks 0.194-0.303, RMS 0.0150-0.0289, absolute DC below 0.00020,
+  maximum adjacent delta below 0.269, loop delta below 0.00024. Live routing
+  switched all three styles through London main/pipe/boss, toggled mute and
+  stopped playback. Before-change London house main/pipe reference renders were
+  also generated. Browser QA used the existing Phaser distribution verified against
+  the unchanged SRI; production loading and network permissions were not changed.
+- Remaining gaps: human headphone/speaker listening and comparison are required
+  before music approval; the assistant did not audition the recordings. Rendered
+  WAVs are session artifacts under `files/house-audio/` and `files/house-before/`.
+  Full unassisted play, mobile/touch hardware, room traversal/return, additional
+  random seeds with live physics, and human visual review remain unverified.
+
 ## Street spray art, cloud climbs and recoverable boss tokens
 
 - Scope: Amsterdam (1), London (2), New York (11) have city-owned painted

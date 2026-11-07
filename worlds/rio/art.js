@@ -6,6 +6,13 @@
   const world = AH.Worlds['rio'] = AH.Worlds['rio'] || {};
   const content = world.art = world.art || { parts: {} };
   AH.ArtModules.regions['brazilsouth'] = content;
+  content.parts.foreground_brazilsouth = () => ({
+    shape: 'flat', detail: 'palm', roof: '#3d3b55', wall: '#886876',
+    light: '#d4ba8f', accent: '#839b79'
+  });
+  content.parts.graffiti_brazilsouth = () => ({
+    tags: ['SALVE RIO', 'ARTE NA RUA', 'JUNTOS SOMOS MAIS'], paint: '#c4ec7b', accent: '#ffbf72'
+  });
 
   content.parts['SKIES_brazilsouth'] = function (C) {
 

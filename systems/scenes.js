@@ -674,15 +674,32 @@
       this.far = this.add.tileSprite(0, 360 - (L.mode === 'run' ? 54 : 0) - this.textures.get(bg[1]).getSourceImage().height / AH.Art.D, 640, this.textures.get(bg[1]).getSourceImage().height / AH.Art.D, bg[1]).setOrigin(0).setScrollFactor(0).setDepth(-20);
       this.near = this.add.tileSprite(0, 360 - this.textures.get(bg[2]).getSourceImage().height / AH.Art.D, 640, this.textures.get(bg[2]).getSourceImage().height / AH.Art.D, bg[2]).setOrigin(0).setScrollFactor(0).setDepth(-19);
 
-      // Optional close-range layer (bg_fore_<region>) in front of the strip, behind all gameplay.
+      // Shared facades sit behind landmarks; authored layers retain their original depth.
       const foreKey = 'bg_fore_' + L.region;
-      this.fore = L.mode === 'run' && L.theme !== 'rack' && this.textures.exists(foreKey)
-        ? this.add.tileSprite(0, 360 - this.textures.get(foreKey).getSourceImage().height / AH.Art.D, 640, this.textures.get(foreKey).getSourceImage().height / AH.Art.D, foreKey).setOrigin(0).setScrollFactor(0).setDepth(-17.4)
+      const foreDepth = AH.Art.foregrounds && AH.Art.foregrounds[L.region] ? -18.2 : -17.4;
+      this.fore = this.textures.exists(foreKey)
+        ? this.add.tileSprite(0, 360 - this.textures.get(foreKey).getSourceImage().height / AH.Art.D, 640, this.textures.get(foreKey).getSourceImage().height / AH.Art.D, foreKey).setOrigin(0).setScrollFactor(0).setDepth(foreDepth)
         : null;
 
       this.solids = this.physics.add.staticGroup();
       this.rects = []; // solid / hazard rectangles used for blasts and rock damage
+      this.graffitiCount = 0;
       L.platforms.forEach((p) => this.addPlatform(p));
+      if (L.mode === 'fly' && AH.Art.graffiti && AH.Art.graffiti[L.region]) {
+        const tops = L.platforms.filter(p => p.y === 0);
+        tops.forEach((p, i) => {
+          const next = tops[i + 1];
+          if (!next || i % 3) return;
+          const width = Math.min(320, next.x - p.x - p.w - 20);
+          if (width < 180) return;
+          const gap = next.x - p.x - p.w;
+          const offset = Math.abs(Math.imul(Math.round(p.x) ^ L.width, 1597334677)) % Math.max(1, gap - width - 20);
+          const x = p.x + p.w + 10 + offset;
+          this.add.tileSprite(x, 278, width, 64, 'pbrick').setOrigin(0).setDepth(-17);
+          this.add.image(x, 278, AH.Art.graffiti[L.region][Math.floor(i / 3) % 3])
+            .setOrigin(0).setDisplaySize(width, 64).setDepth(-16.9);
+        });
+      }
       this.buildScenery();
       this.buildAmbient();
       this.applyTod();
@@ -804,6 +821,18 @@
         this.add.tileSprite(p.x, p.y + 8, 10, rise - 8, 'climb_face').setOrigin(0).setDepth(11);
         this.add.image(p.x - 18, p.wallFrom - 4, 'climb_sign').setOrigin(0.5, 1).setDepth(11);
         this.climbs.push(p);
+      }
+      if (p.h >= 64 && p.w >= 200 && !p.ceil && !p.pipe && !p.cloud && !p.bridge) {
+        const tags = AH.Art.graffiti && AH.Art.graffiti[L.region];
+        if (tags) {
+          const variant = this.graffitiCount || 0;
+          this.graffitiCount = variant + 1;
+          const hash = Math.abs(Math.imul(Math.round(p.x) ^ L.width, 1597334677));
+          const width = Math.min(320, p.w);
+          if (variant < 3 || hash % 3 !== 0) this.add.image(p.x + hash % Math.max(1, p.w - width), p.y + 8,
+            tags[variant < 3 ? variant : hash % tags.length] + '_front')
+            .setOrigin(0).setDisplaySize(width, 24).setDepth(10.5);
+        }
       }
       const z = this.add.zone(p.x + p.w / 2, p.y + p.h / 2, p.w, p.h);
       this.solids.add(z);

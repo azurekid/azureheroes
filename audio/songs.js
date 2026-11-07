@@ -23,9 +23,22 @@
     name: 'CLOUD SIGNAL', tonic: 'A3', colour: 'glow', feel: 'straight',
     hook: '0 . 7 10 7 - 3 . | 5 . 3 2 0 - . . | 0 3 . 7 12 - 10 . | 7 5 3 . 0 - . .'
   };
+  const houseThemes = {
+    title: { name: 'SOFT CIRCUITS', tonic: 'F4', colour: 'glass', feel: 'syncopated',
+      hook: '. 0 - 3 7 - . . | . 5 3 . 2 - . . | 0 . 3 7 10 - 7 . | 5 3 . 2 0 - . .' },
+    main: { name: 'DEPLOY THE GROOVE', tonic: 'A3', colour: 'glow', feel: 'syncopated',
+      hook: '. 0 7 . 10 7 3 . | 5 . 7 3 2 - . . | 0 3 . 7 12 - 10 . | 7 . 5 3 0 - . .' },
+    pipe: { name: 'AFTER HOURS ACCESS', tonic: 'D4', colour: 'air', feel: 'straight',
+      hook: '0 - . 7 5 - . . | 3 . 5 - 2 - . . | . 0 3 7 10 - . . | 7 5 . 3 0 - . .' },
+    boss: { name: 'PEAK TIME DEFENDER', tonic: 'E4', colour: 'pulse', feel: 'syncopated',
+      hook: '0 7 . 0 10 7 . 3 | 5 7 . 3 2 - . . | 0 . 7 12 10 7 . 5 | 7 5 3 2 0 - . .' },
+    bonus: { name: 'CLOUD TERRACE', tonic: 'G4', colour: 'bell', feel: 'straight',
+      hook: '. 0 3 - 7 - . . | 5 - 3 . 2 - . . | . 3 7 10 7 - 5 . | 3 2 . 3 0 - . .' }
+  };
   M.styles.forEach((style) => {
     ['title', 'main', 'pipe', 'boss', 'bonus'].forEach((context) => {
-      const theme = context === 'bonus' ? { ...shared, name: 'GOLD SIGNAL', tonic: 'D4' } : shared;
+      const theme = style === 'house' ? houseThemes[context]
+        : context === 'bonus' ? { ...shared, name: 'GOLD SIGNAL', tonic: 'D4' } : shared;
       RAW[style + '_' + context] = M.electronicSong(theme, style, context);
     });
   });

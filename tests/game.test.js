@@ -234,11 +234,13 @@ test('New York ground faces and generated bridges use registered local art witho
   assert.equal(Art.groundFaces.eastus2, 'ground_face_eastus2');
   const face = Art.textureCanvas(Art.groundFaces.eastus2);
   assert.deepEqual([face.width, face.height], [320 * Art.D, 64 * Art.D]);
-  for (const color of ['#f05d9e', '#40d6e5', '#ffc75c']) {
-    assert.ok(face.ops.some(op => op[0] === 'fillStyle' && op[1] === color), 'visible wall graffiti: ' + color);
+  const graffiti = Art.textureCanvas(Art.graffiti.eastus2[0] + '_front');
+  for (const color of ['#ffd277', '#ed86b5']) {
+    assert.ok(graffiti.ops.some(op => op[0] === 'fillStyle' && op[1] === color), 'visible wall graffiti: ' + color);
   }
   scene.addPlatform({ x: 0, y: 300, w: 420, h: 100 });
   assert.ok(calls.some(c => c[0] === 'tile' && c[2] === 308 && c[5] === 'ground_face_eastus2'));
+  assert.ok(calls.some(c => c[0] === 'image' && c[2] === 308 && c[3] === 'graffiti_eastus2_0_front'));
   assert.ok(calls.some(c => c[0] === 'tile' && c[2] === 300 && c[5] === 'quay_top'));
   assert.deepEqual(zones[0], [210, 350, 420, 100]);
   scene.L.region = 'australiaeast';

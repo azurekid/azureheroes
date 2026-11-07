@@ -15,7 +15,7 @@
     image: { tex: 'image_0', anim: 'image_move', body: [26, 20, 3, 8], gravity: true, speed: 40, origin: 1, behaviour: 'ram', fix: 'IMAGE PATCHED - SCAN WITH DEFENDER FOR CLOUD' },
     rbac: { tex: 'rbac_0', anim: 'rbac_move', body: [20, 34, 6, 3], gravity: true, speed: 40, origin: 1, behaviour: 'robot', fix: 'RBAC FIXED - USE LEAST PRIVILEGE IN ENTRA' },
     endpoint: { tex: 'endpoint_0', anim: 'endpoint_move', body: [26, 20, 3, 8], gravity: true, speed: 0, origin: 1, behaviour: 'robot', fix: 'ENDPOINT SECURED - USE AZURE PRIVATE LINK' },
-    guest: { tex: 'guest_0', anim: 'guest_move', body: [26, 12, 3, 8], gravity: true, speed: 65, origin: 1, behaviour: 'spider', fix: 'GUEST REVIEWED - ENTRA ACCESS REVIEWS' },
+    guest: { tex: 'guest_0', anim: 'guest_move', body: [20, 34, 6, 3], gravity: true, speed: 40, origin: 1, behaviour: 'robot', fix: 'ACCESS REVIEWED - ENTRA ACCESS REVIEWS' },
     hacker: { tex: 'hacker_0', anim: 'hacker_walk', body: [20, 34, 6, 3], gravity: true, speed: 40, origin: 1, behaviour: 'robot', fix: 'INTRUSION STOPPED - ENABLE ENTRA MFA' }
   };
   // threat category drives the nameplate colour, so the hero can read what each enemy is at a glance
@@ -34,7 +34,7 @@
     endpoint: ['PUBLIC ENDPOINT', 'network', 'EXPOSED TURRET. USE PRIVATE LINK'],
     phish: ['PHISHING LURE', 'identity', 'LEAPS AT YOU. NEVER TAKE THE BAIT'],
     rbac: ['OVERPRIVILEGED ROLE', 'identity', 'TOO MANY RIGHTS AND IT SHOOTS'],
-    guest: ['STALE GUEST', 'identity', 'FORGOTTEN ACCOUNT. DUCK + SLIDE'],
+    guest: ['UNREVIEWED GUEST', 'identity', 'FIRES ENERGY BOLTS. REVIEW ACCESS'],
     bug: ['PIPELINE BUG', 'devops', 'HOPS AROUND BUILDS. TEST IT AWAY'],
     image: ['VULNERABLE IMAGE', 'devops', 'UNPATCHED CONTAINER. IT CHARGES'],
     hacker: ['ROGUE HACKER', 'identity', 'FIRES BOLTS. BLOCK WITH MFA SHIELD']
@@ -57,22 +57,23 @@
       this.dead = false;
       this.flash = 0;
       this.phase = Math.random() * 6;
-      this.shoot = (def.type === 'rbac' || def.type === 'endpoint' || def.type === 'hacker') || (!!def.shoot && def.type === 'robot');
+      this.shoot = (def.type === 'rbac' || def.type === 'endpoint' || def.type === 'hacker' || def.type === 'guest') || (!!def.shoot && def.type === 'robot');
       this.shootCd = 1 + Math.random() * 1.5;
       this.act = 0;
       this.mode = 'walk';
       const skin = def.skin ? 'en_' + def.skin + '_' + def.type : null;
       const local = skin && scene.anims.exists(skin);
       const detective = def.appearance === 'detective';
-      this.sprite = scene.physics.add.sprite(def.x, def.y, detective ? 'detective_0' : local ? skin + '_0' : spec.tex).setOrigin(0.5, spec.origin).setDepth(40);
-      this.sprite.play(detective ? 'detective_walk' : local ? skin : spec.anim);
+      const stale = def.type === 'guest' && def.appearance === 'stale-user';
+      this.sprite = scene.physics.add.sprite(def.x, def.y, stale ? 'stale_user_0' : detective ? 'detective_0' : local ? skin + '_0' : spec.tex).setOrigin(0.5, spec.origin).setDepth(40);
+      this.sprite.play(stale ? 'stale_user_move' : detective ? 'detective_walk' : local ? skin : spec.anim);
       this.sprite.body.setSize(spec.body[0] * AH.Art.D, spec.body[1] * AH.Art.D);
       this.sprite.body.setOffset(spec.body[2] * AH.Art.D, spec.body[3] * AH.Art.D);
       this.sprite.body.setAllowGravity(spec.gravity);
       if (spec.gravity) scene.physics.add.collider(this.sprite, scene.solids);
       this.sprite.enemy = this;
       const cat = CATS[spec.cat];
-      this.tag = new AH.PixelText(scene, def.x, def.y, (this.bossToken ? 'TOKEN CARRIER - ' : '') + (detective ? 'SNOOPING DETECTIVE' : spec.label),
+      this.tag = new AH.PixelText(scene, def.x, def.y, (this.bossToken ? 'TOKEN CARRIER - ' : '') + (stale ? 'STALE USER' : detective ? 'SNOOPING DETECTIVE' : spec.label),
         { scale: 1, color: this.bossToken ? '#4dff7a' : cat.color, shadow: cat.dark, ox: 0.5, oy: 1 }).setDepth(41).setVisible(false);
     }
 
@@ -123,7 +124,7 @@
         else if (s.x < this.homeX - this.range) this.dir = 1;
         const out = (this.dir > 0 && s.x > this.homeX + lim) || (this.dir < 0 && s.x < this.homeX - lim);
         b.setVelocityX(out ? 0 : this.dir * (near ? sp * 1.8 : sp));
-        s.setFlipX(this.type === 'guest' ? this.dir > 0 : this.dir < 0);
+        s.setFlipX(this.dir < 0);
       } else if (type === 'phish') {
         // waits on the ground, then leaps at the hero like a lure
         const onGround = b.blocked.down || b.touching.down;
