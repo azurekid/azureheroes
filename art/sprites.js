@@ -13,6 +13,7 @@
     const panoramaLandmarks = C.sceneryRegistry('panoramaLandmarks');
     const sceneryRoutes = C.sceneryRegistry('sceneryRoutes');
     const environments = C.sceneryRegistry('environments');
+    const groundFaces = C.sceneryRegistry('groundFace');
 
     Object.keys(SC).forEach(function (r) {
         sceneryKeys[r] = Object.keys(SC[r]);
@@ -66,6 +67,7 @@
         sceneryStars: sceneryStars,
         sceneryRoutes: sceneryRoutes,
         environments: environments,
+        groundFaces: groundFaces,
         panoramaLandmarks: panoramaLandmarks,
         billKeys: billKeys,
         buildCloudPlatform: function (scene, p) {

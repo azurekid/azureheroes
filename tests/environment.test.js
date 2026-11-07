@@ -70,11 +70,15 @@ function fixture(region = 'australiaeast', tod = 'day') {
 
 test('section coverage suppresses city strips and decorative transit then restores them', () => {
   const { s, env } = fixture();
+  s.fore = { setAlpha(n) { this.alpha = n; return this; }, setTint(n) { this.tint = n; return this; } };
+  env.update(0);
   assert.equal(s.far.alpha, 0); assert.equal(s.near.alpha, 0); assert.equal(s.road.alpha, 0);
+  assert.equal(s.fore.alpha, 0);
   assert.equal(s.children.list[0].alpha, 0); assert.equal(s.amb[0].img.alpha, 0);
   assert.equal(s.amb[1].img.alpha, 1, 'sky traffic remains');
   s.cameras.main.scrollX = 8180; env.update(0);
   assert.equal(s.far.alpha, 1); assert.equal(s.road.alpha, 0.55); assert.equal(s.railLine.alpha, 0.7);
+  assert.equal(s.fore.alpha, 1); assert.equal(s.fore.tint, 0xffffff);
   assert.equal(s.children.list[0].alpha, 1); assert.equal(s.amb[0].img.alpha, 1);
   assert.equal(s.children.list[1].alpha, 0, 'old beach vignette never reappears between full environments');
 });

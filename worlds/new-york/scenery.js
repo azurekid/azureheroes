@@ -332,10 +332,29 @@
               }
               for (let y = top + 11; y < base - 32; y += 22) {
                 for (let wx = x + 9; wx < x + width - 7; wx += 24) {
+                  if (i === 0 && wx === x + 9 && y >= base - 50) continue;
                   g.fillStyle = '#302b43'; g.fillRect(wx, y, 13, 14); g.fillStyle = '#a8c9cb'; g.fillRect(wx + 1, y + 1, 11, 10);
                   g.fillStyle = '#302b43'; g.fillRect(wx + 6, y, 1, 12); g.fillRect(wx, y + 5, 13, 1);
                   g.fillStyle = '#d2ad85'; g.fillRect(wx - 1, y + 12, 15, 2);
                 }
+              }
+              if (i === 0) {
+                const gx = x + 5, gy = base - 51;
+                g.save();
+                g.globalAlpha = 0.78;
+                poly(g, [[gx, gy + 5], [gx + 5, gy + 1], [gx + 11, gy + 3], [gx + 17, gy], [gx + 22, gy + 4],
+                  [gx + 21, gy + 13], [gx + 15, gy + 15], [gx + 8, gy + 12], [gx + 2, gy + 15]], '#27304a');
+                poly(g, [[gx + 1, gy + 4], [gx + 6, gy], [gx + 11, gy + 2], [gx + 17, gy - 1], [gx + 22, gy + 3],
+                  [gx + 20, gy + 10], [gx + 14, gy + 13], [gx + 7, gy + 10], [gx + 2, gy + 13]], '#35c9df');
+                poly(g, [[gx + 4, gy + 5], [gx + 9, gy + 3], [gx + 14, gy + 5], [gx + 19, gy + 2],
+                  [gx + 18, gy + 8], [gx + 13, gy + 11], [gx + 8, gy + 8], [gx + 4, gy + 10]], '#f04f91');
+                poly(g, [[gx + 4, gy + 1], [gx + 6, gy - 4], [gx + 9, gy], [gx + 12, gy - 3],
+                  [gx + 14, gy + 1], [gx + 18, gy - 2], [gx + 17, gy + 3]], '#ffd36f');
+                line(g, gx + 7, gy + 5, gx + 15, gy + 6, 0.8, '#fff0c1');
+                line(g, gx + 9, gy + 8, gx + 17, gy + 7, 0.8, '#fff0c1');
+                line(g, gx + 4, gy + 12, gx + 4, gy + 16, 1, '#35c9df');
+                line(g, gx + 18, gy + 11, gx + 17, gy + 15, 1, '#f04f91');
+                g.restore();
               }
               g.fillStyle = '#342640'; g.fillRect(x + width / 2 - 9, base - 31, 18, 31);
               g.fillStyle = '#b98161'; g.fillRect(x + width / 2 - 12, base - 32, 24, 3);
@@ -344,7 +363,7 @@
               line(g, x + width / 2 - 18, base - 16, x + width / 2 - 12, base - 3, 1.2, '#272b38');
               line(g, x + width / 2 + 18, base - 16, x + width / 2 + 12, base - 3, 1.2, '#272b38');
             }
-            g.fillStyle = '#24283f'; g.fillRect(0, base - 2, w, 2);
+            nyKerb(g, 0, h, w, 4);
             [27, 119, 207].forEach((x) => lamp(g, x, base - 1, 33, '#ffd17c'));
             txt(g, 'BROWNSTONES', 81, base - 10, 0.78, '#ffe8bd');
           }],

@@ -779,8 +779,9 @@
         this.add.image(p.x, p.y - 2, typeof p.cloud === 'string' ? p.cloud : 'cloud_plat').setOrigin(0).setDisplaySize(p.w, 20).setDepth(10);
       } else if (p.bliss || L.ground) {
         const g = p.bliss ? (typeof p.bliss === 'string' ? p.bliss : 'grass') : L.ground;
+        const face = !p.bliss && AH.Art.groundFaces && AH.Art.groundFaces[L.region] || g;
         this.add.tileSprite(p.x, p.y, p.w, 8, g + '_top').setOrigin(0).setDepth(10);
-        this.add.tileSprite(p.x, p.y + 8, p.w, Math.min(p.h - 8, 220), g).setOrigin(0).setDepth(9);
+        this.add.tileSprite(p.x, p.y + 8, p.w, Math.min(p.h - 8, 220), face).setOrigin(0).setDepth(9);
         if (L.rail && !p.bliss && p.h >= 60 && p.w >= 64) {
           const rh = this.textures.get('rail_' + L.rail).getSourceImage().height / AH.Art.D;
           this.add.tileSprite(p.x + 4, p.y - rh, p.w - 8, rh, 'rail_' + L.rail).setOrigin(0).setDepth(11).setAlpha(0.95);

@@ -1,5 +1,21 @@
 # Playtest report - Microsoft Azure Heroes 2027
 
+## New York walkway and bridges
+
+- The New York ground face now carries storefront details and large graffiti;
+  its shared collision top and all platform dimensions remain unchanged.
+  The formerly missing `bridge_eastus2` texture now depicts the existing solid
+  bridges. PR 2's close-range city layer is included.
+- Automated checks exercise actual ordered art modules and 30 seeded New York
+  layouts, including generated bridge texture references and unchanged collision
+  rectangles; they also check other cities and special platforms keep their art.
+- An assisted browser canvas composite displayed the registered New York sky,
+  foreground, walking-path wall and bridge at logical gameplay scale. This is
+  an artwork preview, not a live playtest or a collision-traversal test.
+- Live gameplay, other times of day and touch layout were not checked: the
+  local browser could not load the existing Phaser CDN script. Human visual
+  review and live playtesting are still required.
+
 ## Regional routes, mission briefings and inclusive wardrobe defaults
 
 - Redmond's guaranteed scenic stops now include Microsoft campus, Pike Place

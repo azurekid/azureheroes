@@ -10,6 +10,65 @@
   AH.ArtModules.stages['worlds.new-york.art.69'] = function (C) {
     const { lg, line, lit, poly, reg2, rrect, shade, txt } = C;
 
+    reg2('ground_face_eastus2', 320, 64, function (g, w, h) {
+        g.fillStyle = '#63384b'; g.fillRect(0, 0, w, h);
+        for (let y = 0; y < h; y += 8) {
+          for (let x = (y / 8 % 2 ? -8 : 0); x < w; x += 16) {
+            g.fillStyle = (x + y * 3) % 48 ? '#95555a' : '#aa665e';
+            g.fillRect(x + 1, y + 1, 14, 6);
+            g.fillStyle = 'rgba(255,201,156,0.2)'; g.fillRect(x + 1, y + 1, 14, 1);
+          }
+        }
+        // Storefront recesses are painted on the wall, below the collision top.
+        for (const x of [3, 224]) {
+          g.fillStyle = '#333b50'; g.fillRect(x, 6, 40, 51);
+          g.fillStyle = '#b88e79'; g.fillRect(x, 6, 40, 3); g.fillRect(x + 2, 54, 36, 3);
+          g.fillStyle = '#648294'; g.fillRect(x + 5, 12, 30, 26);
+          g.fillStyle = '#29364a'; g.fillRect(x + 19, 12, 2, 26); g.fillRect(x + 5, 25, 30, 2);
+          line(g, x + 7, 15, x + 15, 15, 1, '#c6e8df');
+          g.fillStyle = '#d1b09a'; g.fillRect(x + 4, 41, 32, 3);
+        }
+        g.fillStyle = '#293446'; g.fillRect(270, 7, 42, 48);
+        g.fillStyle = '#556a76'; g.fillRect(273, 10, 36, 42);
+        for (let y = 13; y < 51; y += 5) line(g, 274, y, 308, y, 1, '#9aaca7');
+        g.fillStyle = '#cfb092'; g.fillRect(270, 6, 42, 2);
+        // Large, contrasting tags sit on the actual walking-path wall.
+        poly(g, [[48, 13], [62, 6], [82, 10], [96, 6], [111, 12], [109, 39], [91, 44],
+          [76, 39], [60, 44], [47, 37]], '#292843');
+        poly(g, [[51, 15], [62, 9], [80, 13], [96, 9], [108, 14], [105, 35],
+          [91, 40], [76, 35], [60, 40], [50, 34]], '#f05d9e');
+        poly(g, [[54, 17], [64, 13], [78, 17], [96, 13], [104, 17], [101, 30],
+          [90, 35], [76, 31], [62, 35], [54, 30]], '#40d6e5');
+        txt(g, 'NYC', 63, 19, 1.15, '#fff3cb', '#40345a');
+        line(g, 58, 39, 58, 47, 2, '#f05d9e'); line(g, 100, 36, 100, 43, 2, '#40d6e5');
+        poly(g, [[126, 16], [137, 8], [152, 12], [166, 8], [184, 12], [200, 8], [214, 17],
+          [211, 38], [196, 43], [178, 39], [160, 43], [143, 38], [127, 42]], '#342c4c');
+        poly(g, [[130, 17], [139, 12], [153, 16], [167, 12], [184, 16], [200, 12], [210, 18],
+          [207, 34], [195, 38], [178, 35], [160, 39], [143, 34], [130, 38]], '#ffc75c');
+        txt(g, 'AZURE', 137, 21, 1.1, '#253b5a', '#f2819e');
+        line(g, 136, 40, 136, 47, 2, '#ffc75c'); line(g, 197, 39, 197, 45, 2, '#ffc75c');
+      }, { shade: 0, noOutline: true });
+
+    reg2('bridge_eastus2', 160, 100, function (g) {
+        g.fillStyle = lg(g, 0, 30, 0, 95, [[0, '#697882'], [1, '#24374d']]);
+        g.fillRect(0, 30, 160, 10);
+        g.fillStyle = '#b5c5bd'; g.fillRect(0, 27, 160, 3);
+        g.fillStyle = '#39475a'; g.fillRect(0, 39, 160, 4);
+        for (let x = 0; x < 160; x += 20) {
+          line(g, x, 38, x + 20, 72, 2, '#536879');
+          line(g, x + 20, 38, x, 72, 2, '#536879');
+        }
+        g.fillStyle = '#344b60'; g.fillRect(0, 70, 160, 5);
+        line(g, 0, 71, 160, 71, 1, '#8a9da0');
+        line(g, 0, 20, 160, 20, 2, '#bac6bb');
+        for (let x = 5; x < 160; x += 10) line(g, x, 20, x, 27, 1, '#71858d');
+        [16, 144].forEach((x) => {
+          g.fillStyle = '#536572'; g.fillRect(x - 3, 7, 6, 23);
+          g.fillStyle = '#d1c9a9'; g.fillRect(x - 4, 6, 8, 2);
+          line(g, x, 10, x, 27, 1, '#aeb8ac');
+        });
+      }, { shade: 0.2, noOutline: true });
+
     reg2('boat_eastus2', 138, 44, function (g) {
         poly(g, [[3, 29], [134, 29], [126, 40], [16, 40], [7, 36]], lg(g, 0, 29, 0, 40, [[0, '#f4eee0'], [0.48, '#e2e4df'], [1, '#8e9ba5']]));
         g.fillStyle = '#d74a4e'; g.fillRect(10, 34, 116, 3); line(g, 9, 29, 132, 29, 1, '#ffffff');
@@ -22,6 +81,10 @@
         txt(g, 'STATEN ISLAND', 45, 37, 0.48, '#f6f0df');
         poly(g, [[1, 41], [30, 42], [58, 41], [81, 43], [111, 41], [137, 42]], 'rgba(170,221,238,0.65)');
       }, { shade: 0.25 });
+  };
+
+  content.parts['groundFace_eastus2'] = function () {
+    return 'ground_face_eastus2';
   };
 
   AH.ArtModules.stages['worlds.new-york.art.73'] = function (C) {
