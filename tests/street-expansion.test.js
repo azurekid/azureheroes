@@ -340,7 +340,7 @@ test('guest and stale-user guns fire real bolts with hacker-sized bodies and two
   assert.equal(AH.Enemy.SPEC.spider.body[1], 12, 'worms remain low slide targets');
 });
 
-test('New York sewer steam is grounded, bounded, decorative and frozen indoors or paused', () => {
+test('New York sewer steam is grounded, bounded, signposted and frozen indoors or paused', () => {
   const art = loadScripts(artScripts(), { globals: { document: recordingDocument() } }).Art;
   assert.deepEqual(Object.keys(art.steam), ['eastus2']);
   assert.deepEqual([art.textureCanvas(art.steam.eastus2.puff).width,
@@ -360,11 +360,11 @@ test('New York sewer steam is grounded, bounded, decorative and frozen indoors o
     add: { image(x, y, key) { const o = Object.assign(display(), { x, y, key }); images.push(o); return o; } } });
   scene.buildSteam();
   assert.equal(scene.steam.length, 2);
-  assert.equal(images.length, 10, 'four reused puffs and one vent per source');
+  assert.equal(images.length, 19, 'eight reused puffs per source, two vents, one heat warning');
   assert.equal(scene.steam[0].y, 300); assert.equal(scene.steam[1].y, 290);
   scene.updateSteam(1);
   assert.equal(scene.steamTime, 1);
-  assert.ok(scene.steam[0].puffs.every(p => p.y < 300 && p.alpha <= 0.4));
+  assert.ok(scene.steam[0].puffs.every(p => p.y < 300 && p.alpha <= 0.75));
   const coords = scene.steam[0].puffs.map(p => [p.x, p.y]);
   scene.state = 'paused'; scene.updateSteam(10);
   assert.equal(scene.steamTime, 1);
@@ -378,6 +378,89 @@ test('New York sewer steam is grounded, bounded, decorative and frozen indoors o
   scene.updateSteam(0); assert.ok(scene.steam[0].vent.visible);
   scene.cameras.main.scrollX = 1000; scene.updateSteam(0);
   assert.equal(scene.steam[0].vent.visible, false); assert.equal(scene.steam[1].vent.visible, true);
-  assert.equal(images.length, 10, 'no allocation while animating');
+  assert.equal(images.length, 19, 'no allocation while animating');
+  scene.cameras.main.scrollX = 0;
+  scene.steamTime = 2; scene.updateSteam(0);
+  assert.equal(scene.steam[0].hot, false, 'warning leads the active hazard');
+  assert.ok(scene.steam[0].warning.alpha > 0.35);
+  scene.steamTime = 4; scene.updateSteam(0);
+  assert.equal(scene.steam[0].hot, true);
+  assert.equal(scene.steam[1].hot, false, 'secret entrance never becomes a heat hazard');
+  scene.steamTime = 6.5; scene.updateSteam(0);
+  assert.equal(scene.steam[0].hot, false, 'cooldown gives a safe crossing window');
+  scene.L.spawn = { x: scene.steam[0].x, y: 300 };
+  scene.buildSteam(); assert.equal(scene.steam.length, 1, 'spawn points are protected');
+  const protectedPoint = scene.L.spawn;
+  delete scene.L.spawn;
+  for (const field of ['checkpoints', 'pipes', 'wardrobeSpots']) {
+    scene.L[field] = [protectedPoint]; scene.buildSteam();
+    assert.equal(scene.steam.length, 1, field + ' stay clear of hot vents');
+    delete scene.L[field];
+  }
+  for (const field of ['objectives', 'gems']) {
+    scene.L.mission = { [field]: [protectedPoint] }; scene.buildSteam();
+    assert.equal(scene.steam.length, 1, 'mission ' + field + ' stay safe');
+  }
+  delete scene.L.mission;
+  scene.L.pipeZones = [{ back: protectedPoint }]; scene.buildSteam();
+  assert.equal(scene.steam.length, 1, 'pipe return stays safe'); delete scene.L.pipeZones;
+  scene.L.enemies = [{ bossToken: protectedPoint }]; scene.buildSteam();
+  assert.equal(scene.steam.length, 1, 'required token stays safe');
   scene.L.region = 'westeurope'; scene.buildSteam(); assert.equal(scene.steam.length, 0);
+});
+
+test('steam heat uses the actual player damage cooldown and never burns in paused or indoor states', () => {
+  const AH = loadScripts(localScripts().filter(f => ['systems/player.js', 'systems/scenes.js'].includes(f)),
+    { AH: { Levels: { ids: [11] }, Audio: { play() {} } }, globals: { Phaser: { Scene: class {} } } });
+  const s = new AH.Scenes[5](), p = Object.create(AH.Player.prototype);
+  Object.assign(p, { sprite: { x: 200, y: 280, body: { x: 193, y: 260, width: 14, height: 40 },
+    setVelocity() {} }, mode: 'run', scene: { cameras: { main: { shake() {} } }, burst() {} },
+    invuln: 0, defender: 0, health: 100, shielding: true });
+  Object.assign(s, { state: 'play', steam: [{ x: 200, y: 300, hot: true }] });
+  s.updateSteamHazards(p);
+  assert.equal(p.health, 92, 'MFA Shield does not block environmental heat');
+  assert.equal(p.invuln, 1.1);
+  s.updateSteamHazards(p);
+  assert.equal(p.health, 92, 'one burn, not damage every frame');
+  for (const state of ['paused', 'help', 'intro', 'dying']) {
+    p.invuln = 0; s.state = state; s.updateSteamHazards(p);
+    assert.equal(p.health, 92);
+  }
+  s.state = 'play';
+  for (const flag of ['inPipe', 'inBonus', 'warping', 'boss']) {
+    s[flag] = true; s.updateSteamHazards(p); assert.equal(p.health, 92); s[flag] = false;
+  }
+  s.steam[0].hot = false; s.updateSteamHazards(p); assert.equal(p.health, 92);
+  s.steam[0].hot = true; p.body.y = 190;
+  s.updateSteamHazards(p); assert.equal(p.health, 92, 'jumping above the active core is safe');
+  p.body.y = 260;
+  s.steam[0].hot = true; p.sprite.x = 240; p.body.x = 233;
+  s.updateSteamHazards(p); assert.equal(p.health, 92, 'outside the narrow active core is safe');
+});
+
+test('seeded New York hot vents keep required pickups and route entries clear', () => {
+  const art = loadScripts(artScripts(), { globals: { document: recordingDocument() } }).Art;
+  const AH = loadScripts(['systems/scenes.js'], { AH: { Levels: { ids: [11] }, Art: art },
+    globals: { Phaser: { Scene: class {} } } });
+  const display = () => ({
+    setDepth() { return this; }, setAlpha() { return this; }, setVisible() { return this; },
+    setScale() { return this; }, setPosition() { return this; }
+  });
+  for (const seed of [1, 7, 19, 42, 99, 207, 2027, 9001]) {
+    const L = loadScripts(levelScripts(), { seed }).Levels.make(11);
+    const scene = new AH.Scenes[5]();
+    Object.assign(scene, { L, state: 'play', cameras: { main: { scrollX: 0 } },
+      add: { image: display } });
+    scene.buildSteam();
+    const safe = [L.spawn, ...L.checkpoints, ...L.pipes, ...L.pipeZones.map(z => z.back),
+      ...L.mission.objectives, ...L.mission.gems, ...L.wardrobeSpots,
+      ...L.enemies.filter(e => e.bossToken).map(e => e.bossToken), L.secret].filter(Boolean);
+    for (const vent of scene.steam.filter(v => v.heat)) {
+      assert.ok(!safe.some(p => Math.abs(vent.x - p.x) < 90 && Math.abs(vent.y - p.y) < 100),
+        'safe anchors in seed ' + seed);
+      assert.ok(L.platforms.some(p => vent.x > p.x && vent.x < p.x + p.w && vent.y === p.y));
+      assert.ok(vent.x < L.boss.left - 180);
+    }
+    assert.equal(scene.steam.find(v => !v.heat).x, L.secret.x, 'decorative manhole stays present');
+  }
 });

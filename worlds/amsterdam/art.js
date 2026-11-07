@@ -13,9 +13,46 @@
   content.parts.graffiti_westeurope = () => ({
     tags: ['SAMEN STERK', 'VRIJE GEEST', 'GROETEN UIT AMS'], paint: '#67e9da', accent: '#ffc179'
   });
+  content.parts.atmosphere_westeurope = () => ({
+    layers: [],
+    rain: { key: 'rain_westeurope', sections: [
+      { start: 0.12, end: 0.35, fade: 0.035 }, { start: 0.48, end: 0.75, fade: 0.04 }
+    ] },
+    overcast: { key: 'overcast_westeurope', sections: [
+      { start: 0.1, end: 0.37, fade: 0.04 }, { start: 0.46, end: 0.77, fade: 0.045 }
+    ] },
+    wet: { key: 'wet_westeurope', road: 'wet_road_westeurope', roadY: 256 }
+  });
 
   AH.ArtModules.stages['worlds.amsterdam.art.68'] = function (C) {
-    const { ell, lg, line, lit, poly, reg2, rrect, shade, txt } = C;
+    const { ell, lg, line, lit, poly, reg, reg2, rrect, shade, txt } = C;
+
+    reg('rain_westeurope', 640, 360, function (g) {
+      for (let i = 0; i < 110; i++) {
+        const x = (i * 179 + 23) % 640, y = (i * 73 + 19) % 360;
+        line(g, x, y, x - 4, y + 13, 0.8, 'rgba(188,221,233,0.55)');
+      }
+    }, true);
+    reg('overcast_westeurope', 640, 200, function (g) {
+      g.fillStyle = lg(g, 0, 0, 0, 200, [[0, 'rgba(51,66,83,0.94)'],
+        [0.6, 'rgba(110,126,140,0.85)'], [1, 'rgba(142,158,172,0)']]);
+      g.fillRect(0, 0, 640, 200);
+      for (let i = 0; i < 18; i++) ell(g, (i * 117) % 700 - 30, 60 + (i * 31) % 90,
+        100, 20, 'rgba(124,141,153,0.24)');
+    }, true);
+    reg('wet_westeurope', 320, 10, function (g) {
+      g.fillStyle = 'rgba(39,62,79,0.65)'; g.fillRect(0, 0, 320, 10);
+      for (let i = 0; i < 28; i++) line(g, (i * 43) % 320, 1 + i % 8,
+        (i * 43) % 320 + 9 + i % 12, 1 + i % 8, 0.8,
+        i % 3 ? 'rgba(169,210,230,0.55)' : 'rgba(245,204,117,0.6)');
+    }, true);
+    reg('wet_road_westeurope', 640, 22, function (g) {
+      g.fillStyle = 'rgba(35,55,73,0.65)'; g.fillRect(0, 0, 640, 22);
+      for (let i = 0; i < 60; i++) {
+        const x = i * 37 % 640, y = i * 7 % 22;
+        line(g, x, y, x + 15, y, 0.8, i % 4 ? 'rgba(130,176,204,0.45)' : 'rgba(255,218,147,0.55)');
+      }
+    }, true);
 
     reg2('ground_face_westeurope', 320, 64, function (g) {
       g.fillStyle = '#4b3a39'; g.fillRect(0, 0, 320, 64);

@@ -39,7 +39,7 @@ test('scenic sections fade at boundaries and hold full coverage over meaningful 
   assert.equal(Object.keys(Art.environments).length, 1, 'other cities keep their own panorama');
 });
 
-function fixture(region = 'australiaeast', tod = 'day') {
+function fixture(region = 'australiaeast', tod = 'day', level = {}) {
   const made = [];
   function display(x, y, key) {
     const o = { x, y, texture: { key }, alpha: 1, visible: true,
@@ -53,13 +53,13 @@ function fixture(region = 'australiaeast', tod = 'day') {
   const AH = loadScripts(['systems/environment.js'], { AH: { Art },
     globals: { Phaser: { BlendModes: { ADD: 1 } } } });
   const s = {
-    tod, state: 'play', L: { width: 10000, region }, cameras: { main: { scrollX: 680 } },
+    tod, state: 'play', L: { width: 10000, region, ...level }, cameras: { main: { scrollX: 680 } },
     sky: display(0, 0, 'bg_sky_tod_day'), far: display(), near: display(),
     road: display(), railLine: display(), children: { list: [
       display().setDepth(-18), display(0, 300, 'sc_au_beach').setDepth(-18)
     ] },
     amb: [{ img: display().setDepth(-18.5) }, { img: display().setDepth(-25) }],
-    add: { image: display, rectangle: display }
+    add: { image: display, rectangle: display, tileSprite: (x, y, w, h, key) => display(x, y, key) }
   };
   const palette = Object.fromEntries(order.map((name, i) => [name,
     { far: i === 0 ? 0x000000 : 0xffffff, near: 0xffffff, strip: 0xffffff,
@@ -118,4 +118,87 @@ test('datacenter keeps its authored indoor lighting', () => {
   const { env } = fixture('eastus', null);
   assert.equal(env.skyBlend, undefined); assert.equal(env.dark, undefined);
   env.update(100);
+});
+
+test('regional weather and neon use city-owned art with bounded layers and section fades', () => {
+  assert.deepEqual(Object.keys(Art.atmospheres).sort(), ['japaneast', 'westeurope']);
+  for (const a of Object.values(Art.atmospheres)) {
+    for (const layer of a.layers) {
+      const canvas = Art.textureCanvas(layer.key);
+      assert.deepEqual([canvas.width, canvas.height], [layer.width * Art.D, layer.height * Art.D]);
+      if (layer.key === 'tokyo_blocks' || layer.key === 'tokyo_yokocho') assert.ok(canvas.ops.length > 80);
+      else assert.ok(canvas.ops.some(op => op[0] === 'drawImage'), 'transparent layer uses uncrisped art');
+    }
+    assert.ok(Art.textureCanvas(a.rain.key));
+    for (const section of a.rain.sections) {
+      assert.equal(Environment.weight(section, section.start), 0);
+      assert.equal(Environment.weight(section, section.end), 0);
+      assert.equal(Environment.weight(section, (section.start + section.end) / 2), 1);
+    }
+  }
+  const tokyo = Art.atmospheres.japaneast;
+  assert.ok(tokyo.layers.some(l => l.additive && l.night));
+  assert.ok(tokyo.layers.find(l => l.key === 'tokyo_blocks').scroll < 0.2);
+  assert.ok(tokyo.layers.find(l => l.key === 'tokyo_wires').scroll > 1);
+  assert.ok(Art.textureCanvas('tokyo_yokocho').ops.some(op => op[0] === 'fillRect'));
+});
+
+test('Amsterdam rain is local to stretches, freezes and restores with no per-frame allocation', () => {
+  const { s, env, made } = fixture('westeurope');
+  s.cameras.main.scrollX = 1800; env.update(1);
+  assert.equal(env.rain.alpha, 1);
+  assert.equal(env.overcast.alpha, 1);
+  assert.equal(env.wetRoad.alpha, 1);
+  const time = env.atmosphereTime, offset = env.rain.tilePositionY, count = made.length;
+  for (const state of ['paused', 'help', 'intro', 'dying']) {
+    s.state = state; env.update(10);
+    assert.equal(env.atmosphereTime, time);
+    assert.equal(env.rain.tilePositionY, offset);
+  }
+  s.state = 'play';
+  for (const flag of ['inPipe', 'inBonus', 'warping']) {
+    s[flag] = true; env.update(1);
+    assert.equal(env.rain.visible, false);
+    assert.equal(env.overcast.visible, false);
+    assert.equal(env.wetRoad.visible, false);
+    assert.equal(env.atmosphereTime, time);
+    s[flag] = false;
+  }
+  env.update(0); assert.equal(env.rain.visible, true); assert.equal(env.rain.alpha, 1);
+  s.cameras.main.scrollX = 0; env.update(0);
+  assert.equal(env.rain.alpha, 0); assert.equal(env.overcast.alpha, 0);
+  for (let i = 0; i < 500; i++) env.update(0.05);
+  assert.equal(made.length, count);
+});
+
+test('Tokyo preserves landmarks and hides decorative framing in rooms', () => {
+  const { s, env, made } = fixture('japaneast', 'night');
+  s.cameras.main.scrollX = 2500; env.update(0);
+  assert.equal(s.children.list[0].alpha, 1, 'weather layers never replace landmarks');
+  assert.equal(env.weatherLayers.length, 4);
+  assert.ok(env.weatherLayers.filter(l => l.depth < 0).every(l => l.height <= 220));
+  assert.equal(env.weatherLayers.find(l => l.night).image.alpha, 0.8);
+  const count = made.length;
+  s.inPipe = true; env.update(1);
+  assert.ok(env.weatherLayers.every(l => !l.image.visible));
+  s.inPipe = false; env.update(0);
+  assert.ok(env.weatherLayers.every(l => l.image.visible));
+  assert.equal(made.length, count);
+});
+
+test('wet overlays match solid outdoor tops without covering gaps, clouds or rooms', () => {
+  const ground = { x: 100, y: 300, w: 420, h: 100 };
+  const platforms = [ground, { ...ground, x: 600, y: 180 },
+    ...['cloud', 'ceil', 'pipe', 'bridge', 'cloudKind'].map((flag, i) =>
+      ({ ...ground, x: 1000 + i * 500, [flag]: true })),
+    { ...ground, x: 12000, pipeFloor: true }];
+  const { s, env, made } = fixture('westeurope', 'day', { platforms, boss: { left: 9000 } });
+  assert.equal(env.wetSurfaces.length, 1);
+  assert.deepEqual([env.wetSurfaces[0].x, env.wetSurfaces[0].y], [100, 300]);
+  s.cameras.main.scrollX = 1800; env.update(0);
+  assert.equal(env.wetSurfaces[0].alpha, 0.85);
+  const count = made.length;
+  s.inPipe = true; env.update(1); assert.equal(env.wetSurfaces[0].visible, false);
+  s.inPipe = false; env.update(0); assert.equal(env.wetSurfaces[0].visible, true);
+  assert.equal(made.length, count);
 });

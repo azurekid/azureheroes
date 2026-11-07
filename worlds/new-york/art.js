@@ -9,7 +9,9 @@
   content.parts.graffiti_eastus2 = () => ({
     tags: ['NYC CREATES', 'BOROUGH VIBES', 'BUILD TOGETHER'], paint: '#ffd277', accent: '#ed86b5'
   });
-  content.parts.steam_eastus2 = () => ({ puff: 'steam_eastus2', vent: 'steam_vent_eastus2' });
+  content.parts.steam_eastus2 = () => ({
+    puff: 'steam_eastus2', vent: 'steam_vent_eastus2', warning: 'steam_hot_eastus2', heat: true
+  });
 
   AH.ArtModules.stages['worlds.new-york.art.69'] = function (C) {
     const { ell, lg, line, lit, poly, reg, reg2, rrect, shade, txt } = C;
@@ -17,8 +19,8 @@
     // Preserve translucent edges instead of crisping the puff into an opaque disc.
     reg('steam_eastus2', 32, 32, function (g) {
       const gradient = g.createRadialGradient(16, 16, 2, 16, 16, 15);
-      gradient.addColorStop(0, 'rgba(230,239,244,0.7)');
-      gradient.addColorStop(0.55, 'rgba(194,210,220,0.4)');
+      gradient.addColorStop(0, 'rgba(255,248,226,0.9)');
+      gradient.addColorStop(0.55, 'rgba(220,232,236,0.65)');
       gradient.addColorStop(1, 'rgba(194,210,220,0)');
       ell(g, 16, 16, 15, 14, gradient);
     }, true);
@@ -26,6 +28,15 @@
       ell(g, 16, 4, 15, 3, '#272e38');
       ell(g, 16, 3, 13, 2, '#717c84');
       for (let x = 7; x < 27; x += 4) line(g, x, 2, x - 2, 5, 1.5, '#28313b');
+    }, { shade: 0, noOutline: true });
+    reg2('steam_hot_eastus2', 48, 20, function (g) {
+      rrect(g, 0, 0, 48, 20, 2, '#422923');
+      line(g, 1, 1, 47, 1, 1, '#ffd073');
+      txt(g, 'HOT', 14, 2, 1, '#ffe1a3');
+      for (const x of [8, 22, 36]) {
+        line(g, x, 18, x - 2, 14, 1.3, '#ffab52');
+        line(g, x - 2, 14, x + 1, 11, 1.3, '#ffab52');
+      }
     }, { shade: 0, noOutline: true });
 
     reg2('ground_face_eastus2', 320, 64, function (g, w, h) {

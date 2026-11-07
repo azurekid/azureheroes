@@ -1,5 +1,44 @@
 # Playtest report - Microsoft Azure Heroes 2027
 
+## Hot steam and regional weather
+
+- New York now uses eight reusable, warm-white puffs per vent, rising about
+  100 logical pixels. HOT plates pulse before a timed, narrow 8-damage core;
+  the secret manhole remains decorative. Tokyo adds slow skyscraper parallax,
+  Japanese vertical neon signs, convenience shops, vending machines, tactile
+  paving, bike markings, umbrellas and sparse foreground wires/poles. Amsterdam
+  adds two rainy/overcast stretches with wet surface reflections and dry gaps.
+- Browser scenario checks PASS, not whole-level completion: separate headless
+  Chrome processes loaded seed 2027 New York, Tokyo and Amsterdam through the
+  actual script loader. A cached copy of the existing pinned Phaser artifact
+  replaced only its exact CDN request in the harness; production loading is
+  unchanged. No runtime exceptions occurred in the successful runs.
+- Assisted camera/clock positioning captured Tokyo and Amsterdam at day/night,
+  plus route fractions 0.12, 0.34, 0.50, 0.72 and 0.85. Inspected rainy Amsterdam
+  surfaces and its dry late stretch; Tokyo storefronts, signs, sparse framing,
+  tower silhouette, birds and pickups remain readable. Forced-touch captures
+  show the actual flight shield and ground melee controls above the effects.
+  Small street details remain background decoration, not flight obstacles.
+- In the real New York scene, placing the hero in an active vent reduced health
+  100 -> 92; a repeated same-frame check stayed at 92. Three sources were present
+  in this layout after safety filtering; the secret source was never hot.
+  The measured puff rise was 97.67 logical pixels. Pause froze steam and rain;
+  toggling bonus-room state hid/restored the weather layers.
+- Automated coverage checks warning/hot/cool phases, safe spawn/checkpoints,
+  mission items, tokens and pipe returns, normal damage invulnerability, shield
+  behavior, jumping above the core, pause/help/warp/boss suppression, weather
+  fades, wet-top alignment/exclusions and persistent allocation. Tests load
+  actual modules in explicit browser order. Eight seeded New York layouts
+  retained safe anchors and decorative manholes. Final `npm test` passed
+  **164/164**; changed JavaScript syntax checks and `git diff --check` passed.
+- Assistance/limitations: cameras, clocks, body position and active heat phase
+  were set directly; physics was paused for captures. This does not establish
+  unassisted hazard traversal, balance, every generated layout, actual warp
+  traversal or real-device behavior. Initial captures retained an unfinished
+  intro fade and two harness runs timed out at browser shutdown; camera FX and
+  exact-process cleanup were corrected and all five final runs exited normally.
+  Regional music is unchanged. Earlier new songs still await human listening.
+
 ## Named songs, sewer steam, resume and player melee
 
 - Changes: N/MUSIC cycles Trance, House, Pop, Night Drive and Soft Skies.

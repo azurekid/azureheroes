@@ -18,6 +18,7 @@
       .map(([region, design]) => [region, C.registerGraffiti(region, design)]));
     const foregrounds = C.sceneryRegistry('foreground');
     const steam = C.sceneryRegistry('steam');
+    const atmospheres = C.sceneryRegistry('atmosphere');
     Object.entries(foregrounds).forEach(([region, design]) =>
       C.registerForeground(region, design));
 
@@ -77,6 +78,7 @@
         graffiti: graffiti,
         foregrounds: foregrounds,
         steam: steam,
+        atmospheres: atmospheres,
         panoramaLandmarks: panoramaLandmarks,
         billKeys: billKeys,
         buildCloudPlatform: function (scene, p) {
@@ -299,6 +301,7 @@
   AH.ArtModules.stages['worlds.redmond.transit'](C);
   AH.ArtModules.stages['worlds.amsterdam.scenery.87'](C);
   AH.ArtModules.stages['worlds.tokyo.scenery.88'](C);
+  AH.ArtModules.stages['worlds.tokyo.atmosphere'](C);
   AH.ArtModules.stages['worlds.new-york.scenery.89'](C);
   AH.ArtModules.stages['worlds.new-york.scenery.90'](C);
   AH.ArtModules.stages['art.ambient.90'](C);

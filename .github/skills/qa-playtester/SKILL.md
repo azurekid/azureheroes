@@ -40,7 +40,10 @@ and Australian 4x4 sizes.
   scenery scroll factors must be accounted for when centering landmarks.
 - Outdoor atmosphere: verify the continuous 240-second cycle, wrap continuity,
   deterministic `?tod` starting phase, pause/help/warp freeze and room-return
-  restoration. Indoor art and HUD keep their authored lighting. For full-background
+  restoration. Test timed hot-steam warning/cooldown, safe mission/pipe/checkpoint positions and
+  jumping above the active core. Verify local rain fades, wet tops only on
+  outdoor solids, additive neon, sparse framing and landmark readability.
+  Indoor art and HUD keep their authored lighting. For full-background
   sections inspect each fade boundary and centre, city/transit suppression and
   harbour return at day/sunset/night/sunrise, including forced-touch layout.
   Assisted camera/clock positioning is visual evidence, not unassisted completion.

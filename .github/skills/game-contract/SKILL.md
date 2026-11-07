@@ -126,6 +126,18 @@ description: Use before any game code change. Defines the shared interfaces for 
 
 ### Outdoor environment sections and continuous lighting
 
+- Optional city `atmosphere_<region>` exposes `{layers,rain?,overcast?,wet?}`
+  via `AH.Art.atmospheres`. Layers are local tiled texture descriptors
+  `{key,width,height,y,depth,scroll,alpha,additive?,night?}`; rain/overcast use
+  `{key,sections:[{start,end,fade}]}` normalized route ranges. Wet textures
+  decorate eligible platform tops and background roads, never gaps or clouds.
+  `AH.Environment` owns persistent layers, section fades and rain animation;
+  hide them indoors/warps and freeze time on pause/help. Additive neon and
+  painted reflections emulate light without new shaders, dependencies or
+  changing the renderer. Keep landmarks, threats, hero and HUD readable.
+  Tokyo stays flight with its existing regional soundtrack; Amsterdam retains
+  its canals, highlights and weather-free stretches. No layout/RNG/save changes.
+
 - Optional city art part `environments_<region>` returns ordered descriptors
   `{key,start,end,fade}`: a local 640x360 background texture and normalized
   main-world camera-progress bounds, with fade distance in the same units.
@@ -155,13 +167,18 @@ description: Use before any game code change. Defines the shared interfaces for 
 
 ### Optional close-range foreground layer
 
-- Optional city art `steam_<region>` returns `{puff,vent}` registered texture
-  keys, exposed in `AH.Art.steam`. Scenes place non-solid vents on eligible
-  outdoor ground and the existing secret manhole. Four reusable puffs per vent
-  rise, expand and fade using elapsed outdoor play time, without gameplay RNG.
+- Optional city art `steam_<region>` returns `{puff,vent,warning?,heat?}` registered
+  texture keys and optional heat flag, exposed in `AH.Art.steam`. Scenes place
+  non-solid vents on eligible outdoor ground and the existing secret manhole.
+  Eight reusable puffs per vent rise, expand and fade using outdoor play time.
   Puff textures preserve graduated transparency, not opaque crisped discs.
   Hide steam indoors, during warps and boss fights; pause freezes animation.
-  No hazards, collision, progress, music or controls are changed.
+  Heat-enabled vents cycle 7s: 0-1s cool, 1-3s orange warning, 3-6s active hot
+  plume, 6-7s cooldown. Active core (34px wide, 64px high) deals 8 damage through
+  normal `player.hurt` invulnerability; shield does not block environmental heat.
+  Keep spawn/checkpoints, mission items, pipe returns and entrances safe; the
+  secret manhole plume is decorative. Existing descriptors without heat stay
+  decorative. No solid collision, progress, music or control changes.
 
 - City art `foreground_<region>` optionally returns `{roof,wall,light,accent,
   shape,detail}` for shared `C.registerForeground`, a deterministic 960x200

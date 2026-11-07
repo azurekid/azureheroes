@@ -38,6 +38,10 @@ description: 'Create Azure Heroes code-drawn pixel art, duck/slide poses, cloud 
   card. `systems/environment.js` blends sections and suppresses city strips and
   decorative transit; keep physical platforms/hazards unchanged. Inspect entry,
   centre and exit in daylight and night, not just texture registration.
+- Optional `atmosphere_<region>` owns local layered weather/neon descriptors.
+  Use uncrisped `C.reg(...,true)` for translucent rain, glow and steam gradients.
+  Preserve landmarks and flight-corridor readability; painted additive light
+  and reflections are not shaders. HOT vent plates must precede damaging plumes.
 - Set `city.rewards` to `{suit,hair,gear,outfit?,classicHat?,classicGear?,collectibleHats?}`.
   Append references in `art/wardrobe.js`'s stable saved arrays, never insert or
   reindex. The suit's `unlock` and hair/gear unlock fields use the world index.

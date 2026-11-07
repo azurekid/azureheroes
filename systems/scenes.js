@@ -905,16 +905,24 @@
       this.steamTime = 0;
       const L = this.L, art = AH.Art.steam && AH.Art.steam[L.region];
       if (!art || L.mode !== 'run') return;
+      const safe = [L.spawn, ...(L.checkpoints || []), ...(L.pipes || []),
+        ...(L.pipeZones || []).map(z => z.back), ...(L.mission?.objectives || []),
+        ...(L.mission?.gems || []), ...(L.wardrobeSpots || []),
+        ...(L.enemies || []).filter(e => e.bossToken).map(e => e.bossToken), L.secret].filter(Boolean);
       const ground = L.platforms.filter(p => p.y >= 240 && p.h >= 60 && p.w >= 200 &&
         !p.cloud && !p.pipe && !p.ceil && !p.bridge && !p.cloudKind && !p.bliss &&
         p.x + p.w < L.boss.left - 180);
-      const spots = ground.filter((p, i) => i % 4 === 0).map(p => ({ x: p.x + p.w * 0.65, y: p.y }));
-      if (L.secret) spots.push({ x: L.secret.x, y: L.secret.y });
+      const spots = ground.filter((p, i) => i % 4 === 0)
+        .map(p => ({ x: p.x + p.w * 0.65, y: p.y, heat: !!art.heat }))
+        .filter(p => !safe.some(q => Math.abs(p.x - q.x) < 90 && Math.abs(p.y - q.y) < 100));
+      if (L.secret) spots.push({ x: L.secret.x, y: L.secret.y, heat: false });
       spots.forEach((spot, index) => {
         const vent = this.add.image(spot.x, spot.y - 1, art.vent).setDepth(11);
-        const puffs = Array.from({ length: 4 }, () =>
+        const warning = spot.heat && art.warning ?
+          this.add.image(spot.x, spot.y + 15, art.warning).setDepth(20) : null;
+        const puffs = Array.from({ length: 8 }, () =>
           this.add.image(spot.x, spot.y - 8, art.puff).setDepth(19).setAlpha(0));
-        this.steam.push({ ...spot, vent, puffs, phase: index * 0.37 });
+        this.steam.push({ ...spot, vent, warning, puffs, phase: index * 0.37 });
       });
       this.updateSteam(0);
     }
@@ -925,14 +933,23 @@
       const cam = this.cameras.main;
       this.steam.forEach(spot => {
         const show = outside && spot.x > cam.scrollX - 60 && spot.x < cam.scrollX + 700;
+        const cycle = (this.steamTime + spot.phase) % 7;
+        spot.hot = !!spot.heat && cycle >= 3 && cycle < 6;
+        spot.warning?.setVisible(show).setAlpha(spot.hot ? 1 : cycle >= 1 && cycle < 3 ? 0.65 + Math.sin(cycle * 15) * 0.25 : 0.35);
         spot.vent.setVisible(show);
         spot.puffs.forEach((puff, i) => {
-          const age = ((this.steamTime + spot.phase + i * 0.75) % 3) / 3;
+          const age = ((this.steamTime + spot.phase + i * 0.375) % 3) / 3;
           puff.setVisible(show).setPosition(spot.x + Math.sin(age * 5 + spot.phase) * age * 10,
-            spot.y - 6 - age * 70).setScale((0.3 + age * 1.2) / AH.Art.D)
-            .setAlpha(Math.sin(age * Math.PI) * 0.4);
+            spot.y - 6 - age * 100).setScale((0.5 + age * 1.8) / AH.Art.D)
+            .setAlpha(Math.sin(age * Math.PI) * (spot.hot || !spot.heat ? 0.75 : 0.2));
         });
       });
+    }
+    updateSteamHazards(p) {
+      if (this.state !== 'play' || this.inPipe || this.inBonus || this.warping || this.boss) return;
+      for (const spot of this.steam || []) {
+        if (spot.hot && ov(rectOf(p.body), { x: spot.x - 17, y: spot.y - 64, w: 34, h: 64 })) p.hurt(8, spot.x);
+      }
     }
     ambAdd(img, o) { o.img = img; o.t = 0; o.y0 = img.y; this.amb.push(o); return o; }
     ambSky(kind, atX) {
@@ -2178,6 +2195,7 @@
       this.updateCheckpoints();
 
       // hazards
+      this.updateSteamHazards(p);
       this.lasers.forEach((l) => {
         const cyc = l.def.on + l.def.off;
         l.active = ((now + l.def.phase) % cyc) < l.def.on;

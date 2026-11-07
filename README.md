@@ -56,8 +56,18 @@ damage: bait a missed attack or shield-block attacks, then punish the green OPEN
 
 New York uses East US 2 as its Azure hosting-region mapping; this does not imply a
 New York datacenter. Its map pin marks the city, with an offset to keep Virginia tappable.
-Decorative sewer steam rises from street grates and the secret manhole, freezing
-when paused and disappearing indoors or during boss fights.
+Stronger sewer steam rises from street grates. Orange HOT plates warn for two
+seconds before a three-second hot phase: the narrow plume core deals 8 damage,
+even through Shield. Wait for cooldown or jump over it; spawn, mission items and
+pipe returns stay safe. The secret manhole's steam is decorative. Steam freezes
+when paused and disappears indoors or during boss fights.
+
+Tokyo adds distant skyscrapers, neon Japanese signs, vending machines, narrow
+storefront alleys, overhead wires, umbrella pedestrians and painted wet-street
+reflections, while retaining its flight route. Amsterdam has rainy/overcast
+stretches with wet roads and platform tops, separated by dry stretches. These
+local code-drawn effects use layered parallax and additive light, not shaders;
+landmarks, collision geometry and regional music stay unchanged.
 
 Levels are generated at random each time a level starts, so platforms, lasers, enemies, coins, power-ups and MFA tokens land in new places on every run. Run levels mix gaps, steps up, drops and floating platforms at different heights, and every region has its own coins, enemy skins, scenery props, traffic, birds and sky objects (planes, balloons, blimps, helicopters). Outdoor worlds start at a random time of day, then smoothly cycle through night, sunrise, morning, day, afternoon and sunset every four minutes of active outdoor play. Pause/help, warps and underground visits freeze the outdoor clock; Virginia's data center keeps its indoor lighting.
 
