@@ -17,6 +17,7 @@
     const graffiti = Object.fromEntries(Object.entries(C.sceneryRegistry('graffiti'))
       .map(([region, design]) => [region, C.registerGraffiti(region, design)]));
     const foregrounds = C.sceneryRegistry('foreground');
+    const steam = C.sceneryRegistry('steam');
     Object.entries(foregrounds).forEach(([region, design]) =>
       C.registerForeground(region, design));
 
@@ -75,6 +76,7 @@
         groundFaces: groundFaces,
         graffiti: graffiti,
         foregrounds: foregrounds,
+        steam: steam,
         panoramaLandmarks: panoramaLandmarks,
         billKeys: billKeys,
         buildCloudPlatform: function (scene, p) {

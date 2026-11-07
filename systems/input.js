@@ -8,13 +8,15 @@
       this.scene = scene;
       this.opts = opts; // { fly, shield }
       const kb = scene.input.keyboard;
-      this.k = kb.addKeys('LEFT,RIGHT,UP,DOWN,A,D,W,S,SPACE,F,SHIFT,E,P,R,M,N,ENTER,ESC,H,Q');
+      this.k = kb.addKeys('LEFT,RIGHT,UP,DOWN,A,D,W,S,SPACE,F,SHIFT,E,P,R,M,N,ENTER,ESC,H,Q,J,K');
       kb.addCapture('SPACE,UP,DOWN,LEFT,RIGHT');
       this.t = { left: false, right: false, up: false, down: false, attack: false, boost: false, shield: false };
       this.tJump = false;
       this.tFire = false;
       this.tPause = false;
       this.tHelp = false;
+      this.tPunch = false;
+      this.tKick = false;
       this.buttons = [];
       const forced = /[?&]touch=1/.test(location.search);
       this.isTouch = forced || scene.sys.game.device.input.touch;
@@ -29,6 +31,8 @@
       const set = (v) => {
         if (v) {
           if (key === 'jump') this.tJump = true;
+          else if (key === 'punch') this.tPunch = true;
+          else if (key === 'kick') this.tKick = true;
           else if (key === 'attack') { this.tFire = true; this.t.attack = true; } else this.t[key] = true;
         } else this.t[key] = false;
         img.setTexture(v ? 'btn_down' : 'btn');
@@ -55,6 +59,8 @@
         this.addButton(116, 288, '>', 'right', 1, { ts: 3 });
         this.addButton(190, 288, 'DUCK', 'down', 0.85);
         this.addButton(592, 286, 'JUMP', 'jump', 1);
+        this.addButton(365, 286, 'PUNCH', 'punch', 0.85);
+        this.addButton(440, 286, 'KICK', 'kick', 0.85);
       }
       this.addButton(520, 296, 'BLAST', 'attack', 1);
       this.addButton(592, 222, 'BOOST', 'boost', 0.85);
@@ -85,7 +91,9 @@
         fire: J(k.F) || this.tFire,
         fireHeld: k.F.isDown || t.attack,
         boost: k.SHIFT.isDown || t.boost,
-        shield: !this.opts.fly && (k.E.isDown || t.shield),
+        shield: k.E.isDown || t.shield,
+        punch: J(k.J) || this.tPunch,
+        kick: J(k.K) || this.tKick,
         pause: J(k.P) || this.tPause,
         help: J(k.H) || this.tHelp,
         quit: J(k.Q),
@@ -100,6 +108,8 @@
       this.tFire = false;
       this.tPause = false;
       this.tHelp = false;
+      this.tPunch = false;
+      this.tKick = false;
       return cmd;
     }
   };

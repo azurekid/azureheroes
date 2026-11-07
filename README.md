@@ -27,6 +27,14 @@ At each level's start a locally dressed guide explains the deployment key, relay
 two hidden gems and three enemy-carried boss tokens. Press **Enter / Space** or
 tap **BEGIN MISSION** to start; the timer and physics wait. Review these tasks
 with **Pause > MISSION** without resetting your progress.
+**R**, **P** or **Esc** resumes a paused level without resetting position, missions or score.
+In flying levels, **Left/A** turns you to shoot backward at birds behind you;
+**Right/D** turns you forward again. Touch direction buttons work the same way.
+Hold **E / SHIELD** to block front-facing attacks in flight as well as on foot.
+Shielding cancels charging and disables Boost until released.
+On foot, **J / PUNCH** and **K / KICK** add close-range attacks alongside blasts;
+moving while holding Down/S slides into an open boss. Armor still blocks all
+damage: bait a missed attack or shield-block attacks, then punish the green OPEN window.
 
 ![World map](docs/screenshots/world-map.png)
 
@@ -48,10 +56,12 @@ with **Pause > MISSION** without resetting your progress.
 
 New York uses East US 2 as its Azure hosting-region mapping; this does not imply a
 New York datacenter. Its map pin marks the city, with an offset to keep Virginia tappable.
+Decorative sewer steam rises from street grates and the secret manhole, freezing
+when paused and disappearing indoors or during boss fights.
 
 Levels are generated at random each time a level starts, so platforms, lasers, enemies, coins, power-ups and MFA tokens land in new places on every run. Run levels mix gaps, steps up, drops and floating platforms at different heights, and every region has its own coins, enemy skins, scenery props, traffic, birds and sky objects (planes, balloons, blimps, helicopters). Outdoor worlds start at a random time of day, then smoothly cycle through night, sunrise, morning, day, afternoon and sunset every four minutes of active outdoor play. Pause/help, warps and underground visits freeze the outdoor clock; Virginia's data center keeps its indoor lighting.
 
-Every region also has cyber-threat enemies: **Phishing hoppers** leap at you, **Ransomware chargers** wind up and dash, and **DDoS botnet clouds** follow you and drop bombs. Street and data-center levels also feature pipeline bugs, vulnerable container images, overprivileged RBAC robots, exposed-endpoint turrets, stale guest-account crawlers and **Rogue Hackers** who fire from handheld terminals. Their bolts can be blocked with the MFA Shield. Defeating them reveals tips about GitHub Actions, Defender for Cloud, Entra MFA and access reviews, least privilege and Azure Private Link.
+Every region also has cyber-threat enemies: **Phishing hoppers** leap at you, **Ransomware chargers** wind up and dash, and **DDoS botnet clouds** follow you and drop bombs. Street and data-center levels also feature pipeline bugs, vulnerable container images, overprivileged RBAC robots, exposed-endpoint turrets, armed guest/stale-user shooters and **Rogue Hackers** who fire from handheld terminals. Their bolts can be blocked with the MFA Shield. Defeating them reveals tips about GitHub Actions, Defender for Cloud, Entra MFA and access reviews, least privilege and Azure Private Link.
 
 ### Missions and hidden Azure gems
 
@@ -312,10 +322,18 @@ Collect 5 MFA tokens for an extra life. Every enemy takes 2 hits and drops an Az
 
 ## Music
 
-Choose **trance, house or pop** by pressing **N** or tapping the
+Press **N** or tap the **MUSIC** button to cycle **Trance → House → Pop →
+Night Drive → Soft Skies → Trance**. Night Drive is a new 134 BPM House song
+with a syncopated hook and a contrasting response; Soft Skies is a separate
+108 BPM lounge tune with spacious keys and sparse percussion. They have original
+melodies, not just different instruments playing the same notes.
+Named songs continue across worlds, rooms and bosses until you select another
+option; selecting a genre restores the region's contextual soundtrack.
+
+Choose music using the
 **MUSIC** button on the title screen, world map, Hero Lab, leaderboard, or during a
 level (including pause). The button shows the current style and cycles through the
-choices. The selection is saved on this device only, separately from game progress;
+choices, including the named song. The selection is saved on this device only, separately from game progress;
 it is not synced to an online account. If browser storage is unavailable, the
 selection lasts for the current session.
 
@@ -390,7 +408,7 @@ listening and musical taste remain human checks.
 | Low Azure Blast | F while ducking | Duck + Blast |
 | MFA Shield (blocks shots and boss hits from the front, works in the air) | E | Shield button |
 | Crouch guard (low shield) | Down / S while standing still | Duck button |
-| Pause / Restart / Mute | P or Esc / R / M | Pause button |
+| Pause / Resume / Restart / Mute | P or Esc / R while paused / R during play / M | Pause button; Resume in menu |
 | Change music style | N | MUSIC button |
 | Help (Hero Handbook) | H (title and in game) | HELP button |
 | Quit to title | Q, or QUIT in the pause menu | Pause > QUIT |

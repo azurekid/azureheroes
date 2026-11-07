@@ -45,6 +45,8 @@ description: 'Create Azure Heroes code-drawn pixel art, duck/slide poses, cloud 
 ## Art invariants
 
 - Hero: blue suit, blue cape, glowing A, sunglasses, 32x48px, frames: idle, run0-3, jump, fly, attack, shield, duck, slide. Preserve wardrobe in every pose and register frames in `HERO_FRAMES`; Cloud Hacker is capeless.
+- Ground melee adds distinct punch and extended-leg kick frames through the same
+  shared hero rig and wardrobe registration; retain 32x48 textures and collision bounds.
 - Enemies: patrol robot, drone, spider bot, boss CyberGuardian, all in same neon sunset palette.
 - Draw with code / pixel arrays, no external image files.
 - Keep the HUD from the mockups: Health, Score, MFA, Credits, Lives, Time on top, ability + level name at bottom.

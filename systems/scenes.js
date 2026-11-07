@@ -750,7 +750,7 @@
       this.portal.setVisible(this.exitActive);
       this.tweens.add({ targets: this.portal, alpha: 0.55, yoyo: true, repeat: -1, duration: 500 });
 
-      this.input2 = new AH.Input(this, { fly: this.mode === 'fly', shield: this.mode === 'run' });
+      this.input2 = new AH.Input(this, { fly: this.mode === 'fly', shield: true });
       this.hud = new AH.HUD(this, this.levelId, L.name);
       this.soundBtn = AH.UI.soundButton(this, 630, 98);
       AH.UI.musicButton(this, 630, 144, true);
@@ -881,6 +881,7 @@
     buildAmbient() {
       const A = this.L.ambient;
       this.amb = []; this.ambT = {}; this.ambCfg = null; this.road = null; this.railLine = null;
+      this.buildSteam();
       if (!A || this.L.theme === 'rack') return;
       this.ambCfg = A;
       if (A.road) this.road = this.add.tileSprite(0, A.roadY === undefined ? AMB_ROAD_Y : A.roadY, 640, 8, 'amb_road').setOrigin(0).setScrollFactor(0).setDepth(-18.6).setAlpha(0.55);
@@ -898,6 +899,40 @@
       if (A.road) this.ambCar(A.road[0], 420);
       if (A.rail) { this.ambRail(A.rail[0], 320); this.ambT.rail = 22; }
       if (A.water) this.ambBoat(A.water[0], 400);
+    }
+    buildSteam() {
+      this.steam = [];
+      this.steamTime = 0;
+      const L = this.L, art = AH.Art.steam && AH.Art.steam[L.region];
+      if (!art || L.mode !== 'run') return;
+      const ground = L.platforms.filter(p => p.y >= 240 && p.h >= 60 && p.w >= 200 &&
+        !p.cloud && !p.pipe && !p.ceil && !p.bridge && !p.cloudKind && !p.bliss &&
+        p.x + p.w < L.boss.left - 180);
+      const spots = ground.filter((p, i) => i % 4 === 0).map(p => ({ x: p.x + p.w * 0.65, y: p.y }));
+      if (L.secret) spots.push({ x: L.secret.x, y: L.secret.y });
+      spots.forEach((spot, index) => {
+        const vent = this.add.image(spot.x, spot.y - 1, art.vent).setDepth(11);
+        const puffs = Array.from({ length: 4 }, () =>
+          this.add.image(spot.x, spot.y - 8, art.puff).setDepth(19).setAlpha(0));
+        this.steam.push({ ...spot, vent, puffs, phase: index * 0.37 });
+      });
+      this.updateSteam(0);
+    }
+    updateSteam(dt) {
+      if (!this.steam || !this.steam.length) return;
+      const outside = !this.inPipe && !this.inBonus && !this.warping && !this.boss;
+      if (outside && this.state === 'play') this.steamTime += dt;
+      const cam = this.cameras.main;
+      this.steam.forEach(spot => {
+        const show = outside && spot.x > cam.scrollX - 60 && spot.x < cam.scrollX + 700;
+        spot.vent.setVisible(show);
+        spot.puffs.forEach((puff, i) => {
+          const age = ((this.steamTime + spot.phase + i * 0.75) % 3) / 3;
+          puff.setVisible(show).setPosition(spot.x + Math.sin(age * 5 + spot.phase) * age * 10,
+            spot.y - 6 - age * 70).setScale((0.3 + age * 1.2) / AH.Art.D)
+            .setAlpha(Math.sin(age * Math.PI) * 0.4);
+        });
+      });
     }
     ambAdd(img, o) { o.img = img; o.t = 0; o.y0 = img.y; this.amb.push(o); return o; }
     ambSky(kind, atX) {
@@ -955,6 +990,7 @@
       void cam;
     }
     updateAmbient(dt) {
+      this.updateSteam(dt);
       const A = this.ambCfg;
       if (!A) return;
       if (this.road) this.road.tilePositionX = this.cameras.main.scrollX * 0.5 * AH.Art.D;
@@ -1590,7 +1626,7 @@
         this.player.cancelCharge();
         this.physics.world.pause();
         this.tweens.pauseAll();
-        this.showPanel('PAUSED', '#ffe14a', ['P: RESUME   R: RESTART', 'H: HELP   Q: QUIT TO TITLE'], [
+        this.showPanel('PAUSED', '#ffe14a', ['P / ESC / R: RESUME', 'H: HELP   Q: QUIT TO TITLE'], [
           ['RESUME', () => this.setPaused(false)],
           ['MISSION', () => this.showBriefing(true)],
           ['WORLD MAP', () => this.scene.start('Select')],
@@ -1968,7 +2004,11 @@
         return;
       }
       if (cmd.music) AH.UI.nextMusic(this);
-      if (cmd.restart) { this.restart(); return; }
+      if (cmd.restart) {
+        if (this.state === 'paused') this.setPaused(false);
+        else this.restart();
+        return;
+      }
       if (cmd.quit && this.state !== 'dying') { this.quitGame(); return; }
       if (this.state === 'briefing') {
         if (cmd.confirm || cmd.esc) this.briefingAction();
@@ -2056,6 +2096,26 @@
       if (this.state === 'play' && p.health <= 0) this.loseLife('hit');
       if (this.boss) this.boss.update(dt, p);
       this.hud.update(this.snapshot(), dt);
+    }
+
+    hitMelee(p, kind, hits) {
+      if (this.mode === 'fly' || this.warping || this.state !== 'play') return;
+      const slide = kind === 'slide', reach = slide ? 24 : kind === 'kick' ? 52 : 38;
+      const box = { x: p.facing > 0 ? p.x : p.x - reach,
+        y: slide ? p.body.bottom - 20 : p.body.bottom - 40,
+        w: reach, h: slide ? 20 : 32 };
+      if (this.rects.some(r => r.active && !r.hazard && ov(box, r))) return;
+      if (!slide) for (const e of this.enemies) {
+        if (!e.dead && !hits.has(e) && ov(box, rectOf(e.sprite.body))) {
+          hits.add(e);
+          e.hit(p.facing);
+        }
+      }
+      const boss = this.boss;
+      if (boss && !boss.dead && !boss.air && !hits.has(boss) && ov(box, rectOf(boss.rect()))) {
+        hits.add(boss);
+        boss.hitByBlast(slide ? 12 : kind === 'kick' ? 14 : 10);
+      }
     }
 
     updateWorld(dt, p) {
@@ -2162,6 +2222,8 @@
       });
 
       this.updateBlasts(dt);
+      if (p.meleeT > 0) this.hitMelee(p, p.meleeKind, p.meleeHits);
+      if (p.sliding) this.hitMelee(p, 'slide', p.slideHits);
 
       // enemy bolts
       for (let i = this.ebolts.length - 1; i >= 0; i--) {

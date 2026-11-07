@@ -41,6 +41,10 @@ All composition and synthesis remain original, local and dependency-free.
    Pop: original repeated hook, verse/chorus contrast, clean bright lead and a
    straight backbeat with room for gameplay cues. Do not reintroduce jazz, blues,
    rock or country, or pretend synthesizers are a live acoustic band.
+   N/MUSIC also offers named original House songs Night Drive and Soft Skies
+   alongside the three genre selections. Named selections need independent
+   hooks and responses, not timbre-only variations. Preserve genre-only APIs,
+   local allowlisted preference migration, stopped playback and context restoration.
 4. Shape transients, decay, release, filtering and velocity per instrument.
    Avoid harsh upper partials, continuous high hats, clicks, low-mid chord mud,
    excessive echo and note tails crossing every rest. Preserve oscillator/source

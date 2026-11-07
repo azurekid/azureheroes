@@ -121,10 +121,24 @@
     }
 
     cancelCharge() {
+      this.meleeT = 0;
       this.charge = 0;
       this.charging = false;
       this.fireBlocked = true;
       if (this.chargeFx) this.chargeFx.setVisible(false);
+    }
+
+    melee(kind) {
+      if ((kind !== 'punch' && kind !== 'kick') || this.mode === 'fly' ||
+          this.shielding || this.ducking || this.riding || this.health <= 0 ||
+          this.scene.warping || this.meleeCd > 0) return false;
+      this.cancelCharge();
+      this.meleeKind = kind;
+      this.meleeT = kind === 'kick' ? 0.26 : 0.18;
+      this.meleeCd = kind === 'kick' ? 0.6 : 0.4;
+      this.meleeHits = new Set();
+      AH.Audio.play('punch');
+      return true;
     }
 
     updateWeapon(dt, cmd) {
@@ -134,6 +148,7 @@
       }
       const held = !!cmd.fireHeld;
       if (this.shielding || this.scene.warping) this.cancelCharge();
+      else if (this.meleeT > 0) return;
       else if (!this.fireBlocked) {
         if (held) {
           this.charging = true;
@@ -199,6 +214,7 @@
       this.boost = 100;
       this.weapon = 'azure';
       this.weaponTime = 0;
+      this.meleeCd = 0;
       this.cancelCharge();
       this.invuln = 1.6;
       this.jumps = 0;
@@ -233,6 +249,8 @@
       this.defender = Math.max(0, this.defender - dt);
       this.blastCd = Math.max(0, this.blastCd - dt);
       this.attackT = Math.max(0, this.attackT - dt);
+      this.meleeT = Math.max(0, (this.meleeT || 0) - dt);
+      this.meleeCd = Math.max(0, (this.meleeCd || 0) - dt);
       this.onGround = b.blocked.down || b.touching.down;
       this.slideT = Math.max(0, this.slideT - dt);
       this.slideCd = Math.max(0, this.slideCd - dt);
@@ -241,7 +259,9 @@
       if (this.mode === 'fly') {
         const dx = (cmd.right ? 1 : 0) - (cmd.left ? 1 : 0);
         const dy = (cmd.down ? 1 : 0) - (cmd.up ? 1 : 0);
-        const wantBoost = cmd.boost && this.boost > 1;
+        if (dx !== 0) this.facing = dx;
+        this.shielding = !!cmd.shield;
+        const wantBoost = cmd.boost && this.boost > 1 && !this.shielding;
         this.boosting = wantBoost && (dx || dy);
         this.fly(dx, dy, dt, this.boosting);
         if (this.boosting) this.boost = Math.max(0, this.boost - 26 * dt);
@@ -253,7 +273,7 @@
         s.setAngle(Phaser.Math.Clamp((b.velocity.y / FLY_SPEED) * 18, -20, 20));
         s.setTexture(this.attackT > 0 ? this.pre + 'attack' : this.pre + 'fly');
         if (this.attackT > 0) s.setAngle(0);
-        s.setFlipX(false);
+        s.setFlipX(this.facing < 0);
       } else {
         if (this.onGround) { this.jumps = 0; this.coyote = 0.1; } else this.coyote -= dt;
         let dir = (cmd.right ? 1 : 0) - (cmd.left ? 1 : 0);
@@ -304,7 +324,9 @@
           if (Math.random() < 0.6) this.scene.burst(this.x - this.facing * 6, this.y + 22, 'spark_y', 1, 60, 0.3);
         }
 
+        if (cmd.punch || cmd.kick) this.melee(cmd.kick ? 'kick' : 'punch');
         if (this.ducking) s.setTexture(this.pre + (this.sliding ? 'slide' : 'duck'));
+        else if (this.meleeT > 0) s.setTexture(this.pre + this.meleeKind);
         else if (this.attackT > 0) s.setTexture(this.pre + 'attack');
         else if (this.shielding) s.setTexture(this.pre + 'shield');
         else if (this.riding && this.onGround) s.setTexture(this.pre + 'idle');

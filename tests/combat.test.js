@@ -128,7 +128,7 @@ test('input reports held fire for keyboard and touch and consumes SPACE only onc
     JustDown(k) { const v = k.just; k.just = false; return v; }
   } } } });
   const i = Object.create(AH.Input.prototype);
-  i.k = Object.fromEntries('LEFT RIGHT UP DOWN A D W S SPACE F SHIFT E P R M N ENTER ESC H Q'.split(' ').map(k => [k, { isDown: false, just: false }]));
+  i.k = Object.fromEntries('LEFT RIGHT UP DOWN A D W S SPACE F SHIFT E P R M N ENTER ESC H Q J K'.split(' ').map(k => [k, { isDown: false, just: false }]));
   i.t = {};
   i.opts = {};
   i.k.F.isDown = true;
@@ -228,6 +228,37 @@ function bossFixture(air = false) {
 
 test('boss music receives the hosting world region', () => {
   assert.deepEqual(bossFixture().music, [['boss', 'uksouth']]);
+});
+
+test('air boss shielding blocks only front-facing bolts and rejects rear hits', () => {
+  const { boss, player } = bossFixture(true);
+  let damage = 0;
+  player.facing = -1;
+  player.shielding = true;
+  player.hurt = amount => { damage += amount; };
+  const bolt = x => ({ s: display(x, 265), vx: 0, vy: 0 });
+  boss.bolts = [bolt(player.x - 4)];
+  boss.updateBolts(0, player);
+  assert.equal(damage, 0);
+  assert.equal(boss.blocks, 1);
+  assert.equal(boss.bolts.length, 0);
+  boss.bolts = [bolt(player.x + 4)];
+  boss.updateBolts(0, player);
+  assert.equal(damage, 15);
+  assert.equal(boss.blocks, 1);
+  player.shielding = false;
+  boss.bolts = [bolt(player.x - 4)];
+  boss.updateBolts(0, player);
+  assert.equal(damage, 30);
+});
+
+test('punch, kick and slide damage use the existing boss armor and open-window gate', () => {
+  const { boss } = bossFixture();
+  for (const damage of [10, 14, 12]) assert.equal(boss.hitByBlast(damage), false);
+  assert.equal(boss.hp, 100);
+  boss.state = 'recover'; boss.timer = 1.5;
+  for (const damage of [10, 14, 12]) assert.equal(boss.hitByBlast(damage), true);
+  assert.equal(boss.hp, 64);
 });
 
 test('boss damage check, green marker, cue and countdown share one vulnerability state', () => {

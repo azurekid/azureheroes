@@ -11,6 +11,13 @@ description: 'Build Azure Heroes movement, charged shots, duck/slide combat, clo
   the outdoor state on return. Reuse persistent display layers, never allocate
   lighting objects every update. City section art/data follow game-contract.
 - Movement: Arrow/WASD, Space jump, double jump, Shift flight boost, F Azure Blast.
+- R resumes a paused level without resetting it; outside pause it still restarts.
+- Flight Left/A and Right/D set facing and blast direction, including touch;
+  vertical-only movement and release retain facing so trailing birds remain shootable.
+- Flight E / touch SHIELD blocks front-facing attacks, cancels charge and prevents Boost.
+- Ground J / PUNCH and K / KICK have shared cooldowns and one hit per target,
+  directional wall-blocked reach and no Boost cost. Slides hit open ground bosses
+  once per slide. All attacks preserve boss armor and vulnerability windows.
 - Wall slide / wall jump (`systems/player.js`): airborne + pushing into a solid side caps the fall at `WALL_SLIDE`;
   jump within the 0.14s `wallT` grace calls `wallJump()` (kick away, `wallLock` 0.12s, `jumps = 1`). Priority:
   ground/coyote jump, then wall jump, then double jump. Not while riding, ducking or shielding.
@@ -88,7 +95,8 @@ description: 'Build Azure Heroes movement, charged shots, duck/slide combat, clo
   Selectable trance, house and pop have distinct original rhythms, voices
   and lounge/world/challenge/boss arrangements. Keep house/trance kick-ducking off pop
   styles, preserve context routing and store the validated choice locally without
-  changing game progress. N and the MUSIC button cycle styles. Preserve mute,
+  changing game progress. N and the MUSIC button cycle the three genres and the
+  named Night Drive / Soft Skies selections defined in game-contract. Preserve mute,
   suspended-context resume, SFX and node cleanup; muting during Gold Mode may
   persist the preference locally but must never push run progress online.
   Add no downloaded tracks, dependencies or outbound services. Validate timing,

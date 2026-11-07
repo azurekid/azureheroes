@@ -339,3 +339,45 @@ test('guest and stale-user guns fire real bolts with hacker-sized bodies and two
   }
   assert.equal(AH.Enemy.SPEC.spider.body[1], 12, 'worms remain low slide targets');
 });
+
+test('New York sewer steam is grounded, bounded, decorative and frozen indoors or paused', () => {
+  const art = loadScripts(artScripts(), { globals: { document: recordingDocument() } }).Art;
+  assert.deepEqual(Object.keys(art.steam), ['eastus2']);
+  assert.deepEqual([art.textureCanvas(art.steam.eastus2.puff).width,
+    art.textureCanvas(art.steam.eastus2.vent).height], [64, 16]);
+  const AH = loadScripts(localScripts().filter(f => f === 'systems/scenes.js'),
+    { AH: { Levels: { ids: [11] }, Art: art }, globals: { Phaser: { Scene: class {} } } });
+  const scene = new AH.Scenes[5](), images = [];
+  const display = () => ({
+    setDepth(v) { this.depth = v; return this; }, setAlpha(v) { this.alpha = v; return this; },
+    setVisible(v) { this.visible = v; return this; }, setScale(v) { this.scale = v; return this; },
+    setPosition(x, y) { this.x = x; this.y = y; return this; }
+  });
+  Object.assign(scene, { state: 'play', L: { region: 'eastus2', mode: 'run', boss: { left: 3000 },
+    platforms: [{ x: 0, y: 300, w: 420, h: 100 }, { x: 600, y: 200, w: 300, h: 160 },
+      { x: 3400, y: 300, w: 500, h: 100 }, { x: 35000, y: 300, w: 500, h: 100, pipeFloor: true }],
+    secret: { x: 1200, y: 290 } }, cameras: { main: { scrollX: 0 } },
+    add: { image(x, y, key) { const o = Object.assign(display(), { x, y, key }); images.push(o); return o; } } });
+  scene.buildSteam();
+  assert.equal(scene.steam.length, 2);
+  assert.equal(images.length, 10, 'four reused puffs and one vent per source');
+  assert.equal(scene.steam[0].y, 300); assert.equal(scene.steam[1].y, 290);
+  scene.updateSteam(1);
+  assert.equal(scene.steamTime, 1);
+  assert.ok(scene.steam[0].puffs.every(p => p.y < 300 && p.alpha <= 0.4));
+  const coords = scene.steam[0].puffs.map(p => [p.x, p.y]);
+  scene.state = 'paused'; scene.updateSteam(10);
+  assert.equal(scene.steamTime, 1);
+  assert.deepEqual(scene.steam[0].puffs.map(p => [p.x, p.y]), coords);
+  for (const flag of ['inPipe', 'inBonus', 'warping', 'boss']) {
+    scene.state = 'play'; scene[flag] = true; scene.updateSteam(2);
+    assert.equal(scene.steamTime, 1);
+    assert.ok(images.every(p => !p.visible));
+    scene[flag] = null;
+  }
+  scene.updateSteam(0); assert.ok(scene.steam[0].vent.visible);
+  scene.cameras.main.scrollX = 1000; scene.updateSteam(0);
+  assert.equal(scene.steam[0].vent.visible, false); assert.equal(scene.steam[1].vent.visible, true);
+  assert.equal(images.length, 10, 'no allocation while animating');
+  scene.L.region = 'westeurope'; scene.buildSteam(); assert.equal(scene.steam.length, 0);
+});

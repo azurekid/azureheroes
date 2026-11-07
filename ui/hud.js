@@ -148,12 +148,12 @@
     },
     nextMusic(scene) {
       AH.Audio.init();
-      AH.Audio.nextStyle();
+      AH.Audio.nextSelection();
       scene.events.emit('music-changed');
     },
     musicButton(scene, x, y, compact) {
       const t = T(scene, x, y, '', { scale: 1, color: '#ffe14a', ox: 1 }).setScrollFactor(0).setDepth(1501);
-      const refresh = () => t.setText((compact ? 'MUSIC ' : 'N: MUSIC ') + AH.Audio.style.toUpperCase());
+      const refresh = () => t.setText((compact ? 'MUSIC ' : 'N: MUSIC ') + AH.Audio.selectionLabel());
       const hit = scene.add.zone(x - 64, y + 16, 128, 44).setScrollFactor(0).setDepth(1500).setInteractive({ useHandCursor: true });
       hit.on('pointerdown', () => { if (!scene.help) AH.UI.nextMusic(scene); });
       scene.events.on('music-changed', refresh);
@@ -191,11 +191,11 @@
         if (page === 0) {
           [['LEFT / RIGHT  A / D', 'RUN'], ['SPACE / UP / W', 'JUMP - AIR: DOUBLE JUMP - ON A WALL: WALL JUMP'],
             ['F - TAP / HOLD', 'RELEASE TO FIRE / HOLD FOR A CHARGED SHOT'], ['E', 'MFA SHIELD - BLOCKS SHOTS AND HITS FROM THE FRONT'],
-            ['DOWN / S', 'DUCK - STANDING STILL IT IS A LOW SHIELD GUARD'], ['DOWN + LEFT / RIGHT', 'SLIDE ATTACK UNDER LOW THREATS'],
+            ['DOWN / S', 'DUCK - STILL: GUARD / MOVE: SLIDE ATTACK'], ['J / K', 'PUNCH / KICK - PUNISH AN OPEN BOSS'],
             ['SHIFT', 'BOOST JETS - FLY UP FOR A MOMENT'], ['DOWN ON A PIPE', 'WARP INTO A CLOUD CHALLENGE'],
-            ['P / ESC', 'PAUSE MENU'], ['Q', 'QUIT TO THE TITLE SCREEN'], ['R', 'RESTART THE LEVEL'], ['H   M   N', 'HELP   MUTE   CHANGE MUSIC STYLE']
+            ['P / ESC', 'PAUSE MENU'], ['Q', 'QUIT TO THE TITLE SCREEN'], ['R', 'RESUME IF PAUSED / OTHERWISE RESTART'], ['H   M   N', 'HELP   MUTE   CHANGE MUSIC']
           ].forEach((r, k) => { btxt(44, 90 + k * 18, r[0], { color: '#ffe14a' }); btxt(232, 90 + k * 18, r[1]); });
-          btxt(320, 314, 'FLIGHT LEVELS: ARROWS OR WASD FLY IN ALL DIRECTIONS, F BLASTS', { color: '#7fe8ff', ox: 0.5 });
+          btxt(320, 314, 'FLIGHT: LEFT / RIGHT AIM BLASTS. E SHIELDS. F FIRES.', { color: '#7fe8ff', ox: 0.5 });
         } else if (page === 1) {
           const SPEC = (AH.Enemy && AH.Enemy.SPEC) || {}, CATS = (AH.Enemy && AH.Enemy.CATS) || {};
           let x = 52;

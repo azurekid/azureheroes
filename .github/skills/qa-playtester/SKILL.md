@@ -7,6 +7,11 @@ description: 'Verify Azure Heroes controls, procedural reachability, cloud rooms
 - Verification may add/update automated tests in `tests/` and evidence in `tests/playtest.md`.
   Do not change runtime code during the QA step; hand failures to the owning implementation step and retest.
 - Test: start screen, all controls, jump reach, enemy hits, coin collection, checkpoint, boss, game over, restart, mobile touch buttons.
+- Pause then press R: preserve position, health, mission tokens, score and timers.
+  In flight, test Left/A and Right/D backward/forward blasts and E / touch shield
+  on front/rear enemy and boss hits. Shield must cancel charge and prevent Boost.
+  Test J / touch PUNCH and K / touch KICK cooldowns, once-per-target hits, walls,
+  cancelled attacks and boss armor/open windows; slide hits a ground boss once.
 - Report each bug as: Level, Steps, Expected, Actual, File suspected.
 - Mark PASS / FAIL per level, do not mark the game done if one level fails.
 - Also test: world map (select, deploy, cleared routes), Continue after game over and after a clear, Hero Lab, warp pipes, secret rooms, and with `npm start`: register, login, score posting and the leaderboard. Run `npm test` for the API.
@@ -41,7 +46,8 @@ and Australian 4x4 sizes.
   Assisted camera/clock positioning is visual evidence, not unassisted completion.
 - Music checks: follow [music-producer](../music-producer/SKILL.md)'s actual-render and human
   listening gates; do not approve timbre from fake Web Audio nodes.
-  Select trance, house and pop by keyboard and touch; check migration of old styles.
+  Cycle trance, house, pop, Night Drive and Soft Skies by keyboard and touch;
+  check migration of old styles and restoration of contextual music after named songs.
   Verify the choice persists locally across reloads, all scene contexts follow it,
   old/invalid preferences fall back safely, and selecting music or muting in Gold
   Mode never pushes progress.

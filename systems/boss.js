@@ -65,7 +65,7 @@
     get vulnerable() { return !this.dead && (this.stunned || this.state === 'recover'); }
     get cue() {
       if (this.vulnerable) {
-        const open = 'OPEN - FIRE! ' + Math.ceil(Math.max(0, this.timer)) + 'S';
+        const open = (this.air ? 'OPEN - FIRE! ' : 'OPEN - ATTACK! ') + Math.ceil(Math.max(0, this.timer)) + 'S';
         if (this.streak > 1) return this.streak + ' HIT COMBO! ' + open;
         return this.state === 'recover' ? 'WHIFF! ' + open : open;
       }
@@ -115,7 +115,7 @@
       this.scene.toast(msg || 'WHIFFED - PUNISH IT!');
     }
 
-    // returns true when the blast damaged the boss
+    // Shared damage gate for blasts and close-range attacks.
     hitByBlast(damage = 10) {
       if (this.dead) return false;
       if (!this.vulnerable) {
@@ -123,7 +123,7 @@
         this.scene.burst(this.sprite.x, this.sprite.y - 40, 'spark_c', 6, 120);
         if (!this.armorTipAt || this.scene.time.now >= this.armorTipAt) {
           this.armorTipAt = this.scene.time.now + 2000;
-          this.scene.toast(this.air ? 'ARMORED! DODGE 3 VOLLEYS. FIRE WHEN GREEN' : 'ARMORED! BLOCK 2 HITS OR BAIT A MISS, FIRE WHEN GREEN');
+          this.scene.toast(this.air ? 'ARMORED! DODGE 3 VOLLEYS. FIRE WHEN GREEN' : 'ARMORED! BLOCK 2 HITS OR BAIT A MISS, ATTACK WHEN GREEN');
         }
         return false;
       }

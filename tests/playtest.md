@@ -1,5 +1,65 @@
 # Playtest report - Microsoft Azure Heroes 2027
 
+## Named songs, sewer steam, resume and player melee
+
+- Changes: N/MUSIC cycles Trance, House, Pop, Night Drive and Soft Skies.
+  The two named songs have independent original four-bar hooks and response
+  melodies, rather than regional melody reskins. New York has decorative,
+  reusable sewer steam. R resumes pause without resetting the run. Flight
+  direction controls aim backward/forward, and E/touch SHIELD now works in
+  flight. J/PUNCH, K/KICK and slides punish open ground bosses alongside blasts.
+- Automated: `npm test` passed **158/158**; changed JavaScript syntax checks and
+  `git diff --check` passed. Subsequent ground-boss OPEN wording and soft-alpha
+  refinements passed 24 focused combat/resume and 11 street-art tests respectively.
+  Added coverage includes named-song
+  persistence, malformed/blocked storage, mute/stop/context compatibility,
+  actual ordered module loading, steam bounds/freeze/suppression, pause-run
+  preservation, flight facing/shielding, shared melee cooldowns, once-per-target
+  damage, walls and the existing boss armor gate. Wardrobe rendering tests now
+  include punch/kick in both bodies, all regional bundles and headwear cases;
+  the expanded wardrobe suite separately passed 13/13.
+- Browser integration checks PASS for the tested scenarios, not whole levels:
+  separate Chrome processes opened New York, Tokyo, Rio and Mexico with
+  randomized layouts and forced-touch controls. Actual held keyboard R preserved
+  the generated layout, health, mission tokens and score. N visited all five
+  choices in order while paused; pointer events used the real MUSIC target.
+  Named choices persisted through preference reload and retained their selected
+  song across pipe/boss context routing.
+- New York: ground puffs visibly rise and fade; daytime/night screenshots used
+  assisted camera/clock positioning without the pause overlay. Seven sources
+  in the inspected layouts used four reusable puffs each. Paused time stayed
+  fixed, bonus-room flags hid all puffs/vents and returning restored them.
+  Actual canvas inspection verified 78 alpha levels, maximum 179/255 and no
+  opaque pixels: puffs retain soft edges instead of crisp opaque discs.
+  Keyboard punch/kick/slide changed boss HP 100 -> 90 -> 76 -> 64.
+  Actual mouse clicks on forced-touch PUNCH/KICK then changed HP to 54 and 40.
+  Cooldown waits used simulation time, not elapsed wall time.
+- Tokyo/Rio/Mexico: actual Left/F presses fired backward and defeated a trailing
+  regional bird with two hits, then damaged a trailing air boss from 100 to 90 HP.
+  E blocked a front-facing enemy bolt. Direct integration calls to the actual
+  air-boss bolt handler preserved 100 player HP for a front hit and reduced it
+  to 85 for a rear hit. SHIELD was present in each flight touch layout.
+- Assistance/gaps: bird targets were positioned behind the hero, other enemies
+  removed and hazard rectangles cleared to isolate firing. Boss targets used
+  assisted placement and an explicitly forced recovery window; New York boss
+  setup temporarily bypassed the mission gate only inside the browser harness.
+  No production bypass was added. These are real rendering/Arcade/input
+  integration checks, **not unassisted traversal, boss balance or natural-window
+  completion**. Forced-touch/mouse is not a real-device test. New steam warp/boss
+  suppression is regression-tested, but actual room/warp traversal, browser
+  account flows and every other world's new melee combat were not replayed.
+  Early harness runs raced title startup or used wall-clock cooldown waits;
+  those harness errors were corrected before the successful integration checks.
+- Actual Web Audio: OfflineAudioContext rendered two loops, a loop join and SFX
+  at 22050 Hz. Night Drive: peak 0.29436, RMS 0.02825, absolute DC < 0.000001,
+  maximum adjacent delta 0.25907, loop delta 0.000086. Soft Skies: peak 0.20554,
+  RMS 0.01510, absolute DC < 0.000003, maximum delta 0.25397, loop delta 0.000134.
+  Both passed the existing finite/headroom/loop numerical gates. WAV previews
+  and render reports are session artifacts, not downloaded game assets.
+  **Human headphone/speaker listening approval remains pending.** Numerical
+  rendering does not certify timbre, artistic quality or release readiness.
+  Maintainer review is required before merge; no deployment was performed.
+
 ## Worldwide street art, armed guests and house arrangements
 
 - Scope: localized city tags in all eleven worlds, Japanese decorative glyphs,

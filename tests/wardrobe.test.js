@@ -8,7 +8,7 @@ const { artScripts, levelScripts, loadScripts, recordingDocument } = require('./
 
 const scenes = fs.readFileSync(path.join(__dirname, '../systems/scenes.js'), 'utf8');
 const regionCount = loadScripts(levelScripts()).Levels.ids.length;
-const frames = ['idle', 'run0', 'run1', 'run2', 'run3', 'jump', 'fly', 'duck', 'slide', 'shield', 'attack'];
+const frames = ['idle', 'run0', 'run1', 'run2', 'run3', 'jump', 'fly', 'duck', 'slide', 'shield', 'attack', 'punch', 'kick'];
 
 function art() {
   return loadScripts(artScripts(), { globals: { document: recordingDocument() } }).Art;

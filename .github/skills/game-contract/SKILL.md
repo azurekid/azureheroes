@@ -155,6 +155,14 @@ description: Use before any game code change. Defines the shared interfaces for 
 
 ### Optional close-range foreground layer
 
+- Optional city art `steam_<region>` returns `{puff,vent}` registered texture
+  keys, exposed in `AH.Art.steam`. Scenes place non-solid vents on eligible
+  outdoor ground and the existing secret manhole. Four reusable puffs per vent
+  rise, expand and fade using elapsed outdoor play time, without gameplay RNG.
+  Puff textures preserve graduated transparency, not opaque crisped discs.
+  Hide steam indoors, during warps and boss fights; pause freezes animation.
+  No hazards, collision, progress, music or controls are changed.
+
 - City art `foreground_<region>` optionally returns `{roof,wall,light,accent,
   shape,detail}` for shared `C.registerForeground`, a deterministic 960x200
   near-building layer. City descriptors select local facade silhouettes and props;
@@ -220,6 +228,17 @@ description: Use before any game code change. Defines the shared interfaces for 
   must not activate main-world checkpoints. Flight retains its airborne markers.
 
 ### Electronic soundtrack policy
+
+- N and the MUSIC button cycle selections `trance`, `house`, `pop`,
+  `night-drive`, `soft-skies`. The last two are original named House songs,
+  not new genres or alternative instrumentation of a regional hook.
+  `AH.Audio.selection` and `SELECTIONS` track the device-local choice;
+  `setSelection`, `nextSelection` and `selectionLabel` expose selection.
+  Existing `style`, `STYLES`, `setStyle` and `nextStyle` keep genre-only
+  compatibility. Selecting a genre restores contextual regional arrangements.
+  Named songs continue across world/room/boss contexts until changed; `music(null)`
+  still stops. The existing music preference key stores an allowlisted selection,
+  with legacy genre values and migration behavior preserved. No progress writes.
 
 - House arrangements use 134 BPM main routes and 142 BPM bosses; title, pipe and
   bonus contexts use gentler 104/108/112 BPM lounge arrangements. Original city
@@ -308,7 +327,22 @@ Input contract: Arrows/WASD move, Space jump (press again in the air = double ju
 pushing into a wall = wall slide, Space then wall-jumps away and restores the double jump),
 F Azure Blast (low while ducking; blasts also destroy enemy and boss bullets), Shift Flight Boost,
 E = MFA Shield (ground and air), S / Down = duck (standing still = crouch guard with the shield,
-moving starts a slide attack), P / Esc pause, H help overlay, Q quit to title, R restart, M mute, N cycle music style.
+moving starts a slide attack), P / Esc pause, H help overlay, Q quit to title,
+R resumes when paused and restarts otherwise, M mute, N cycle music selection.
+In flight, Left/A and Right/D turn the hero and aim blasts in that direction;
+releasing horizontal input preserves facing, including vertical-only movement.
+E / touch SHIELD also works in flight, blocks only front-facing hits, cancels
+charged fire and prevents boosting while held; free directional flight remains.
+Ground combat adds J / touch PUNCH and K / touch KICK, alongside existing blasts.
+`AH.Input.read()` adds `punch` and `kick` press flags. `player.melee(kind)`
+starts a short attack (punch 0.18s, kick 0.26s) with a shared 0.4s / 0.6s
+cooldown, one hit per target, no Boost cost, and cancels held blasts.
+`scene.hitMelee(player,kind,hits)` resolves directional, wall-blocked reach
+(punch 38px, kick 52px) against enemies and bosses. Damage is one enemy hit,
+10 boss HP for punch and 14 for kick. Sliding can hit an open ground boss
+once per slide for 12 HP. Boss armor/open-window rules remain unchanged.
+Flight has ranged combat and shield, not ground melee. New hero `punch` and
+`kick` frames preserve the shared rig, all wardrobes and collision dimensions.
 `AH.Input.read()` returns `help`, `quit`, `esc` and `nav` (-1/0/1 page turns) besides the movement flags.
 Touch run controls include DUCK, SHIELD, PAUSE and HELP. On the title screen E opens the Hero Lab and H opens help.
 
@@ -492,7 +526,8 @@ Touch run controls include DUCK, SHIELD, PAUSE and HELP. On the title screen E o
   unavailable storage falls back to trance with a warning. `setStyle(style)` rejects
   invalid values, persists locally where possible and switches the current music
   context without changing mute, scores, progress or online accounts.
-  `nextStyle()` cycles the same ordered list. N and the visible MUSIC button work
+  `nextStyle()` cycles the genre-only list; N/MUSIC use `nextSelection()` as
+  described in the electronic soundtrack revision. The controls work
   on the title, map, Hero Lab, leaderboard and during play or pause.
 - All three styles have original scene and regional arrangements.
   All sounds are synthesised locally. Kick-ducking applies to house/trance only.
