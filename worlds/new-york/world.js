@@ -10,4 +10,5 @@
     sub: '#b8ddd3', subShadow: '#111d2b', ach: 'HUDSON UNDERGROUND', music: 'pipe',
     threats: [250, 470, 710, 940, 1090].map((x) => ({ type: 'spider', x, y: 300, range: 40 }))
   };
+  AH.Worlds['new-york'].world.opt.skyClimb = true;
 })();

@@ -55,7 +55,7 @@ and Australian 4x4 sizes.
   not grant clothing. Hacker Mode must use Cloud Hacker and never save collections.
   Check local guide garments/headwear, guaranteed three-token carrier drops,
   collision collection, death/checkpoint recovery and boss gating. Tap cooldown
-  is 0.16s with unchanged charge/Boost costs and keyboard/touch release behavior.
+  is 0.10s with unchanged charge/Boost costs and keyboard/touch release behavior.
 - Verify textured hair without progress and New York/cork/cowboy hats locked
   even on legacy completed saves; collect cowboy in each eligible US world.
 - Regional routing: select each represented sign-up region, preserve old saves,

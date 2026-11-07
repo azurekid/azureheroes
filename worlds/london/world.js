@@ -6,4 +6,5 @@
   AH.Worlds.london.challenges = Object.assign(AH.Worlds.london.challenges || {}, {
     tube: { region: 'uksouth', music: 'metro', name: 'LONDON UNDERGROUND', hint: 'MIND THE GAP. KEEP YOUR NETWORK PRIVATE.', stages: ['TICKET HALL', 'BAKER STREET', 'INTERCHANGE', 'WESTMINSTER', 'WAY OUT'], tips: ['ENTRA ACCESS REVIEWS', 'AZURE MONITOR', 'ROUTE WITH FRONT DOOR', 'PRIVATE ENDPOINTS', 'LEAST PRIVILEGE'], threats: ['guest', 'bug', 'endpoint', 'rbac', 'bug'] }
   });
+  AH.Worlds.london.world.opt.skyClimb = true;
 })();

@@ -9,6 +9,7 @@ const withoutMission = (L) => {
   const copy = plain(L);
   delete copy.mission;
   delete copy.wardrobeSpots;
+  delete copy.weaponDrops;
   copy.enemies.forEach((enemy) => { delete enemy.bossToken; });
   return copy;
 };
@@ -130,7 +131,7 @@ test('missions have ordered safe objectives and six reachable gems across every 
       }
       undergroundGems += L.mission.gems.filter((p) => p.zone !== undefined).length;
       const baseTime = L.mode === 'fly' ? Math.round(L.width / L.scroll + 90) : Math.round(L.width / 1000 * (L.theme === 'rack' ? 30 : 26) + 110);
-      assert.equal(L.time - baseTime, L.mode === 'fly' ? 45 : 90);
+      assert.equal(L.time - baseTime, (L.mode === 'fly' ? 45 : 90) + (L.skyRoute ? 45 : 0));
       layouts++;
     }
   }

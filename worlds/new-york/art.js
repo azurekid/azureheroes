@@ -8,7 +8,7 @@
   AH.ArtModules.regions['eastus2'] = content;
 
   AH.ArtModules.stages['worlds.new-york.art.69'] = function (C) {
-    const { lg, line, lit, poly, reg2, rrect, shade, txt } = C;
+    const { lg, line, lit, poly, reg2, rrect, shade, sprayTag, txt } = C;
 
     reg2('ground_face_eastus2', 320, 64, function (g, w, h) {
         g.fillStyle = '#63384b'; g.fillRect(0, 0, w, h);
@@ -39,13 +39,13 @@
           [91, 40], [76, 35], [60, 40], [50, 34]], '#f05d9e');
         poly(g, [[54, 17], [64, 13], [78, 17], [96, 13], [104, 17], [101, 30],
           [90, 35], [76, 31], [62, 35], [54, 30]], '#40d6e5');
-        txt(g, 'NYC', 63, 19, 1.15, '#fff3cb', '#40345a');
+        sprayTag(g, 'NYC', 59, 17, 2.2, '#fff3cb', '#40345a');
         line(g, 58, 39, 58, 47, 2, '#f05d9e'); line(g, 100, 36, 100, 43, 2, '#40d6e5');
         poly(g, [[126, 16], [137, 8], [152, 12], [166, 8], [184, 12], [200, 8], [214, 17],
           [211, 38], [196, 43], [178, 39], [160, 43], [143, 38], [127, 42]], '#342c4c');
         poly(g, [[130, 17], [139, 12], [153, 16], [167, 12], [184, 16], [200, 12], [210, 18],
           [207, 34], [195, 38], [178, 35], [160, 39], [143, 34], [130, 38]], '#ffc75c');
-        txt(g, 'AZURE', 137, 21, 1.1, '#253b5a', '#f2819e');
+        sprayTag(g, 'AZURE', 138, 19, 2.2, '#253b5a', '#f2819e');
         line(g, 136, 40, 136, 47, 2, '#ffc75c'); line(g, 197, 39, 197, 45, 2, '#ffc75c');
       }, { shade: 0, noOutline: true });
 

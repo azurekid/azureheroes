@@ -5,6 +5,45 @@
   const intersects = (a, b) => a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
   const separated = (a, b) => Math.hypot(a.x - b.x, a.y - b.y) >= 100;
 
+  G.addSkyRoute = function (L) {
+    if (L.skyRoute) return L;
+    const steps = L.id % 2 ? 7 : 6;
+    const end = L.boss.left - 180;
+    const starts = L.platforms.filter(p => p.sky === 1 && p.x > 400 && p.x < end - 1000)
+      .sort((a, b) => Math.abs(a.x - end * 0.3) - Math.abs(b.x - end * 0.3));
+    for (const first of starts) {
+      const route = [first];
+      for (;;) {
+        const last = route[route.length - 1];
+        const next = L.platforms.find(p => p.sky === last.sky + 1 && p.y < last.y &&
+          p.x >= last.x + last.w + 24 && p.x <= last.x + last.w + 51);
+        if (!next) break;
+        route.push(next);
+      }
+      if (route.length < 2) continue;
+      const additions = [];
+      for (let i = route.length + 1; i <= steps; i++) {
+        const last = additions.length ? additions[additions.length - 1] : route[route.length - 1];
+        additions.push({ x: last.x + last.w + 24, y: last.y - 72,
+          w: i === steps ? 160 : 112, h: 14, float: true, cloud: 'sky_cloud' });
+      }
+      if (additions.some(p => p.x + p.w >= end || L.platforms.some(q =>
+        intersects({ x: p.x, y: p.y - 56, w: p.w, h: 70 }, q)))) continue;
+      const summit = additions[additions.length - 1];
+      const offset = [48, 112].find(dx => L.checkpoints.every(c => Math.abs(summit.x + dx - c.x) > 96));
+      if (offset === undefined) continue;
+      route.push(...additions);
+      route.forEach((p, i) => { p.skyStep = i + 1; p.skySummit = i + 1 === steps; });
+      L.platforms.push(...additions);
+      L.skyRoute = { x: first.x + first.w / 2, steps, top: summit.y - 100 };
+      L.enemies.push({ type: 'hacker', appearance: 'detective', skyCarrier: true,
+        x: summit.x + offset, y: summit.y, range: 16 });
+      L.mfaTokens.push({ x: summit.x + (offset === 48 ? 132 : 28), y: summit.y - 24 });
+      return L;
+    }
+    throw new Error('SKY ROUTE PLACEMENT FAILED IN LEVEL ' + L.id);
+  };
+
   function clear(L, x, floor, support, flight, lift = 20, allowEnemies = false) {
     const height = Math.max(56, lift + 16);
     const box = { x: x - 28, y: floor - height, w: 56, h: height };
@@ -27,7 +66,7 @@
   }
 
   function groundSpots(L, platforms, lo, hi, allowEnemies = false) {
-    const supports = platforms.filter((p) => !p.pipe && !p.ceil && !p.bridge && !p.lowTunnel && p.w >= 72 && p.x < hi && p.x + p.w > lo);
+    const supports = platforms.filter((p) => !p.skyStep && !p.pipe && !p.ceil && !p.bridge && !p.lowTunnel && p.w >= 72 && p.x < hi && p.x + p.w > lo);
     // Solid street/rack floors already form the traversable baseline. Admit upper
     // ledges only through single jumps: v=440, g=1100, run=190 (no boost needed).
     const reached = new Set(supports.filter((p) => !p.float && p.h >= 80));
@@ -65,7 +104,7 @@
     return spots;
   }
 
-  function flightSpots(L, end) {
+  function flightSpots(L, end, allowEnemies = false) {
     const tops = L.platforms.filter((p) => p.y === 0).sort((a, b) => a.x - b.x);
     const spots = [];
     for (let i = 0; i + 1 < tops.length; i++) {
@@ -78,7 +117,7 @@
       const middle = Math.round((a.h + bottomA.y + b.h + bottomB.y) / 4);
       for (const offset of [0, -40, 40, -64, 64]) {
         const y = Math.max(80, Math.min(290, middle + offset));
-        if (clear(L, x, y, null, true)) spots.push({ x, y, upper: offset !== 0 });
+        if (clear(L, x, y, null, true, 20, allowEnemies)) spots.push({ x, y, upper: offset !== 0 });
       }
     }
     return spots;
@@ -163,6 +202,24 @@
       if (room.bonus) point.bonus = true;
       return point;
     });
+    const weaponSpots = fly ? flightSpots(L, end, true) : groundSpots(L, L.platforms, 320, end, true);
+    L.weaponDrops = ['spread', 'pierce', 'spread', 'pierce'].map((kind, i) => {
+      const target = end * (0.16 + i * 0.2);
+      const options = weaponSpots.filter(p => used.every(q => Math.hypot(p.x - q.x, p.y - q.y) >= 52) &&
+        tokens.every(q => Math.hypot(p.x - q.x, p.y - q.y) >= 52))
+        .sort((a, b) => Math.abs(a.x - target) - Math.abs(b.x - target));
+      const point = options[0];
+      if (!point) throw new Error('WEAPON PLACEMENT FAILED IN LEVEL ' + L.id);
+      used.push(point);
+      return { kind, x: point.x, y: point.y };
+    });
+    if (L.skyRoute) {
+      const carrier = L.enemies.find(e => e.skyCarrier);
+      const previous = L.enemies.find(e => e.bossToken === tokens[2]);
+      delete previous.bossToken;
+      carrier.bossToken = { id: tokens[2].id, x: carrier.x, y: carrier.y - 24 };
+      tokens[2] = carrier.bossToken;
+    }
     return L;
   };
 })();

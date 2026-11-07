@@ -8,7 +8,27 @@
   AH.ArtModules.regions['westeurope'] = content;
 
   AH.ArtModules.stages['worlds.amsterdam.art.68'] = function (C) {
-    const { ell, lg, line, lit, poly, reg2, rrect, shade, txt } = C;
+    const { ell, lg, line, lit, poly, reg2, rrect, shade, sprayTag, txt } = C;
+
+    reg2('ground_face_westeurope', 320, 64, function (g) {
+      g.fillStyle = '#4b3a39'; g.fillRect(0, 0, 320, 64);
+      for (let y = 0; y < 64; y += 8) for (let x = y % 16 ? -12 : 0; x < 320; x += 24) {
+        g.fillStyle = (x + y) % 48 ? '#986e5a' : '#a87e61';
+        g.fillRect(x + 1, y + 1, 22, 6);
+        line(g, x + 1, y + 1, x + 22, y + 1, 0.6, '#be997b');
+      }
+      for (const x of [8, 282]) {
+        rrect(g, x, 10, 28, 33, 2, '#29394b');
+        line(g, x + 14, 12, x + 14, 40, 2, '#71888c');
+        line(g, x + 2, 25, x + 26, 25, 2, '#71888c');
+        line(g, x - 2, 44, x + 30, 44, 3, '#d1b997');
+      }
+      sprayTag(g, 'AMS', 52, 14, 2.6, '#49dccc', '#254154');
+      sprayTag(g, 'CANAL', 130, 23, 2.5, '#ffbc70', '#704456');
+      sprayTag(g, 'A', 231, 10, 3.2, '#e982bf', '#453857');
+      line(g, 0, 59, 320, 59, 3, '#314853');
+    }, { shade: 0, noOutline: true });
+    content.parts.groundFace_westeurope = () => 'ground_face_westeurope';
 
     Object.assign(C, { canalBoat });
     reg2('houseboat', 90, 30, function (g) {

@@ -39,7 +39,7 @@
 
   AH.ArtModules.stages['art.core.0'] = function (C) {
 
-    Object.assign(C, { cv, R, outline, crisp, shade, glow, upscale, reg, reg2, regArt, disc, rng, lerpCol, lg, poly, ell, rrect, limb, line, depthFace, depthGround });
+    Object.assign(C, { cv, R, outline, crisp, shade, glow, upscale, reg, reg2, regArt, disc, rng, lerpCol, lg, poly, ell, rrect, limb, line, depthFace, depthGround, sprayTag });
     const NAVY = '#0a0720';
 
     const D = 2;
@@ -47,6 +47,34 @@
     const defs = {};
 
     const density = { value: D, hd: false };
+
+    function sprayTag(g, text, x, y, scale, paint, edge) {
+        const width = C.txtW(text, scale), height = 7 * scale;
+        g.save();
+        g.translate(x, y);
+        g.transform(1, -0.06, 0.16, 1, 0, 0);
+        g.shadowColor = paint; g.shadowBlur = 5;
+        g.globalAlpha = 0.55;
+        C.txt(g, text, 0, 0, scale, paint);
+        g.shadowBlur = 0;
+        g.globalAlpha = 0.9;
+        for (const [dx, dy] of [[-1, 0], [1, 0], [0, -1], [0, 1]])
+          C.txt(g, text, dx, dy, scale, edge);
+        C.txt(g, text, 0, 0, scale, paint);
+        for (let i = 0; i < 100; i++) {
+          const sx = (i * 37 % 101) / 101 * (width + 10) - 5;
+          const sy = (i * 61 % 103) / 103 * (height + 10) - 5;
+          g.globalAlpha = i % 3 ? 0.18 : 0.35;
+          ell(g, sx, sy, i % 4 ? 0.35 : 0.65, 0.35, paint);
+        }
+        g.globalAlpha = 0.75;
+        for (let i = 0; i < text.length; i++) {
+          const dx = i * 6 * scale + 2;
+          line(g, dx, height - 1, dx, height + 3 + i % 3 * 2, 0.8, paint);
+          ell(g, dx, height + 3 + i % 3 * 2, 0.6, 0.9, paint);
+        }
+        g.restore();
+      }
 
     function depthFace(g, x, top, width, base, depth, side, roof) {
         const d = Math.min(depth, width / 3, (base - top) / 3);

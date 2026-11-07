@@ -19,6 +19,9 @@ description: 'Build Azure Heroes generated layouts, vertical streets, undergroun
 - Preserve `levels/missions.js` tactical objectives/gem quota. Required pickups
   must have reachable safe placements; flight missions must pause scrolling before
   missed requirements. Never gate progress on every hidden/underground gem.
+- Optional `skyClimb` street routes have six/seven safe cloud platforms, a summit
+  carrier and MFA token, and vertical camera bounds. Test actual upward landings,
+  downward return, mission placement and room/respawn camera restoration.
 - Mark three guaranteed main-route enemy token carriers before the boss; keep
   fixed safe drop anchors and flight scroll/checkpoint recovery. Optional wardrobe
   stashes use existing rooms/secrets or hidden side routes where rooms do not exist.

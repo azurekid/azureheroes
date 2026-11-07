@@ -178,6 +178,7 @@
           mk('coin_spin', ['coin0', 'coin1', 'coin2', 'coin3'], 8);
           mk('robot_walk', ['robot_0', 'robot_1'], 5);
           mk('hacker_walk', ['hacker_0', 'hacker_1'], 5);
+          mk('detective_walk', ['detective_0', 'detective_1'], 5);
           mk('drone_fly', ['drone_0', 'drone_1'], 16);
           mk('spider_crawl', ['spider_0', 'spider_1'], 8);
           mk('phish_swim', ['phish_0', 'phish_1'], 6);

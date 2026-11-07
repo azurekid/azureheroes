@@ -1,5 +1,52 @@
 # Playtest report - Microsoft Azure Heroes 2027
 
+## Street spray art, cloud climbs and recoverable boss tokens
+
+- Scope: Amsterdam (1), London (2), New York (11) have city-owned painted
+  walking-path faces and six/seven-step extensions to existing cloud stairways.
+  Each summit has an MFA token and one of the three required enemy tokens.
+  Existing objectives, six gems, quota, level IDs, saves and regional music remain.
+  All worlds receive four additional alternating spread/beam pickups. Tap fire
+  cooldown is 0.10s, fully charged 0.30s; charge/release and Boost costs are unchanged.
+  Stale guests are crouched people with expired badges. Shared detective artwork
+  changes a rogue shooter's appearance, not its two-hit combat rules.
+- Automated evidence: full `npm test` (142/142 passing), plus changed/new JavaScript syntax and
+  whitespace checks. Focused tests load actual modules in HTML order and check
+  90 seeded cloud routes using numerical ascending/descending collision
+  trajectories; 330 world layouts check safe, distributed weapons. The existing
+  1,100 mission-layout checks and historical opt-out generation digest remain.
+  Actual scene cleanup tests reproduce falling and flight-offscreen carriers:
+  unfinished carriers return alive with remaining health, without granting a
+  token; released tokens persist and no longer require carrier recovery.
+- Browser evidence: the normal CDN was unavailable. QA intercepted only the
+  existing Phaser request with the exact 3.80.1 distribution obtained from its
+  public upstream repository and verified against the unchanged SHA-384/SRI.
+  No dependency, CDN URL or production loader was changed.
+- Separate bounded Chrome processes tested all three cities using actual Arcade
+  world updates and Player.update at manually stepped 60Hz: Amsterdam 7/7,
+  London 6/6, New York 7/7 ascending landings, plus all intervening descending
+  landings. Each required summit carrier was hit once, forced below the cleanup
+  threshold, recovered at its post with one health, then defeated. The released
+  token collected through actual mission-body overlap; incomplete missions still
+  kept the boss locked. The MFA token and safe summit anchor were also inspected.
+- Assistance: each trajectory began by positioning the hero on its preceding
+  platform with a running start. Enemies were parked offscreen; invulnerability,
+  time refill and automatic briefing acknowledgment isolated geometry. Carrier
+  hits/fall and final camera placement were scripted. These are real collision
+  integration checks, not unassisted combat completions or real-device tests.
+  Earlier wall-clock browser bots missed landings when several physics steps ran
+  per rendered frame; the bounded fixed-step checks above replaced that evidence.
+- Visual review: actual registered canvases show brick/stone surfaces, original
+  slanted lettering, overspray, speckles and drips in all three cities, plus human
+  guests and trench-coated/fedora detectives. Final summit screenshots confirm
+  an above-street viewport and anchored HUD. Regional tracks/SFX were not changed;
+  no new musical arrangement or listening approval is claimed.
+- Remaining gaps: unassisted full-route combat, live continuous traversal across
+  many seeds, keyboard/touch play on real mobile devices, new-route room/secret
+  round trips and human visual/listening approval. Existing automated room,
+  camera, combat, save, online and security-boundary checks remain enabled.
+  Preview browsers and server are stopped after QA.
+
 ## New York walkway and bridges
 
 - The New York ground face now carries storefront details and large graffiti;

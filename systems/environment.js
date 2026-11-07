@@ -24,7 +24,7 @@
       this.strip = scene.children.list.filter((o) => o.depth === -18 && o.setTint);
       this.sections = ((AH.Art.environments || {})[scene.L.region] || []).map((section) => ({
         ...section,
-        image: scene.add.image(0, 0, section.key).setOrigin(0).setScrollFactor(0).setDepth(-17.5).setAlpha(0)
+        image: scene.add.image(0, 0, section.key).setOrigin(0).setScrollFactor(0, scene.L.skyRoute ? 1 : 0).setDepth(-17.5).setAlpha(0)
       }));
       this.replacedKeys = new Set(this.sections.flatMap((section) => section.replaces || []));
       if (scene.tod) {

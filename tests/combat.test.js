@@ -55,21 +55,21 @@ test('tap/release and hold/release use the same keyboard and touch charge state'
   assert.equal(p.azureBlast(1), false, 'low Boost cannot shoot for free');
 });
 
-test('tap shots fire almost twice as often while charge timing and Boost costs stay unchanged', () => {
+test('tap shots have a 100ms cooldown while charge timing and Boost costs stay unchanged', () => {
   for (const weapon of ['azure', 'spread', 'pierce']) {
     const { p, shots, AH } = playerFixture();
     p.weapon = weapon;
     assert.equal(p.azureBlast(), true);
-    assert.equal(p.blastCd, 0.16);
+    assert.equal(p.blastCd, 0.10);
     assert.equal(p.boost, 100 - AH.Weapons[weapon].cost);
-    p.blastCd -= 0.159;
+    p.blastCd -= 0.099;
     assert.equal(p.azureBlast(), false, 'cooldown is still enforced');
     p.blastCd = Math.max(0, p.blastCd - 0.0011);
     assert.equal(p.azureBlast(), true);
     assert.equal(shots.length, 2);
     p.blastCd = 0; p.boost = 100;
     assert.equal(p.azureBlast(1), true);
-    assert.ok(Math.abs(p.blastCd - 0.36) < 1e-12);
+    assert.ok(Math.abs(p.blastCd - 0.30) < 1e-12);
   }
 });
 

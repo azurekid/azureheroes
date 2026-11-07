@@ -56,11 +56,14 @@ description: 'Build Azure Heroes movement, charged shots, duck/slide combat, clo
 - Three guaranteed marked enemy tokens also gate boss access. Track released and
   collected tokens through death; respawn unfinished carriers even behind flight
   checkpoints. Drops use safe anchors, never physics that can lose them in pits.
+- Recover unfinished carriers at their home position before fall/offscreen cleanup;
+  preserve their remaining health. Tall cloud routes use `skyRoute.top` for outdoor
+  camera bounds, restoring the original y=0 bounds in rooms and boss arenas.
 - `systems/wardrobe-pickups.js` owns optional regional collection. Use full progress
   objects for ownership; clears no longer grant clothes. Preserve fixed legacy
   migration entitlements, always-open religious headwear and bounded online unions.
   Hacker sandbox (`AH.Gold`) uses Cloud Hacker and must not persist collections.
-- Tap-shot cooldown is 0.16s plus 0.20s at full charge. Preserve the 1.2s hold,
+- Tap-shot cooldown is 0.10s plus 0.20s at full charge. Preserve the 1.2s hold,
   release-to-fire, Boost costs and projectile speed on keyboard and touch.
 - Accounts and leaderboard: client in `systems/online.js`, server in `server.js` (zero dependencies, Node 18+). Any API change needs a test in `tests/server.test.js` and must keep guest mode (no server) working.
 - Resume and save rules are in the game-contract skill. Use `AH.Save.setResume`.

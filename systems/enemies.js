@@ -63,15 +63,16 @@
       this.mode = 'walk';
       const skin = def.skin ? 'en_' + def.skin + '_' + def.type : null;
       const local = skin && scene.anims.exists(skin);
-      this.sprite = scene.physics.add.sprite(def.x, def.y, local ? skin + '_0' : spec.tex).setOrigin(0.5, spec.origin).setDepth(40);
-      this.sprite.play(local ? skin : spec.anim);
+      const detective = def.appearance === 'detective';
+      this.sprite = scene.physics.add.sprite(def.x, def.y, detective ? 'detective_0' : local ? skin + '_0' : spec.tex).setOrigin(0.5, spec.origin).setDepth(40);
+      this.sprite.play(detective ? 'detective_walk' : local ? skin : spec.anim);
       this.sprite.body.setSize(spec.body[0] * AH.Art.D, spec.body[1] * AH.Art.D);
       this.sprite.body.setOffset(spec.body[2] * AH.Art.D, spec.body[3] * AH.Art.D);
       this.sprite.body.setAllowGravity(spec.gravity);
       if (spec.gravity) scene.physics.add.collider(this.sprite, scene.solids);
       this.sprite.enemy = this;
       const cat = CATS[spec.cat];
-      this.tag = new AH.PixelText(scene, def.x, def.y, (this.bossToken ? 'TOKEN CARRIER - ' : '') + spec.label,
+      this.tag = new AH.PixelText(scene, def.x, def.y, (this.bossToken ? 'TOKEN CARRIER - ' : '') + (detective ? 'SNOOPING DETECTIVE' : spec.label),
         { scale: 1, color: this.bossToken ? '#4dff7a' : cat.color, shadow: cat.dark, ox: 0.5, oy: 1 }).setDepth(41).setVisible(false);
     }
 
@@ -122,7 +123,7 @@
         else if (s.x < this.homeX - this.range) this.dir = 1;
         const out = (this.dir > 0 && s.x > this.homeX + lim) || (this.dir < 0 && s.x < this.homeX - lim);
         b.setVelocityX(out ? 0 : this.dir * (near ? sp * 1.8 : sp));
-        s.setFlipX(this.dir < 0);
+        s.setFlipX(this.type === 'guest' ? this.dir > 0 : this.dir < 0);
       } else if (type === 'phish') {
         // waits on the ground, then leaps at the hero like a lure
         const onGround = b.blocked.down || b.touching.down;

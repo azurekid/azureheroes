@@ -128,8 +128,18 @@ Every level ends in a street-fighter style showdown with that region's boss: a c
 | Cosmos Beam | Replaces the blaster for 25 s: pierces three enemies, five when charged; stops at walls |
 
 **Tap F and release for a quick shot; hold F up to 1.2 seconds, then release for a stronger shot.**
-Quick shots now have a **0.16-second cooldown** (previously 0.30); full-charge
-cooldown is 0.36 seconds. Projectile speed, charging and Boost costs are unchanged.
+Quick shots have a **0.10-second cooldown**; full-charge cooldown is 0.30 seconds.
+Holding fire still charges for 1.2 seconds, rather than auto-firing. Projectile speed
+and Boost costs are unchanged. Four additional spread/beam pickups are distributed
+along each main route; weapons still expire after 25 seconds.
+
+Amsterdam, London and New York include six/seven-step cloud climbs with an MFA
+token and a required token carrier at the summit. Follow the CLOUD TOKENS sign;
+the camera follows upward and you can descend the same platforms. These existing
+worlds retain their regional music. Fallen unfinished carriers return to their
+posts instead of permanently removing a boss requirement. Street walls in all
+three cities have spray-painted tags. Stale guests now look like crouching people
+with expired badges; trench-coated snooping detectives reuse rogue-shooter behavior.
 The touch BLAST button works the same way. The HUD shows the weapon, remaining pickup
 time and charge; a glowing muzzle signals charge readiness. Charged Azure/Cosmos shots
 deal up to three normal hits and use up to 20 extra Boost. Spread pellets each deal one

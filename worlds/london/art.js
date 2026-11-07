@@ -8,7 +8,25 @@
   AH.ArtModules.regions['uksouth'] = content;
 
   AH.ArtModules.stages['worlds.london.art.75'] = function (C) {
-    const { ell, lg, lit, reg2, rrect, shade, txt } = C;
+    const { ell, lg, line, lit, reg2, rrect, shade, sprayTag, txt } = C;
+
+    reg2('ground_face_uksouth', 320, 64, function (g) {
+      g.fillStyle = '#45404b'; g.fillRect(0, 0, 320, 64);
+      for (let y = 0; y < 64; y += 10) for (let x = y % 20 ? -16 : 0; x < 320; x += 32) {
+        g.fillStyle = (x + y) % 64 ? '#8b7e79' : '#9e8e83';
+        g.fillRect(x + 1, y + 1, 30, 8);
+        line(g, x + 1, y + 1, x + 29, y + 1, 0.7, '#b5a69a');
+      }
+      for (const x of [4, 272]) {
+        g.fillStyle = '#29303f'; g.fillRect(x, 9, 43, 39);
+        for (let y = 12; y < 47; y += 5) line(g, x + 2, y, x + 41, y, 1, '#636c75');
+        line(g, x - 1, 49, x + 44, 49, 3, '#c3b7a2');
+      }
+      sprayTag(g, 'LDN', 59, 14, 3, '#f684b7', '#49354d');
+      sprayTag(g, 'THAMES', 126, 26, 2.2, '#71d9ec', '#293b58');
+      sprayTag(g, 'A', 226, 11, 3, '#ffd370', '#674655');
+    }, { shade: 0, noOutline: true });
+    content.parts.groundFace_uksouth = () => 'ground_face_uksouth';
 
     reg2('booth', 30, 62, function (g) {
         rrect(g, 2, 8, 26, 54, 1.4, lg(g, 2, 0, 28, 0, [[0, '#ff6a5a'], [0.5, '#e81a2a'], [1, '#8a0a14']]));

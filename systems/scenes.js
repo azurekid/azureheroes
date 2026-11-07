@@ -687,6 +687,14 @@
       this.buildAmbient();
       this.applyTod();
       this.buildStreet();
+      if (L.skyRoute) {
+        const first = L.platforms.find(p => p.skyStep === 1);
+        this.add.image(L.skyRoute.x, first.y + 50, 'climb_sign').setDepth(21);
+        T(this, L.skyRoute.x, first.y + 24, 'CLOUD TOKENS - JUMP UP',
+          { scale: 1, color: '#7fe8ff', ox: 0.5 }).setDepth(21);
+        [this.far, this.near, this.fore, this.water, this.road, this.railLine]
+          .filter(Boolean).forEach(layer => layer.setScrollFactor(0, 1));
+      }
       this.buildPipes();
       this.buildGates();
       this.buildHazards();
@@ -710,7 +718,7 @@
       const cam = this.cameras.main;
       if (this.mode === 'run') {
         this.player.sprite.setCollideWorldBounds(true);
-        cam.setBounds(0, 0, L.width, 360);
+        this.outdoorBounds(cam);
         cam.startFollow(this.player.sprite, true, 0.12, 0.12, -40, 0);
       } else {
         cam.setBounds(0, 0, L.width, 360);
@@ -828,7 +836,7 @@
         else { key = choose(x < 0 && stars.length ? stars : keys, x); sinceBill++; }
         if (!key) { x += 40; continue; }
         lastAt[key] = x;
-        const img = this.add.image(x, y - (key.indexOf('bb_') === 0 ? 4 : 0), key).setOrigin(0, 1).setScrollFactor(sf).setDepth(-18);
+        const img = this.add.image(x, y - (key.indexOf('bb_') === 0 ? 4 : 0), key).setOrigin(0, 1).setScrollFactor(sf, this.L.skyRoute ? 1 : sf).setDepth(-18);
         // a near-continuous townscape keeps local detail (canal houses, zinc roofs); every few pieces
         // a wider sky window lets the sun, the painted panorama and passing traffic show through
         if (++sinceSky >= nextSky) { sinceSky = 0; nextSky = 3 + Math.floor(Math.random() * 2); x += img.displayWidth + 110 + Math.floor(Math.random() * 80); }
@@ -894,21 +902,21 @@
       const dir = Math.random() < 0.5 ? -1 : 1, cam = this.cameras.main, sf = 0.5;
       const x = cam.scrollX * sf + (atX === undefined ? (dir < 0 ? 760 : -120) : atX);
       const y = this.ambCfg.roadY === undefined ? AMB_ROAD_Y : this.ambCfg.roadY;
-      const img = this.add.image(x, y + 7 - (dir < 0 ? 0 : 2), 'amb_car_' + kind).setOrigin(0.5, 1).setScrollFactor(sf).setDepth(dir < 0 ? -18.4 : -18.5).setFlipX(dir > 0).setScale((kind === 'tram' ? 0.72 : 0.95) / AH.Art.D);
+      const img = this.add.image(x, y + 7 - (dir < 0 ? 0 : 2), 'amb_car_' + kind).setOrigin(0.5, 1).setScrollFactor(sf, this.L.skyRoute ? 1 : sf).setDepth(dir < 0 ? -18.4 : -18.5).setFlipX(dir > 0).setScale((kind === 'tram' ? 0.72 : 0.95) / AH.Art.D);
       this.ambAdd(img, { car: true, vx: dir * (kind === 'cyclist' ? 30 : kind === 'tram' || kind.indexOf('bus') >= 0 ? 45 : 70 + Math.random() * 30), life: 40 });
     }
     ambRail(kind, atX) {
       const dir = Math.random() < 0.5 ? -1 : 1, sf = 0.5, cam = this.cameras.main;
       const x = cam.scrollX * sf + (atX === undefined ? (dir < 0 ? 900 : -260) : atX);
       const y = this.ambCfg.railY === undefined ? 218 : this.ambCfg.railY;
-      const img = this.add.image(x, y, 'amb_train_' + kind).setOrigin(0.5, 1).setScrollFactor(sf).setDepth(-18.8).setFlipX(dir > 0).setScale(0.65 / AH.Art.D);
+      const img = this.add.image(x, y, 'amb_train_' + kind).setOrigin(0.5, 1).setScrollFactor(sf, this.L.skyRoute ? 1 : sf).setDepth(-18.8).setFlipX(dir > 0).setScale(0.65 / AH.Art.D);
       this.ambAdd(img, { vx: dir * 95, life: 22 });
     }
     // Tour boats cruising the river behind the quays (decorative only, never solid).
     ambBoat(kind, atX) {
       const dir = Math.random() < 0.5 ? -1 : 1, sf = 0.8, cam = this.cameras.main, key = kind === 'region' ? 'boat_' + this.L.region : 'amb_' + kind;
       if (!this.textures.exists(key)) return;
-      const img = this.add.image(cam.scrollX * sf + (atX === undefined ? (dir < 0 ? 760 : -120) : atX), 322, key).setOrigin(0.5, 1).setScrollFactor(sf).setDepth(8.2)
+      const img = this.add.image(cam.scrollX * sf + (atX === undefined ? (dir < 0 ? 760 : -120) : atX), 322, key).setOrigin(0.5, 1).setScrollFactor(sf, this.L.skyRoute ? 1 : sf).setDepth(8.2)
         .setFlipX(dir > 0).setScale(0.78 / AH.Art.D).setTint(0xd8d0e0);
       this.ambAdd(img, { vx: dir * (22 + Math.random() * 14), life: 60, wob: 1.4, amp: 1 });
     }
@@ -1050,7 +1058,8 @@
         cam.once('camerafadeoutcomplete', () => {
           this.inPipe = zone;
           this.physics.world.setBounds(bounds[0], -400, bounds[1], 1200);
-          cam.setBounds(bounds[0], 0, bounds[1], 360);
+          if (zone) cam.setBounds(bounds[0], 0, bounds[1], 360);
+          else this.outdoorBounds(cam);
           p.sprite.setPosition(toX, toY);
           p.sprite.body.enable = true;
           p.sprite.body.reset(toX, toY);
@@ -1075,7 +1084,7 @@
       (this.pipeSkies || []).forEach(({ sky }) => sky.setVisible(false));
       if (this.fx) this.fx.setVisible(true);
       this.physics.world.setBounds(0, -400, L.width, 1200);
-      cam.setBounds(0, 0, L.width, 360);
+      this.outdoorBounds(cam);
     }
 
     updatePipes(dt, p) {
@@ -1203,7 +1212,7 @@
       const back = () => {
         this.inBonus = false;
         this.physics.world.setBounds(0, -400, L.width, 1200);
-        cam.setBounds(0, 0, L.width, 360);
+        this.outdoorBounds(cam);
         this.secret.booth.setTint(0x777799);
         this.secret.label.setVisible(false);
         this.warping = false;
@@ -1281,7 +1290,7 @@
         const img = this.add.image(p.x, p.y, 'prop_' + p.kind).setOrigin(0.5, p.float ? 0.5 : 1).setDepth(p.float ? 8 : 12);
         if (p.float) this.tweens.add({ targets: img, y: p.y + 7, yoyo: true, repeat: -1, duration: 1400 + (p.x % 600), ease: 'Sine.easeInOut' });
       });
-      this.pups = (L.powerups || []).map((u) => {
+      this.pups = [...(L.powerups || []), ...(L.weaponDrops || [])].map((u) => {
         const spr = this.add.image(u.x, u.y, 'pu_' + u.kind).setDepth(36);
         this.tweens.add({ targets: spr, y: u.y - 6, yoyo: true, repeat: -1, duration: 700, ease: 'Sine.easeInOut' });
         return { spr, def: u, taken: false };
@@ -1728,7 +1737,7 @@
       if (this.boss) { this.boss.destroy(); this.boss = null; }
       if (L.boss && !this.bossDone) {
         this.arenaLocked = false;
-        cam.setBounds(0, 0, L.width, 360);
+        this.outdoorBounds(cam);
         cam.startFollow(p.sprite, true, 0.12, 0.12, -40, 0);
         this.levelMusic();
       }
@@ -1751,6 +1760,24 @@
       this.blasts = [];
       this.timeLeft = Math.max(this.timeLeft, 45);
       this.state = 'play';
+    }
+
+    outdoorBounds(cam) {
+      const top = this.L.skyRoute ? this.L.skyRoute.top : 0;
+      cam.setBounds(0, top, this.L.width, 360 - top);
+    }
+
+    recoverCarrier(e) {
+      const needed = e.bossToken && this.mission && this.mission.tokens.some(item =>
+        item.def.id === e.bossToken.id && !item.released && !item.done);
+      if (!needed) return false;
+      e.sprite.body.reset(e.homeX, e.homeY);
+      e.sprite.body.setVelocity(0, 0);
+      e.mode = 'walk';
+      e.act = 0;
+      e.tag.setVisible(false);
+      this.toast('TOKEN CARRIER RETURNED TO ITS POST');
+      return true;
     }
 
     // a lost life restores the level's threats, keeping a safe gap around the respawn point
@@ -2132,7 +2159,10 @@
         const e = this.enemies[i];
         if (e.dead) { this.enemies.splice(i, 1); continue; }
         e.update(dt, p);
-        if ((this.mode === 'fly' && e.x < cam.scrollX - 80) || e.sprite.y > 460) { e.remove(); continue; }
+        if ((this.mode === 'fly' && e.x < cam.scrollX - 80) || e.sprite.y > 460) {
+          if (!this.recoverCarrier(e)) e.remove();
+          continue;
+        }
         const er = rectOf(e.sprite.body);
         if (!ov(pr, er)) continue;
         const falling = this.mode === 'run' && pb.velocity.y > 60 && pb.bottom < er.y + er.h * 0.65;

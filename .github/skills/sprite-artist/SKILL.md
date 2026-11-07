@@ -83,6 +83,10 @@ description: 'Create Azure Heroes code-drawn pixel art, duck/slide poses, cloud 
 - The rogue `hacker_*` enemy has a red-accented hood and a handheld terminal facing left.
   Its laptop port aligns with shooter bolts; its nameplate identifies it as an enemy.
   Reuse its hood, visor and terminal art for the playable Cloud Hacker where practical.
+- `appearance:'detective'` uses shared `detective_*` trench-coat/fedora art with
+  unchanged hacker collisions and shooter behavior. Guest threats are crouched
+  people with expired badges, retaining low slideable bodies. `C.sprayTag` paints
+  city-owned ground faces with deterministic overspray, slanted letters and drips.
 - Faces stay natural at hi-res: subtle mouth lines and soft blush, no glossy or saturated lips.
 - Climb walls use `climb_face` (tiling grip rail) and `climb_sign` (up arrow) so wall-jump spots read at a glance.
 - Challenge art must match regional-world detail: recognizable shipping containers

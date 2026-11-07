@@ -106,7 +106,7 @@
       if (this.boost < spec.cost || this.blastCd > 0) return false;
       charge = Math.min(charge, Math.max(0, (this.boost - spec.cost) / 20));
       this.boost -= Math.min(cost, this.boost);
-      this.blastCd = 0.16 + charge * 0.2;
+      this.blastCd = 0.10 + charge * 0.2;
       this.attackT = 0.22;
       // low shots rise with charge so the bigger blast clears the floor it is fired along
       this.scene.spawnBlast(this.x + this.facing * 20, this.ducking ? this.body.bottom - 10 - 5 * charge : this.y - (this.mode === 'fly' ? 0 : 6), this.facing, { weapon, charge });

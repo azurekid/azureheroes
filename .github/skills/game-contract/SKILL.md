@@ -80,7 +80,17 @@ description: Use before any game code change. Defines the shared interfaces for 
 
 ### Collected regional wardrobe, boss tokens and Hacker sandbox
 
-- Each run marks three existing, reachable main-world enemies with optional
+- Unfinished token carriers removed by falling or flight-camera cleanup return
+  to their original safe position with remaining health; cleanup never destroys
+  a required token. Released drops remain at their fixed anchors through death.
+- Optional city `world.opt.skyClimb` adds a six/seven-platform cloud ascent to
+  existing street levels. `level.skyRoute = {x,steps,top}` describes its camera
+  ceiling; platform `skySummit` identifies the safe summit. One of the three
+  required carriers and an MFA token are placed there. Main-world cameras can
+  scroll above y=0; indoor rooms and boss arenas retain their original bounds.
+  Existing IDs, controls, saves and soundtrack contexts remain unchanged.
+
+- Each run marks three reachable main-world enemies with optional
   `bossToken: {id,x,y}`. These visibly labelled carriers release guaranteed access
   tokens on defeat at a safe fixed anchor, not random drops over gaps. Three tokens
   join (not replace) the existing objectives/gem quota. Token state belongs to
@@ -110,8 +120,8 @@ description: Use before any game code change. Defines the shared interfaces for 
   all-world access, 30 lives and no-persistence/no-score-submission rules remain.
   No new cheat, account privilege or invulnerability is introduced. Sandbox
   wardrobe pickups never persist or upload collection progress.
-- Faster firing: uncharged blast cooldown is 0.16s (previously 0.30s);
-  fully charged cooldown is 0.36s. Keep 1.2s charge/release, Boost costs,
+- Faster firing: uncharged blast cooldown is 0.10s (previously 0.16s);
+  fully charged cooldown is 0.30s. Keep 1.2s charge/release, Boost costs,
   projectile velocities, keyboard/touch parity and no held-fire auto-repeat.
 
 ### Outdoor environment sections and continuous lighting
@@ -155,6 +165,8 @@ description: Use before any game code change. Defines the shared interfaces for 
   texture for the visible face of ordinary regional ground platforms. Its top
   edge, collision geometry and other platform types still use existing assets.
   Cities without it retain their original ground face.
+- Shared drawing-only `C.sprayTag(g,text,x,y,scale,paint,outline)` draws original
+  painted lettering, deterministic overspray and drips without consuming RNG.
 
 ### City-owned secret rooms
 
@@ -336,6 +348,13 @@ Touch run controls include DUCK, SHIELD, PAUSE and HELP. On the title screen E o
 ### Charged weapons, boss signals and varied rooms
 - Optional powerup kinds `spread` and `pierce` equip a temporary weapon for 25 seconds;
   replacement refreshes the timer, expiry and respawn restore Azure Blast. No save changes.
+- Optional `weaponDrops: [{kind:'spread'|'pierce',x,y}]` distributes four additional
+  safe main-route weapons through each level, separate from legacy powerups.
+- Optional enemy `appearance:'detective'` renders a trench-coated, fedora-wearing
+  rogue investigator using the hacker's existing two-hit patrol/shooter behavior;
+  its nameplate identifies it as a SNOOPING DETECTIVE, not a friendly guide.
+  Stale guest art is a crouched person with an expired-access badge; retain the
+  existing low collision/slide behavior and remediation message.
 - Input adds `fireHeld` alongside `fire` (press). Tap fires on release; hold up to 1.2s
   for a charged shot, then release. Cancel charge on hurt, shield, pause/help and warp.
   Keyboard F and the touch BLAST button share these rules.

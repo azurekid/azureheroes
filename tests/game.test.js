@@ -36,10 +36,13 @@ test('seeded world generation preserves the pre-refactor output digest', () => {
     delete Levels.meta(9).ambient.railY;
     for (const meta of Levels.worlds) {
       const key = `${seed}:${meta.id}:${meta.city}`;
+      // Tall routes are opt-in additions; retain the original terrain fixture.
+      meta.opt.skyClimb = false;
       const generated = Levels.make(meta.id);
       delete generated.mission;
       delete generated.wardrobeSpots;
-      generated.enemies.forEach((enemy) => { delete enemy.bossToken; });
+      delete generated.weaponDrops;
+      generated.enemies.forEach((enemy) => { delete enemy.bossToken; delete enemy.appearance; });
       generated.time -= generated.mode === 'fly' ? 45 : 90;
       const output = JSON.stringify(generated);
       hashes.push([key, crypto.createHash('sha256').update(output).digest('hex')]);
@@ -238,7 +241,7 @@ test('New York ground faces and generated bridges use registered local art witho
   assert.ok(calls.some(c => c[0] === 'tile' && c[2] === 308 && c[5] === 'ground_face_eastus2'));
   assert.ok(calls.some(c => c[0] === 'tile' && c[2] === 300 && c[5] === 'quay_top'));
   assert.deepEqual(zones[0], [210, 350, 420, 100]);
-  scene.L.region = 'westeurope';
+  scene.L.region = 'australiaeast';
   scene.addPlatform({ x: 450, y: 300, w: 220, h: 100 });
   assert.ok(calls.some(c => c[0] === 'tile' && c[1] === 450 && c[5] === 'quay'), 'other cities keep their ground');
   scene.L.region = 'eastus2';
