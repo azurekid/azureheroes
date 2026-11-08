@@ -93,6 +93,11 @@ and Australian 4x4 sizes.
   optional duck scan, hidden gem quota, inaccessible boss/exit while incomplete,
   no duplicate scoring and unchanged saved progress. Die before/after objectives;
   verify flight camera recovery and underground bonus gems with actual collisions.
+- Pipe exits: leave a carrier/drop/required objective on the skipped street,
+  verify entry-side return, then complete the work and verify the forward shortcut.
+  Check post-warp checkpoints, low-time recovery grants and repeated visits/deaths
+  cannot farm time. Confirm fresh games vary encounters and mission positions
+  across all worlds while death preserves the active layout.
 - Check grounded flag/guide/terminal feet and pipe bases against platform tops,
   active checkpoint labels and readable Azure/Entra/Defender/Microsoft 365 lessons.
   Rooms must not activate main-world checkpoints. Konami Gold Mode opens all map

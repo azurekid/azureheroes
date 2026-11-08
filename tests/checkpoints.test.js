@@ -109,3 +109,26 @@ test('generated ground checkpoint and pipe bases stay on supporting terrain', ()
     }
   }
 });
+
+test('revisited nearby checkpoints offer token recovery time once and never reset the run', () => {
+  const scene = fixture();
+  const AH = loadScripts(['systems/mission.js']);
+  scene.mission = new AH.Mission({ mode: 'run', mission: { tokens: [
+    { id: 'token', x: 100, y: 256 }
+  ], tokenQuota: 1 } });
+  scene.timeLeft = 500; scene.updateCheckpoints();
+  scene.timeLeft = 12;
+  scene.updateCheckpoints();
+  assert.equal(scene.timeLeft, 64, '60 seconds plus 600px round-trip at 150px/s');
+  assert.equal(scene.flags[0].hit, true);
+  assert.deepEqual([scene.checkpoint.x, scene.checkpoint.y], [400, 280]);
+  scene.timeLeft = 5; scene.updateCheckpoints();
+  assert.equal(scene.timeLeft, 5);
+  for (const state of [{ inPipe: {} }, { inBonus: true }, { warping: true }, { state: 'paused' }]) {
+    const s = fixture();
+    Object.assign(s, state);
+    s.timeLeft = 5; s.mission = { recoveryTime() { throw Error('room recovery grant'); } };
+    s.updateCheckpoints();
+    assert.equal(s.timeLeft, 5);
+  }
+});

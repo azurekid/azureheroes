@@ -1,5 +1,49 @@
 # Playtest report - Microsoft Azure Heroes 2027
 
+## Pipe-safe tokens, recovery time and varied mission placement
+
+- Bug: in street worlds, enter a pipe with an undefeated token carrier between
+  its entry and forward return. Expected: required work remains on the route,
+  with enough recovery time. Previously: the exit always skipped ahead and
+  immediately moved the checkpoint; revisits offered no time. Owners:
+  `systems/scenes.js` pipe return/checkpoints and `systems/mission.js`.
+- Fixed: pending required street work sends the exit back to the entry. Fully
+  completed work retains the forward shortcut. The checkpoint changes only when
+  the warp completes. Low-time pipe returns, nearby checkpoint revisits and
+  blocked boss entry share a distance/climb-based allowance, used at most once
+  per missed token per run. The HUD prioritizes missed carriers and released
+  drops. Token requirements, life-loss preservation and normal enemy combat stay.
+- Mission targets and nearby safe candidates vary from generated geometry:
+  cache/relay, gems, carrier assignments, wardrobe caches and weapon drops.
+  The existing terrain, encounters and objects already regenerate at each new
+  game/restart. No terrain RNG, legacy seeded-output digest, landmark art, music,
+  world IDs, account boundary or save schema changed.
+- Automated PASS: final `npm test` **171/171**. Includes all eleven worlds across
+  100 seeds (1,100 layouts), safe/reachable markers, idempotent mission rebuilding
+  and unchanged terrain RNG. Twelve successive new games in each world verify
+  at least ten distinct terrain/enemy/reward/object layouts, varied cache route
+  fractions and token carriers; Virginia intentionally uses racks, not props.
+  Focused checks cover undefeated/released/collected tokens, required versus
+  optional objectives, post-warp checkpoints, allowance distance/climb thresholds,
+  repeated grants, collected/ahead tokens, room/pause suppression and read-only HUD.
+- Real Chrome/Arcade/input scenario PASS: separate processes in Amsterdam
+  (seed 1), Paris (42) and New York (2027). Each selected a generated pipe whose
+  shortcut crossed an actual token carrier, landed on the pipe and used held S
+  to enter. Held S on the actual room exit returned to the original entry with
+  that safe checkpoint, zero free tokens and all three live carriers intact.
+  With 12s remaining before exit, returns left about 65s, 66s and 70s respectively.
+  Repeated recovery calls did not refill time. A second pipe in each world used
+  its normal forward return after required work was marked complete.
+- Assistance/gaps: the harness positioned the hero on entry/exit pipes and set
+  low time; it did not traverse entire rooms. The completed-shortcut branch used
+  explicitly assigned completed mission flags, not legitimate token collection.
+  No invulnerability, forced boss stun or production bypass was added. The
+  existing pinned Phaser artifact was supplied only to its exact CDN request.
+  Successful runs had no runtime exceptions; initial concurrent browser runs
+  timed out during the full suite, then passed on retry without runtime changes.
+  Return captures pause mid-fade. This is integration evidence, not unassisted
+  traversal/balance, real-device testing or an audition of unchanged music.
+
 ## Hot steam and regional weather
 
 - New York now uses eight reusable, warm-white puffs per vent, rising about

@@ -32,7 +32,23 @@
       return target ? Math.min(desired, Math.max(0, target.def.x - 350)) : desired;
     }
 
-    next() {
+    pipeReturn(entry, back) {
+      return this.pending().some(item => item.def.x > entry.x && item.def.x < back.x) ? entry : back;
+    }
+
+    recoveryTime(x, timeLeft) {
+      const missed = this.tokens.filter(item => !item.done && !item.recoveryGranted && item.def.x < x - 70);
+      if (!missed.length) return 0;
+      const reserve = Math.ceil(Math.max(...missed.map(item =>
+        60 + (x - item.def.x) * 2 / 150 + Math.max(0, 240 - item.def.y) * 2 / 90)));
+      if (timeLeft >= reserve) return 0;
+      missed.forEach(item => { item.recoveryGranted = true; });
+      return reserve - timeLeft;
+    }
+
+    next(x = 0) {
+      const missed = this.tokens.find(item => !item.done && item.def.x < x - 70);
+      if (missed) return missed;
       const required = this.objectives.find((item) => item.def.required && !item.done);
       if (required) return required;
       if (this.gemCount < this.quota) return this.gems.find((item) => !item.done && item.def.zone === undefined);
@@ -42,7 +58,7 @@
 
     snapshot(x = 0) {
       if (!this.enabled) return null;
-      const required = this.objectives.filter((item) => item.def.required), next = this.next();
+      const required = this.objectives.filter((item) => item.def.required), next = this.next(x);
       const direction = next ? Math.abs(next.def.x - x) < 70 ? 'NEAR' : next.def.x > x ? 'RIGHT' : 'LEFT' : '';
       let action = next?.def.label || 'FIND A GEM';
       if (next && this.tokens.includes(next)) action = next.released ? 'COLLECT BOSS TOKEN' : 'DEFEAT TOKEN CARRIER';

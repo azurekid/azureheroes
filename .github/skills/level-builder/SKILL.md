@@ -26,6 +26,10 @@ description: 'Build Azure Heroes generated layouts, vertical streets, undergroun
   fixed safe drop anchors and flight scroll/checkpoint recovery. Optional wardrobe
   stashes use existing rooms/secrets or hidden side routes where rooms do not exist.
   Add no terrain/RNG changes to place rewards; test repeated decoration idempotence.
+- Vary mission targets and safe candidates from generated geometry, preserving
+  terrain RNG and idempotent rebuilding. Check repeated fresh games in every
+  world for varied terrain, enemies, props/rewards and carrier assignments.
+  Stable spawn/boss/landmark anchors are intentional, not cached encounters.
 
 ## Generated worlds
 - Levels are produced by `AH.Levels.make(id)` in `levels/worlds.js`; discover current worlds from `AH.Levels.worlds`, not a fixed count.

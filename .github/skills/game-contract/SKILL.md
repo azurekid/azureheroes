@@ -80,6 +80,22 @@ description: Use before any game code change. Defines the shared interfaces for 
 
 ### Collected regional wardrobe, boss tokens and Hacker sandbox
 
+- Pipe exits use `mission.pipeReturn(entry,back)`: if unfinished required work
+  lies on the skipped street, return to the entry instead of bypassing it.
+  Update the respawn checkpoint only after the return warp completes.
+  `mission.recoveryTime(x,timeLeft)` offers a bounded backtracking reserve for
+  missed tokens behind the hero: 60s plus round-trip travel at 150px/s and
+  vertical climb allowance. Grant each token's reserve at most once per run,
+  only when it increases remaining time; preserve it through life loss.
+  Pipe returns, nearby revisited checkpoints and blocked boss entry use this
+  same allowance. No unlimited checkpoint clock resets or free token awards.
+- Mission placement varies deterministically with each newly generated layout:
+  cache/relay, gems, carrier selection, weapons and wardrobe caches use varied
+  safe candidates/route targets without consuming terrain RNG. Rebuilding a
+  mission on the same layout remains idempotent. Gameplay terrain, encounters
+  and objects continue to regenerate on every new game/restart; safe spawn,
+  boss arenas and authored regional landmarks are deliberate stable anchors.
+
 - Unfinished token carriers removed by falling or flight-camera cleanup return
   to their original safe position with remaining health; cleanup never destroys
   a required token. Released drops remain at their fixed anchors through death.

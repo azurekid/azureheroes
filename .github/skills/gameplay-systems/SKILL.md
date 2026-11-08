@@ -67,6 +67,11 @@ description: 'Build Azure Heroes movement, charged shots, duck/slide combat, clo
 - Three guaranteed marked enemy tokens also gate boss access. Track released and
   collected tokens through death; respawn unfinished carriers even behind flight
   checkpoints. Drops use safe anchors, never physics that can lose them in pits.
+- Pipe returns must not bypass pending street requirements; use `Mission.pipeReturn`
+  and set the checkpoint after warp completion. Pipe exits, nearby checkpoint
+  revisits and blocked boss entry share `Mission.recoveryTime` for a one-time
+  distance/climb allowance per missed token, only when time is low. Preserve
+  grant state through death; never reset clocks indefinitely or award free tokens.
 - Recover unfinished carriers at their home position before fall/offscreen cleanup;
   preserve their remaining health. Tall cloud routes use `skyRoute.top` for outdoor
   camera bounds, restoring the original y=0 bounds in rooms and boss arenas.

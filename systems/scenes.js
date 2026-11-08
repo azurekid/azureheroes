@@ -1130,6 +1130,7 @@
 
     warpPipe(fromX, fromY, toX, toY, bounds, zone) {
       const p = this.player, cam = this.cameras.main;
+      const recoveryX = !zone && this.inPipe ? this.inPipe.back.x : toX;
       p.cancelCharge();
       this.warping = true;
       AH.Audio.play('secret');
@@ -1149,7 +1150,11 @@
           cam.fadeIn(260, 0, 10, 40);
           this.warping = false;
           if (zone) AH.Audio.music(zone.music || 'pipe', this.L.region);
-          else this.levelMusic();
+          else {
+            this.levelMusic();
+            this.checkpoint = { x: toX, y: toY + 30 };
+            this.restoreTokenTime(recoveryX);
+          }
           if (zone) {
             if (!zone.timeGranted) { this.timeLeft += zone.timeBonus; zone.timeGranted = true; }
             this.toast(zone.name + ' - SECURE AND DEPLOY!');
@@ -1192,8 +1197,10 @@
         if (Z.t > 0.8) {
           Z.t = 0;
           const L = this.L;
-          this.warpPipe(Z.exit.x, Z.exit.y, Z.back.x, Z.back.y - 30, [0, L.width], null);
-          this.checkpoint = { x: Z.back.x, y: Z.back.y };
+          const entry = this.pipes.find(q => q.Z === Z).def;
+          const back = this.mission ? this.mission.pipeReturn(entry, Z.back) : Z.back;
+          if (back === entry) this.toast('PIPE RETURN - RECOVER THE MISSED STREET OBJECTIVES');
+          this.warpPipe(Z.exit.x, Z.exit.y, back.x, back.y - 30, [0, L.width], null);
         }
       }
     }
@@ -1428,6 +1435,16 @@
           this.toast('CHECKPOINT!');
         }
       });
+      if (mainWorld && this.flags.some(f => Math.abs(p.x - f.def.x) < 70 &&
+          (this.mode === 'fly' || Math.abs(p.body.bottom - f.def.y) < 55))) this.restoreTokenTime(p.x);
+    }
+
+    restoreTokenTime(x) {
+      const extra = this.mission?.recoveryTime(x, this.timeLeft) || 0;
+      if (extra > 0) {
+        this.timeLeft += extra;
+        this.toast('TOKEN RECOVERY +' + Math.ceil(extra) + 'S - ' + this.mission.snapshot(this.player.x).next);
+      }
     }
 
     buildTerminals() {
@@ -2099,6 +2116,7 @@
         else {
           p.sprite.x = L.boss.trigger - 16;
           p.sprite.body.setVelocityX(Math.min(0, p.sprite.body.velocity.x));
+          this.restoreTokenTime(p.x);
           if (!this.missionNoticeAt || this.time.now >= this.missionNoticeAt) {
             this.toast('BOSS LOCKED - ' + this.mission.snapshot(p.x).next);
             this.missionNoticeAt = this.time.now + 4000;

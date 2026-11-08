@@ -71,6 +71,11 @@ landmarks, collision geometry and regional music stay unchanged.
 
 Levels are generated at random each time a level starts, so platforms, lasers, enemies, coins, power-ups and MFA tokens land in new places on every run. Run levels mix gaps, steps up, drops and floating platforms at different heights, and every region has its own coins, enemy skins, scenery props, traffic, birds and sky objects (planes, balloons, blimps, helicopters). Outdoor worlds start at a random time of day, then smoothly cycle through night, sunrise, morning, day, afternoon and sunset every four minutes of active outdoor play. Pause/help, warps and underground visits freeze the outdoor clock; Virginia's data center keeps its indoor lighting.
 
+Deployment caches, relays, hidden gems, token-carrier assignments, weapon drops
+and wardrobe caches also vary their safe positions within each generated route.
+Restart creates a fresh layout; death preserves the current layout and mission
+progress. Safe spawn areas, boss arenas and signature landmarks stay recognizable.
+
 Every region also has cyber-threat enemies: **Phishing hoppers** leap at you, **Ransomware chargers** wind up and dash, and **DDoS botnet clouds** follow you and drop bombs. Street and data-center levels also feature pipeline bugs, vulnerable container images, overprivileged RBAC robots, exposed-endpoint turrets, armed guest/stale-user shooters and **Rogue Hackers** who fire from handheld terminals. Their bolts can be blocked with the MFA Shield. Defeating them reveals tips about GitHub Actions, Defender for Cloud, Entra MFA and access reviews, least privilege and Azure Private Link.
 
 ### Missions and hidden Azure gems
@@ -250,7 +255,16 @@ Rooms shuffle seven distinct layout types: steps, catwalks, ducts, split-level r
 security-laser crossings, encounter arenas and switchbacks. Bay widths, lesson order,
 threats and rewards vary, and layouts do not repeat within a room. Duck or slide under
 ducts, or jump onto their roofs. Each room grants extra time once on entry. The exit
-pipe returns you farther along the street and sets a checkpoint.
+pipe returns you farther along the street only when that shortcut would not skip
+unfinished required street work. Otherwise it returns you to the entry so you can
+recover the carrier, token or objective. The checkpoint updates after the warp.
+
+When a missed token requires backtracking, pipe returns, nearby checkpoints
+(including revisits) and blocked boss entry offer a **one-time recovery allowance
+per token** if time is low: 60 seconds plus round-trip distance and climb time.
+The HUD prioritizes missed carriers/tokens and shows their direction. This does
+not award tokens or refill the clock indefinitely; the boss still requires all
+three tokens, the deployment key, relay and gem quota.
 
 Docker and AKS rooms are shipping-container docks with corrugated cargo stacks,
 locking bars, cranes, harbour water and work lights. GitHub Actions and Azure

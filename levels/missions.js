@@ -125,6 +125,14 @@
 
   G.addMission = function (L) {
     L.enemies.forEach((enemy) => { delete enemy.bossToken; });
+    let variant = 2166136261;
+    for (const p of [...L.platforms, ...L.enemies]) for (const n of [p.x, p.y, p.w || 0]) {
+      variant = Math.imul(variant ^ Math.round(n), 16777619) >>> 0;
+    }
+    const vary = (lo, hi) => {
+      variant = (Math.imul(variant, 1664525) + 1013904223) >>> 0;
+      return lo + variant / 4294967296 * (hi - lo);
+    };
     const end = Math.min(L.width, L.boss ? L.boss.left : L.width - 400) - 180;
     const fly = L.mode === 'fly';
     const spots = fly ? flightSpots(L, end) : groundSpots(L, L.platforms, 320, end);
@@ -136,31 +144,33 @@
         return score(a) - score(b) || a.x - b.x || a.y - b.y;
       });
       if (!options.length) throw new Error('MISSION PLACEMENT FAILED: ' + description + ' IN LEVEL ' + L.id);
-      const p = { x: options[0].x, y: options[0].y };
+      const preferred = upper && options[0].upper ? options.filter(p => p.upper) : options;
+      const choice = preferred[Math.floor(vary(0, Math.min(8, preferred.length)))];
+      const p = { x: choice.x, y: choice.y };
       used.push(p);
       return p;
     }
     const cachePool = fly ? spots : spots.filter((p) => p.upper || p.side);
-    const cache = choose(cachePool, end * 0.22, 400, end * 0.4, true, 'CACHE');
+    const cache = choose(cachePool, end * vary(0.18, 0.3), 400, end * 0.4, true, 'CACHE');
     const relayPool = fly ? spots : spots.filter((p) => !p.upper);
-    const relay = choose(relayPool, end * 0.55, Math.max(cache.x + 240, end * 0.42), end * 0.72, false, 'RELAY');
+    const relay = choose(relayPool, end * vary(0.48, 0.66), Math.max(cache.x + 240, end * 0.42), end * 0.72, false, 'RELAY');
     objectives.push(Object.assign({ id: 'mission-cache', kind: 'cache', label: 'DEPLOYMENT CACHE',
       tip: fly ? 'RECOVER THE CACHE BETWEEN ROCKS.' : 'CHECK THE UPPER AND SIDE ROUTES.', required: true }, cache));
     objectives.push(Object.assign({ id: 'mission-relay', kind: 'relay', label: 'STABILIZE RELAY',
       tip: fly ? 'CACHE FIRST. BLAST THE RELAY.' : 'CACHE FIRST. HOLD E / SHIELD HERE.', required: true }, relay));
-    const scan = choose(relayPool, end * 0.73, relay.x + 140, end, false, 'SCAN');
+    const scan = choose(relayPool, end * vary(0.73, 0.88), relay.x + 140, end, false, 'SCAN');
     objectives.push(Object.assign({ id: 'mission-scan', kind: 'scan', label: 'BONUS SECURITY SCAN',
       tip: fly ? 'TOUCH THE SCAN FOR BONUS SCORE.' : 'HOLD S / DOWN TO SCAN FOR BONUS.', required: false }, scan));
 
     const zones = fly ? [] : (L.pipeZones || []).slice(0, 2);
     const mainCount = 6 - zones.length;
     for (let i = 0; i < mainCount; i++) {
-      const p = choose(spots, end * (0.12 + i * 0.68 / (mainCount - 1)), 320, end, true, 'GEM ' + (i + 1));
+      const p = choose(spots, end * (vary(0.085, 0.155) + i * 0.68 / (mainCount - 1)), 320, end, true, 'GEM ' + (i + 1));
       gems.push(Object.assign({ id: 'mission-gem-' + (i + 1) }, p));
     }
     zones.forEach((zone, i) => {
       const pool = groundSpots(L, zone.platforms, zone.x + 110, zone.x + zone.w - 180);
-      const p = choose(pool, zone.x + zone.w * 0.4, zone.x + 110, zone.x + zone.w - 180, true, 'UNDERGROUND GEM');
+      const p = choose(pool, zone.x + zone.w * vary(0.25, 0.65), zone.x + 110, zone.x + zone.w - 180, true, 'UNDERGROUND GEM');
       gems.push(Object.assign({ id: 'mission-gem-' + (gems.length + 1), zone: i }, p));
     });
     L.mission = { objectives, gems, gemQuota: 2 };
@@ -173,8 +183,9 @@
         tokenSpots.some((p) => Math.abs(p.x - enemy.x) <= 160 && p.y === enemy.y - 20)));
     const tokens = [];
     for (let i = 0; i < 3; i++) {
+      const target = end * (vary(0.18, 0.32) + i * 0.25);
       const options = carriers.filter((e) => !e.bossToken).sort((a, b) =>
-        Math.abs(a.x - end * (0.25 + i * 0.25)) - Math.abs(b.x - end * (0.25 + i * 0.25)));
+        Math.abs(a.x - target) - Math.abs(b.x - target));
       const enemy = options[0];
       if (!enemy) throw new Error('TOKEN CARRIER PLACEMENT FAILED IN LEVEL ' + L.id);
       const spot = tokenSpots.filter((p) => fly || p.y === enemy.y - 20)
@@ -196,7 +207,7 @@
     L.wardrobeSpots = Array.from({ length: 6 }, (_, i) => {
       const room = rooms.length ? rooms[i % rooms.length] :
         { pool: fly ? spots : groundSpots(L, L.platforms, 320, end, true), lo: 320, hi: end };
-      const target = room.lo + (room.hi - room.lo) * (0.12 + Math.floor(i / Math.max(1, rooms.length)) * (rooms.length ? 0.25 : 0.15));
+      const target = room.lo + (room.hi - room.lo) * (vary(0.08, 0.18) + Math.floor(i / Math.max(1, rooms.length)) * (rooms.length ? 0.25 : 0.15));
       const point = choose(room.pool, target, room.lo, room.hi, true, 'WARDROBE CACHE');
       if (room.zone !== undefined) point.zone = room.zone;
       if (room.bonus) point.bonus = true;
@@ -204,7 +215,7 @@
     });
     const weaponSpots = fly ? flightSpots(L, end, true) : groundSpots(L, L.platforms, 320, end, true);
     L.weaponDrops = ['spread', 'pierce', 'spread', 'pierce'].map((kind, i) => {
-      const target = end * (0.16 + i * 0.2);
+      const target = end * (vary(0.12, 0.2) + i * 0.2);
       const options = weaponSpots.filter(p => used.every(q => Math.hypot(p.x - q.x, p.y - q.y) >= 52) &&
         tokens.every(q => Math.hypot(p.x - q.x, p.y - q.y) >= 52))
         .sort((a, b) => Math.abs(a.x - target) - Math.abs(b.x - target));

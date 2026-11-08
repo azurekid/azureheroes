@@ -166,3 +166,30 @@ test('impossible mission layouts fail explicitly instead of producing invalid pl
     assert.equal(L.mission, undefined);
   }
 });
+
+test('every world regenerates structures, encounters, objects and mission placements on repeated games', () => {
+  for (const id of loadScripts(levelScripts()).Levels.ids) {
+    const { Levels } = loadScripts(levelScripts(), { seed: 2027 });
+    const layouts = new Map(['platforms', 'enemies', 'props', 'mfaTokens', 'powerups', 'mission']
+      .map(field => [field, new Set()]));
+    const markerPositions = new Set(), carrierPositions = new Set();
+    let previous;
+    for (let run = 0; run < 12; run++) {
+      const L = Levels.make(id);
+      for (const [field, values] of layouts) values.add(JSON.stringify(L[field]));
+      markerPositions.add(Math.round(L.mission.objectives[0].x / L.boss.left * 100));
+      carrierPositions.add(L.mission.tokens.map(p => Math.round(p.x / L.boss.left * 100)).join(','));
+      if (previous) {
+        assert.notEqual(L.platforms, previous.platforms);
+        assert.notEqual(L.mission.tokens, previous.mission.tokens);
+      }
+      previous = L;
+    }
+    for (const [field, variants] of layouts) {
+      if (field === 'props' && id === 10) continue; // Indoor racks replace outdoor props.
+      assert.ok(variants.size >= 10, `${field} varies in world ${id}: ${variants.size}/12`);
+    }
+    assert.ok(markerPositions.size >= 3, 'cache route fraction varies in world ' + id);
+    assert.ok(carrierPositions.size >= 6, 'token carriers vary in world ' + id);
+  }
+});
