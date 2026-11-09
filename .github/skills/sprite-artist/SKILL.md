@@ -38,6 +38,10 @@ description: 'Create Azure Heroes code-drawn pixel art, duck/slide poses, cloud 
   card. `systems/environment.js` blends sections and suppresses city strips and
   decorative transit; keep physical platforms/hazards unchanged. Inspect entry,
   centre and exit in daylight and night, not just texture registration.
+- Optional `atmosphere_<region>` owns local layered weather/neon descriptors.
+  Use uncrisped `C.reg(...,true)` for translucent rain, glow and steam gradients.
+  Preserve landmarks and flight-corridor readability; painted additive light
+  and reflections are not shaders. HOT vent plates must precede damaging plumes.
 - Set `city.rewards` to `{suit,hair,gear,outfit?,classicHat?,classicGear?,collectibleHats?}`.
   Append references in `art/wardrobe.js`'s stable saved arrays, never insert or
   reindex. The suit's `unlock` and hair/gear unlock fields use the world index.
@@ -45,6 +49,8 @@ description: 'Create Azure Heroes code-drawn pixel art, duck/slide poses, cloud 
 ## Art invariants
 
 - Hero: blue suit, blue cape, glowing A, sunglasses, 32x48px, frames: idle, run0-3, jump, fly, attack, shield, duck, slide. Preserve wardrobe in every pose and register frames in `HERO_FRAMES`; Cloud Hacker is capeless.
+- Ground melee adds distinct punch and extended-leg kick frames through the same
+  shared hero rig and wardrobe registration; retain 32x48 textures and collision bounds.
 - Enemies: patrol robot, drone, spider bot, boss CyberGuardian, all in same neon sunset palette.
 - Draw with code / pixel arrays, no external image files.
 - Keep the HUD from the mockups: Health, Score, MFA, Credits, Lives, Time on top, ability + level name at bottom.
@@ -83,6 +89,19 @@ description: 'Create Azure Heroes code-drawn pixel art, duck/slide poses, cloud 
 - The rogue `hacker_*` enemy has a red-accented hood and a handheld terminal facing left.
   Its laptop port aligns with shooter bolts; its nameplate identifies it as an enemy.
   Reuse its hood, visor and terminal art for the playable Cloud Hacker where practical.
+- `appearance:'detective'` uses shared `detective_*` trench-coat/fedora art with
+  unchanged hacker collisions and shooter behavior. Guest/stale threats are
+  hacker-sized people with expired badges, compact pistols or long rifles.
+  `C.sprayTag` paints
+  city-owned ground faces with deterministic overspray, slanted letters and drips.
+- City `graffiti_<region>` descriptors own localized tags and optional pixel
+  glyphs. Shared `C.registerGraffiti` adds AZUREKID, AZURE HEROES and Octocat art;
+  decorative Japanese glyphs never extend the UI font or change gameplay text.
+  Bubble, stencil and wildstyle variants include Copilot figures and compact
+  fronts above the HUD. Fit complete tags to faces; do not crop words or figures.
+  Hash offsets/selection from generated geometry without consuming gameplay RNG.
+  Shared near buildings render behind landmarks (-18.2 versus -18); New York
+  retains its authored foreground. Check Centraal Station and Erasmus Bridge.
 - Faces stay natural at hi-res: subtle mouth lines and soft blush, no glossy or saturated lips.
 - Climb walls use `climb_face` (tiling grip rail) and `climb_sign` (up arrow) so wall-jump spots read at a glance.
 - Challenge art must match regional-world detail: recognizable shipping containers

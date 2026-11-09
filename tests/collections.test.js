@@ -85,7 +85,7 @@ test('all generated worlds have three guaranteed carriers, safe drops and reacha
       assert.ok(H.regionalItems(id - 1).length <= L.wardrobeSpots.length);
       for (const e of carriers) {
         const t = e.bossToken;
-        assert.ok(t.x > 320 && t.x < L.boss.left && t.y >= 48 && t.y <= 316);
+        assert.ok(t.x > 320 && t.x < L.boss.left && t.y >= (L.skyRoute ? L.skyRoute.top + 48 : 48) && t.y <= 316);
         assert.ok(L.mission.tokens.includes(t));
         if (L.mode === 'run') assert.ok(L.platforms.some(p => p.x <= t.x - 20 && p.x + p.w >= t.x + 20 && p.y === t.y + 24));
         assert.ok(!L.platforms.some(p => t.x + 14 > p.x && t.x - 14 < p.x + p.w && t.y + 14 > p.y && t.y - 14 < p.y + p.h));

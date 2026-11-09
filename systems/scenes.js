@@ -674,13 +674,44 @@
       this.far = this.add.tileSprite(0, 360 - (L.mode === 'run' ? 54 : 0) - this.textures.get(bg[1]).getSourceImage().height / AH.Art.D, 640, this.textures.get(bg[1]).getSourceImage().height / AH.Art.D, bg[1]).setOrigin(0).setScrollFactor(0).setDepth(-20);
       this.near = this.add.tileSprite(0, 360 - this.textures.get(bg[2]).getSourceImage().height / AH.Art.D, 640, this.textures.get(bg[2]).getSourceImage().height / AH.Art.D, bg[2]).setOrigin(0).setScrollFactor(0).setDepth(-19);
 
+      // Shared facades sit behind landmarks; authored layers retain their original depth.
+      const foreKey = 'bg_fore_' + L.region;
+      const foreDepth = AH.Art.foregrounds && AH.Art.foregrounds[L.region] ? -18.2 : -17.4;
+      this.fore = this.textures.exists(foreKey)
+        ? this.add.tileSprite(0, 360 - this.textures.get(foreKey).getSourceImage().height / AH.Art.D, 640, this.textures.get(foreKey).getSourceImage().height / AH.Art.D, foreKey).setOrigin(0).setScrollFactor(0).setDepth(foreDepth)
+        : null;
+
       this.solids = this.physics.add.staticGroup();
       this.rects = []; // solid / hazard rectangles used for blasts and rock damage
+      this.graffitiCount = 0;
       L.platforms.forEach((p) => this.addPlatform(p));
+      if (L.mode === 'fly' && AH.Art.graffiti && AH.Art.graffiti[L.region]) {
+        const tops = L.platforms.filter(p => p.y === 0);
+        tops.forEach((p, i) => {
+          const next = tops[i + 1];
+          if (!next || i % 3) return;
+          const width = Math.min(320, next.x - p.x - p.w - 20);
+          if (width < 180) return;
+          const gap = next.x - p.x - p.w;
+          const offset = Math.abs(Math.imul(Math.round(p.x) ^ L.width, 1597334677)) % Math.max(1, gap - width - 20);
+          const x = p.x + p.w + 10 + offset;
+          this.add.tileSprite(x, 278, width, 64, 'pbrick').setOrigin(0).setDepth(-17);
+          this.add.image(x, 278, AH.Art.graffiti[L.region][Math.floor(i / 3) % 3])
+            .setOrigin(0).setDisplaySize(width, 64).setDepth(-16.9);
+        });
+      }
       this.buildScenery();
       this.buildAmbient();
       this.applyTod();
       this.buildStreet();
+      if (L.skyRoute) {
+        const first = L.platforms.find(p => p.skyStep === 1);
+        this.add.image(L.skyRoute.x, first.y + 50, 'climb_sign').setDepth(21);
+        T(this, L.skyRoute.x, first.y + 24, 'CLOUD TOKENS - JUMP UP',
+          { scale: 1, color: '#7fe8ff', ox: 0.5 }).setDepth(21);
+        [this.far, this.near, this.fore, this.water, this.road, this.railLine]
+          .filter(Boolean).forEach(layer => layer.setScrollFactor(0, 1));
+      }
       this.buildPipes();
       this.buildGates();
       this.buildHazards();
@@ -704,7 +735,7 @@
       const cam = this.cameras.main;
       if (this.mode === 'run') {
         this.player.sprite.setCollideWorldBounds(true);
-        cam.setBounds(0, 0, L.width, 360);
+        this.outdoorBounds(cam);
         cam.startFollow(this.player.sprite, true, 0.12, 0.12, -40, 0);
       } else {
         cam.setBounds(0, 0, L.width, 360);
@@ -719,7 +750,7 @@
       this.portal.setVisible(this.exitActive);
       this.tweens.add({ targets: this.portal, alpha: 0.55, yoyo: true, repeat: -1, duration: 500 });
 
-      this.input2 = new AH.Input(this, { fly: this.mode === 'fly', shield: this.mode === 'run' });
+      this.input2 = new AH.Input(this, { fly: this.mode === 'fly', shield: true });
       this.hud = new AH.HUD(this, this.levelId, L.name);
       this.soundBtn = AH.UI.soundButton(this, 630, 98);
       AH.UI.musicButton(this, 630, 144, true);
@@ -773,8 +804,9 @@
         this.add.image(p.x, p.y - 2, typeof p.cloud === 'string' ? p.cloud : 'cloud_plat').setOrigin(0).setDisplaySize(p.w, 20).setDepth(10);
       } else if (p.bliss || L.ground) {
         const g = p.bliss ? (typeof p.bliss === 'string' ? p.bliss : 'grass') : L.ground;
+        const face = !p.bliss && AH.Art.groundFaces && AH.Art.groundFaces[L.region] || g;
         this.add.tileSprite(p.x, p.y, p.w, 8, g + '_top').setOrigin(0).setDepth(10);
-        this.add.tileSprite(p.x, p.y + 8, p.w, Math.min(p.h - 8, 220), g).setOrigin(0).setDepth(9);
+        this.add.tileSprite(p.x, p.y + 8, p.w, Math.min(p.h - 8, 220), face).setOrigin(0).setDepth(9);
         if (L.rail && !p.bliss && p.h >= 60 && p.w >= 64) {
           const rh = this.textures.get('rail_' + L.rail).getSourceImage().height / AH.Art.D;
           this.add.tileSprite(p.x + 4, p.y - rh, p.w - 8, rh, 'rail_' + L.rail).setOrigin(0).setDepth(11).setAlpha(0.95);
@@ -789,6 +821,18 @@
         this.add.tileSprite(p.x, p.y + 8, 10, rise - 8, 'climb_face').setOrigin(0).setDepth(11);
         this.add.image(p.x - 18, p.wallFrom - 4, 'climb_sign').setOrigin(0.5, 1).setDepth(11);
         this.climbs.push(p);
+      }
+      if (p.h >= 64 && p.w >= 200 && !p.ceil && !p.pipe && !p.cloud && !p.bridge) {
+        const tags = AH.Art.graffiti && AH.Art.graffiti[L.region];
+        if (tags) {
+          const variant = this.graffitiCount || 0;
+          this.graffitiCount = variant + 1;
+          const hash = Math.abs(Math.imul(Math.round(p.x) ^ L.width, 1597334677));
+          const width = Math.min(320, p.w);
+          if (variant < 3 || hash % 3 !== 0) this.add.image(p.x + hash % Math.max(1, p.w - width), p.y + 8,
+            tags[variant < 3 ? variant : hash % tags.length] + '_front')
+            .setOrigin(0).setDisplaySize(width, 24).setDepth(10.5);
+        }
       }
       const z = this.add.zone(p.x + p.w / 2, p.y + p.h / 2, p.w, p.h);
       this.solids.add(z);
@@ -821,7 +865,7 @@
         else { key = choose(x < 0 && stars.length ? stars : keys, x); sinceBill++; }
         if (!key) { x += 40; continue; }
         lastAt[key] = x;
-        const img = this.add.image(x, y - (key.indexOf('bb_') === 0 ? 4 : 0), key).setOrigin(0, 1).setScrollFactor(sf).setDepth(-18);
+        const img = this.add.image(x, y - (key.indexOf('bb_') === 0 ? 4 : 0), key).setOrigin(0, 1).setScrollFactor(sf, this.L.skyRoute ? 1 : sf).setDepth(-18);
         // a near-continuous townscape keeps local detail (canal houses, zinc roofs); every few pieces
         // a wider sky window lets the sun, the painted panorama and passing traffic show through
         if (++sinceSky >= nextSky) { sinceSky = 0; nextSky = 3 + Math.floor(Math.random() * 2); x += img.displayWidth + 110 + Math.floor(Math.random() * 80); }
@@ -837,6 +881,7 @@
     buildAmbient() {
       const A = this.L.ambient;
       this.amb = []; this.ambT = {}; this.ambCfg = null; this.road = null; this.railLine = null;
+      this.buildSteam();
       if (!A || this.L.theme === 'rack') return;
       this.ambCfg = A;
       if (A.road) this.road = this.add.tileSprite(0, A.roadY === undefined ? AMB_ROAD_Y : A.roadY, 640, 8, 'amb_road').setOrigin(0).setScrollFactor(0).setDepth(-18.6).setAlpha(0.55);
@@ -854,6 +899,57 @@
       if (A.road) this.ambCar(A.road[0], 420);
       if (A.rail) { this.ambRail(A.rail[0], 320); this.ambT.rail = 22; }
       if (A.water) this.ambBoat(A.water[0], 400);
+    }
+    buildSteam() {
+      this.steam = [];
+      this.steamTime = 0;
+      const L = this.L, art = AH.Art.steam && AH.Art.steam[L.region];
+      if (!art || L.mode !== 'run') return;
+      const safe = [L.spawn, ...(L.checkpoints || []), ...(L.pipes || []),
+        ...(L.pipeZones || []).map(z => z.back), ...(L.mission?.objectives || []),
+        ...(L.mission?.gems || []), ...(L.wardrobeSpots || []),
+        ...(L.enemies || []).filter(e => e.bossToken).map(e => e.bossToken), L.secret].filter(Boolean);
+      const ground = L.platforms.filter(p => p.y >= 240 && p.h >= 60 && p.w >= 200 &&
+        !p.cloud && !p.pipe && !p.ceil && !p.bridge && !p.cloudKind && !p.bliss &&
+        p.x + p.w < L.boss.left - 180);
+      const spots = ground.filter((p, i) => i % 4 === 0)
+        .map(p => ({ x: p.x + p.w * 0.65, y: p.y, heat: !!art.heat }))
+        .filter(p => !safe.some(q => Math.abs(p.x - q.x) < 90 && Math.abs(p.y - q.y) < 100));
+      if (L.secret) spots.push({ x: L.secret.x, y: L.secret.y, heat: false });
+      spots.forEach((spot, index) => {
+        const vent = this.add.image(spot.x, spot.y - 1, art.vent).setDepth(11);
+        const warning = spot.heat && art.warning ?
+          this.add.image(spot.x, spot.y + 15, art.warning).setDepth(20) : null;
+        const puffs = Array.from({ length: 8 }, () =>
+          this.add.image(spot.x, spot.y - 8, art.puff).setDepth(19).setAlpha(0));
+        this.steam.push({ ...spot, vent, warning, puffs, phase: index * 0.37 });
+      });
+      this.updateSteam(0);
+    }
+    updateSteam(dt) {
+      if (!this.steam || !this.steam.length) return;
+      const outside = !this.inPipe && !this.inBonus && !this.warping && !this.boss;
+      if (outside && this.state === 'play') this.steamTime += dt;
+      const cam = this.cameras.main;
+      this.steam.forEach(spot => {
+        const show = outside && spot.x > cam.scrollX - 60 && spot.x < cam.scrollX + 700;
+        const cycle = (this.steamTime + spot.phase) % 7;
+        spot.hot = !!spot.heat && cycle >= 3 && cycle < 6;
+        spot.warning?.setVisible(show).setAlpha(spot.hot ? 1 : cycle >= 1 && cycle < 3 ? 0.65 + Math.sin(cycle * 15) * 0.25 : 0.35);
+        spot.vent.setVisible(show);
+        spot.puffs.forEach((puff, i) => {
+          const age = ((this.steamTime + spot.phase + i * 0.375) % 3) / 3;
+          puff.setVisible(show).setPosition(spot.x + Math.sin(age * 5 + spot.phase) * age * 10,
+            spot.y - 6 - age * 100).setScale((0.5 + age * 1.8) / AH.Art.D)
+            .setAlpha(Math.sin(age * Math.PI) * (spot.hot || !spot.heat ? 0.75 : 0.2));
+        });
+      });
+    }
+    updateSteamHazards(p) {
+      if (this.state !== 'play' || this.inPipe || this.inBonus || this.warping || this.boss) return;
+      for (const spot of this.steam || []) {
+        if (spot.hot && ov(rectOf(p.body), { x: spot.x - 17, y: spot.y - 64, w: 34, h: 64 })) p.hurt(8, spot.x);
+      }
     }
     ambAdd(img, o) { o.img = img; o.t = 0; o.y0 = img.y; this.amb.push(o); return o; }
     ambSky(kind, atX) {
@@ -887,21 +983,21 @@
       const dir = Math.random() < 0.5 ? -1 : 1, cam = this.cameras.main, sf = 0.5;
       const x = cam.scrollX * sf + (atX === undefined ? (dir < 0 ? 760 : -120) : atX);
       const y = this.ambCfg.roadY === undefined ? AMB_ROAD_Y : this.ambCfg.roadY;
-      const img = this.add.image(x, y + 7 - (dir < 0 ? 0 : 2), 'amb_car_' + kind).setOrigin(0.5, 1).setScrollFactor(sf).setDepth(dir < 0 ? -18.4 : -18.5).setFlipX(dir > 0).setScale((kind === 'tram' ? 0.72 : 0.95) / AH.Art.D);
+      const img = this.add.image(x, y + 7 - (dir < 0 ? 0 : 2), 'amb_car_' + kind).setOrigin(0.5, 1).setScrollFactor(sf, this.L.skyRoute ? 1 : sf).setDepth(dir < 0 ? -18.4 : -18.5).setFlipX(dir > 0).setScale((kind === 'tram' ? 0.72 : 0.95) / AH.Art.D);
       this.ambAdd(img, { car: true, vx: dir * (kind === 'cyclist' ? 30 : kind === 'tram' || kind.indexOf('bus') >= 0 ? 45 : 70 + Math.random() * 30), life: 40 });
     }
     ambRail(kind, atX) {
       const dir = Math.random() < 0.5 ? -1 : 1, sf = 0.5, cam = this.cameras.main;
       const x = cam.scrollX * sf + (atX === undefined ? (dir < 0 ? 900 : -260) : atX);
       const y = this.ambCfg.railY === undefined ? 218 : this.ambCfg.railY;
-      const img = this.add.image(x, y, 'amb_train_' + kind).setOrigin(0.5, 1).setScrollFactor(sf).setDepth(-18.8).setFlipX(dir > 0).setScale(0.65 / AH.Art.D);
+      const img = this.add.image(x, y, 'amb_train_' + kind).setOrigin(0.5, 1).setScrollFactor(sf, this.L.skyRoute ? 1 : sf).setDepth(-18.8).setFlipX(dir > 0).setScale(0.65 / AH.Art.D);
       this.ambAdd(img, { vx: dir * 95, life: 22 });
     }
     // Tour boats cruising the river behind the quays (decorative only, never solid).
     ambBoat(kind, atX) {
       const dir = Math.random() < 0.5 ? -1 : 1, sf = 0.8, cam = this.cameras.main, key = kind === 'region' ? 'boat_' + this.L.region : 'amb_' + kind;
       if (!this.textures.exists(key)) return;
-      const img = this.add.image(cam.scrollX * sf + (atX === undefined ? (dir < 0 ? 760 : -120) : atX), 322, key).setOrigin(0.5, 1).setScrollFactor(sf).setDepth(8.2)
+      const img = this.add.image(cam.scrollX * sf + (atX === undefined ? (dir < 0 ? 760 : -120) : atX), 322, key).setOrigin(0.5, 1).setScrollFactor(sf, this.L.skyRoute ? 1 : sf).setDepth(8.2)
         .setFlipX(dir > 0).setScale(0.78 / AH.Art.D).setTint(0xd8d0e0);
       this.ambAdd(img, { vx: dir * (22 + Math.random() * 14), life: 60, wob: 1.4, amp: 1 });
     }
@@ -911,6 +1007,7 @@
       void cam;
     }
     updateAmbient(dt) {
+      this.updateSteam(dt);
       const A = this.ambCfg;
       if (!A) return;
       if (this.road) this.road.tilePositionX = this.cameras.main.scrollX * 0.5 * AH.Art.D;
@@ -1033,6 +1130,7 @@
 
     warpPipe(fromX, fromY, toX, toY, bounds, zone) {
       const p = this.player, cam = this.cameras.main;
+      const recoveryX = !zone && this.inPipe ? this.inPipe.back.x : toX;
       p.cancelCharge();
       this.warping = true;
       AH.Audio.play('secret');
@@ -1043,7 +1141,8 @@
         cam.once('camerafadeoutcomplete', () => {
           this.inPipe = zone;
           this.physics.world.setBounds(bounds[0], -400, bounds[1], 1200);
-          cam.setBounds(bounds[0], 0, bounds[1], 360);
+          if (zone) cam.setBounds(bounds[0], 0, bounds[1], 360);
+          else this.outdoorBounds(cam);
           p.sprite.setPosition(toX, toY);
           p.sprite.body.enable = true;
           p.sprite.body.reset(toX, toY);
@@ -1051,7 +1150,11 @@
           cam.fadeIn(260, 0, 10, 40);
           this.warping = false;
           if (zone) AH.Audio.music(zone.music || 'pipe', this.L.region);
-          else this.levelMusic();
+          else {
+            this.levelMusic();
+            this.checkpoint = { x: toX, y: toY + 30 };
+            this.restoreTokenTime(recoveryX);
+          }
           if (zone) {
             if (!zone.timeGranted) { this.timeLeft += zone.timeBonus; zone.timeGranted = true; }
             this.toast(zone.name + ' - SECURE AND DEPLOY!');
@@ -1068,7 +1171,7 @@
       (this.pipeSkies || []).forEach(({ sky }) => sky.setVisible(false));
       if (this.fx) this.fx.setVisible(true);
       this.physics.world.setBounds(0, -400, L.width, 1200);
-      cam.setBounds(0, 0, L.width, 360);
+      this.outdoorBounds(cam);
     }
 
     updatePipes(dt, p) {
@@ -1094,8 +1197,10 @@
         if (Z.t > 0.8) {
           Z.t = 0;
           const L = this.L;
-          this.warpPipe(Z.exit.x, Z.exit.y, Z.back.x, Z.back.y - 30, [0, L.width], null);
-          this.checkpoint = { x: Z.back.x, y: Z.back.y };
+          const entry = this.pipes.find(q => q.Z === Z).def;
+          const back = this.mission ? this.mission.pipeReturn(entry, Z.back) : Z.back;
+          if (back === entry) this.toast('PIPE RETURN - RECOVER THE MISSED STREET OBJECTIVES');
+          this.warpPipe(Z.exit.x, Z.exit.y, back.x, back.y - 30, [0, L.width], null);
         }
       }
     }
@@ -1196,7 +1301,7 @@
       const back = () => {
         this.inBonus = false;
         this.physics.world.setBounds(0, -400, L.width, 1200);
-        cam.setBounds(0, 0, L.width, 360);
+        this.outdoorBounds(cam);
         this.secret.booth.setTint(0x777799);
         this.secret.label.setVisible(false);
         this.warping = false;
@@ -1274,7 +1379,7 @@
         const img = this.add.image(p.x, p.y, 'prop_' + p.kind).setOrigin(0.5, p.float ? 0.5 : 1).setDepth(p.float ? 8 : 12);
         if (p.float) this.tweens.add({ targets: img, y: p.y + 7, yoyo: true, repeat: -1, duration: 1400 + (p.x % 600), ease: 'Sine.easeInOut' });
       });
-      this.pups = (L.powerups || []).map((u) => {
+      this.pups = [...(L.powerups || []), ...(L.weaponDrops || [])].map((u) => {
         const spr = this.add.image(u.x, u.y, 'pu_' + u.kind).setDepth(36);
         this.tweens.add({ targets: spr, y: u.y - 6, yoyo: true, repeat: -1, duration: 700, ease: 'Sine.easeInOut' });
         return { spr, def: u, taken: false };
@@ -1330,6 +1435,16 @@
           this.toast('CHECKPOINT!');
         }
       });
+      if (mainWorld && this.flags.some(f => Math.abs(p.x - f.def.x) < 70 &&
+          (this.mode === 'fly' || Math.abs(p.body.bottom - f.def.y) < 55))) this.restoreTokenTime(p.x);
+    }
+
+    restoreTokenTime(x) {
+      const extra = this.mission?.recoveryTime(x, this.timeLeft) || 0;
+      if (extra > 0) {
+        this.timeLeft += extra;
+        this.toast('TOKEN RECOVERY +' + Math.ceil(extra) + 'S - ' + this.mission.snapshot(this.player.x).next);
+      }
     }
 
     buildTerminals() {
@@ -1545,7 +1660,7 @@
         this.player.cancelCharge();
         this.physics.world.pause();
         this.tweens.pauseAll();
-        this.showPanel('PAUSED', '#ffe14a', ['P: RESUME   R: RESTART', 'H: HELP   Q: QUIT TO TITLE'], [
+        this.showPanel('PAUSED', '#ffe14a', ['P / ESC / R: RESUME', 'H: HELP   Q: QUIT TO TITLE'], [
           ['RESUME', () => this.setPaused(false)],
           ['MISSION', () => this.showBriefing(true)],
           ['WORLD MAP', () => this.scene.start('Select')],
@@ -1721,7 +1836,7 @@
       if (this.boss) { this.boss.destroy(); this.boss = null; }
       if (L.boss && !this.bossDone) {
         this.arenaLocked = false;
-        cam.setBounds(0, 0, L.width, 360);
+        this.outdoorBounds(cam);
         cam.startFollow(p.sprite, true, 0.12, 0.12, -40, 0);
         this.levelMusic();
       }
@@ -1744,6 +1859,24 @@
       this.blasts = [];
       this.timeLeft = Math.max(this.timeLeft, 45);
       this.state = 'play';
+    }
+
+    outdoorBounds(cam) {
+      const top = this.L.skyRoute ? this.L.skyRoute.top : 0;
+      cam.setBounds(0, top, this.L.width, 360 - top);
+    }
+
+    recoverCarrier(e) {
+      const needed = e.bossToken && this.mission && this.mission.tokens.some(item =>
+        item.def.id === e.bossToken.id && !item.released && !item.done);
+      if (!needed) return false;
+      e.sprite.body.reset(e.homeX, e.homeY);
+      e.sprite.body.setVelocity(0, 0);
+      e.mode = 'walk';
+      e.act = 0;
+      e.tag.setVisible(false);
+      this.toast('TOKEN CARRIER RETURNED TO ITS POST');
+      return true;
     }
 
     // a lost life restores the level's threats, keeping a safe gap around the respawn point
@@ -1905,7 +2038,11 @@
         return;
       }
       if (cmd.music) AH.UI.nextMusic(this);
-      if (cmd.restart) { this.restart(); return; }
+      if (cmd.restart) {
+        if (this.state === 'paused') this.setPaused(false);
+        else this.restart();
+        return;
+      }
       if (cmd.quit && this.state !== 'dying') { this.quitGame(); return; }
       if (this.state === 'briefing') {
         if (cmd.confirm || cmd.esc) this.briefingAction();
@@ -1950,6 +2087,7 @@
       }
       this.far.tilePositionX = cam.scrollX * 0.15 * AH.Art.D;
       this.near.tilePositionX = cam.scrollX * 0.35 * AH.Art.D;
+      if (this.fore) this.fore.tilePositionX = cam.scrollX * 0.75 * AH.Art.D;
       if (this.water) { this.water.tilePositionX = (cam.scrollX + this.time.now * 0.012) * AH.Art.D; this.water.tilePositionY = Math.sin(this.time.now / 600) * 2 * AH.Art.D; }
 
       if (this.state === 'dying') { this.hud.update(this.snapshot(), dt); return; }
@@ -1978,6 +2116,7 @@
         else {
           p.sprite.x = L.boss.trigger - 16;
           p.sprite.body.setVelocityX(Math.min(0, p.sprite.body.velocity.x));
+          this.restoreTokenTime(p.x);
           if (!this.missionNoticeAt || this.time.now >= this.missionNoticeAt) {
             this.toast('BOSS LOCKED - ' + this.mission.snapshot(p.x).next);
             this.missionNoticeAt = this.time.now + 4000;
@@ -1992,6 +2131,26 @@
       if (this.state === 'play' && p.health <= 0) this.loseLife('hit');
       if (this.boss) this.boss.update(dt, p);
       this.hud.update(this.snapshot(), dt);
+    }
+
+    hitMelee(p, kind, hits) {
+      if (this.mode === 'fly' || this.warping || this.state !== 'play') return;
+      const slide = kind === 'slide', reach = slide ? 24 : kind === 'kick' ? 52 : 38;
+      const box = { x: p.facing > 0 ? p.x : p.x - reach,
+        y: slide ? p.body.bottom - 20 : p.body.bottom - 40,
+        w: reach, h: slide ? 20 : 32 };
+      if (this.rects.some(r => r.active && !r.hazard && ov(box, r))) return;
+      if (!slide) for (const e of this.enemies) {
+        if (!e.dead && !hits.has(e) && ov(box, rectOf(e.sprite.body))) {
+          hits.add(e);
+          e.hit(p.facing);
+        }
+      }
+      const boss = this.boss;
+      if (boss && !boss.dead && !boss.air && !hits.has(boss) && ov(box, rectOf(boss.rect()))) {
+        hits.add(boss);
+        boss.hitByBlast(slide ? 12 : kind === 'kick' ? 14 : 10);
+      }
     }
 
     updateWorld(dt, p) {
@@ -2054,6 +2213,7 @@
       this.updateCheckpoints();
 
       // hazards
+      this.updateSteamHazards(p);
       this.lasers.forEach((l) => {
         const cyc = l.def.on + l.def.off;
         l.active = ((now + l.def.phase) % cyc) < l.def.on;
@@ -2098,6 +2258,8 @@
       });
 
       this.updateBlasts(dt);
+      if (p.meleeT > 0) this.hitMelee(p, p.meleeKind, p.meleeHits);
+      if (p.sliding) this.hitMelee(p, 'slide', p.slideHits);
 
       // enemy bolts
       for (let i = this.ebolts.length - 1; i >= 0; i--) {
@@ -2124,7 +2286,10 @@
         const e = this.enemies[i];
         if (e.dead) { this.enemies.splice(i, 1); continue; }
         e.update(dt, p);
-        if ((this.mode === 'fly' && e.x < cam.scrollX - 80) || e.sprite.y > 460) { e.remove(); continue; }
+        if ((this.mode === 'fly' && e.x < cam.scrollX - 80) || e.sprite.y > 460) {
+          if (!this.recoverCarrier(e)) e.remove();
+          continue;
+        }
         const er = rectOf(e.sprite.body);
         if (!ov(pr, er)) continue;
         const falling = this.mode === 'run' && pb.velocity.y > 60 && pb.bottom < er.y + er.h * 0.65;

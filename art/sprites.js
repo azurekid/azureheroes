@@ -13,6 +13,14 @@
     const panoramaLandmarks = C.sceneryRegistry('panoramaLandmarks');
     const sceneryRoutes = C.sceneryRegistry('sceneryRoutes');
     const environments = C.sceneryRegistry('environments');
+    const groundFaces = C.sceneryRegistry('groundFace');
+    const graffiti = Object.fromEntries(Object.entries(C.sceneryRegistry('graffiti'))
+      .map(([region, design]) => [region, C.registerGraffiti(region, design)]));
+    const foregrounds = C.sceneryRegistry('foreground');
+    const steam = C.sceneryRegistry('steam');
+    const atmospheres = C.sceneryRegistry('atmosphere');
+    Object.entries(foregrounds).forEach(([region, design]) =>
+      C.registerForeground(region, design));
 
     Object.keys(SC).forEach(function (r) {
         sceneryKeys[r] = Object.keys(SC[r]);
@@ -66,6 +74,11 @@
         sceneryStars: sceneryStars,
         sceneryRoutes: sceneryRoutes,
         environments: environments,
+        groundFaces: groundFaces,
+        graffiti: graffiti,
+        foregrounds: foregrounds,
+        steam: steam,
+        atmospheres: atmospheres,
         panoramaLandmarks: panoramaLandmarks,
         billKeys: billKeys,
         buildCloudPlatform: function (scene, p) {
@@ -176,6 +189,8 @@
           mk('coin_spin', ['coin0', 'coin1', 'coin2', 'coin3'], 8);
           mk('robot_walk', ['robot_0', 'robot_1'], 5);
           mk('hacker_walk', ['hacker_0', 'hacker_1'], 5);
+          mk('detective_walk', ['detective_0', 'detective_1'], 5);
+          mk('stale_user_move', ['stale_user_0', 'stale_user_1'], 5);
           mk('drone_fly', ['drone_0', 'drone_1'], 16);
           mk('spider_crawl', ['spider_0', 'spider_1'], 8);
           mk('phish_swim', ['phish_0', 'phish_1'], 6);
@@ -286,7 +301,9 @@
   AH.ArtModules.stages['worlds.redmond.transit'](C);
   AH.ArtModules.stages['worlds.amsterdam.scenery.87'](C);
   AH.ArtModules.stages['worlds.tokyo.scenery.88'](C);
+  AH.ArtModules.stages['worlds.tokyo.atmosphere'](C);
   AH.ArtModules.stages['worlds.new-york.scenery.89'](C);
+  AH.ArtModules.stages['worlds.new-york.scenery.90'](C);
   AH.ArtModules.stages['art.ambient.90'](C);
   AH.ArtModules.stages['worlds.venice.art.91'](C);
   AH.ArtModules.stages['worlds.venice.scenery.92'](C);

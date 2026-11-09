@@ -6,9 +6,82 @@
   const world = AH.Worlds['new-york'] = AH.Worlds['new-york'] || {};
   const content = world.art = world.art || { parts: {} };
   AH.ArtModules.regions['eastus2'] = content;
+  content.parts.graffiti_eastus2 = () => ({
+    tags: ['NYC CREATES', 'BOROUGH VIBES', 'BUILD TOGETHER'], paint: '#ffd277', accent: '#ed86b5'
+  });
+  content.parts.steam_eastus2 = () => ({
+    puff: 'steam_eastus2', vent: 'steam_vent_eastus2', warning: 'steam_hot_eastus2', heat: true
+  });
 
   AH.ArtModules.stages['worlds.new-york.art.69'] = function (C) {
-    const { lg, line, lit, poly, reg2, rrect, shade, txt } = C;
+    const { ell, lg, line, lit, poly, reg, reg2, rrect, shade, txt } = C;
+
+    // Preserve translucent edges instead of crisping the puff into an opaque disc.
+    reg('steam_eastus2', 32, 32, function (g) {
+      const gradient = g.createRadialGradient(16, 16, 2, 16, 16, 15);
+      gradient.addColorStop(0, 'rgba(255,248,226,0.9)');
+      gradient.addColorStop(0.55, 'rgba(220,232,236,0.65)');
+      gradient.addColorStop(1, 'rgba(194,210,220,0)');
+      ell(g, 16, 16, 15, 14, gradient);
+    }, true);
+    reg2('steam_vent_eastus2', 32, 8, function (g) {
+      ell(g, 16, 4, 15, 3, '#272e38');
+      ell(g, 16, 3, 13, 2, '#717c84');
+      for (let x = 7; x < 27; x += 4) line(g, x, 2, x - 2, 5, 1.5, '#28313b');
+    }, { shade: 0, noOutline: true });
+    reg2('steam_hot_eastus2', 48, 20, function (g) {
+      rrect(g, 0, 0, 48, 20, 2, '#422923');
+      line(g, 1, 1, 47, 1, 1, '#ffd073');
+      txt(g, 'HOT', 14, 2, 1, '#ffe1a3');
+      for (const x of [8, 22, 36]) {
+        line(g, x, 18, x - 2, 14, 1.3, '#ffab52');
+        line(g, x - 2, 14, x + 1, 11, 1.3, '#ffab52');
+      }
+    }, { shade: 0, noOutline: true });
+
+    reg2('ground_face_eastus2', 320, 64, function (g, w, h) {
+        g.fillStyle = '#63384b'; g.fillRect(0, 0, w, h);
+        for (let y = 0; y < h; y += 8) {
+          for (let x = (y / 8 % 2 ? -8 : 0); x < w; x += 16) {
+            g.fillStyle = (x + y * 3) % 48 ? '#95555a' : '#aa665e';
+            g.fillRect(x + 1, y + 1, 14, 6);
+            g.fillStyle = 'rgba(255,201,156,0.2)'; g.fillRect(x + 1, y + 1, 14, 1);
+          }
+        }
+        // Storefront recesses are painted on the wall, below the collision top.
+        for (const x of [3, 224]) {
+          g.fillStyle = '#333b50'; g.fillRect(x, 6, 40, 51);
+          g.fillStyle = '#b88e79'; g.fillRect(x, 6, 40, 3); g.fillRect(x + 2, 54, 36, 3);
+          g.fillStyle = '#648294'; g.fillRect(x + 5, 12, 30, 26);
+          g.fillStyle = '#29364a'; g.fillRect(x + 19, 12, 2, 26); g.fillRect(x + 5, 25, 30, 2);
+          line(g, x + 7, 15, x + 15, 15, 1, '#c6e8df');
+          g.fillStyle = '#d1b09a'; g.fillRect(x + 4, 41, 32, 3);
+        }
+        g.fillStyle = '#293446'; g.fillRect(270, 7, 42, 48);
+        g.fillStyle = '#556a76'; g.fillRect(273, 10, 36, 42);
+        for (let y = 13; y < 51; y += 5) line(g, 274, y, 308, y, 1, '#9aaca7');
+        g.fillStyle = '#cfb092'; g.fillRect(270, 6, 42, 2);
+      }, { shade: 0, noOutline: true });
+
+    reg2('bridge_eastus2', 160, 100, function (g) {
+        g.fillStyle = lg(g, 0, 30, 0, 95, [[0, '#697882'], [1, '#24374d']]);
+        g.fillRect(0, 30, 160, 10);
+        g.fillStyle = '#b5c5bd'; g.fillRect(0, 27, 160, 3);
+        g.fillStyle = '#39475a'; g.fillRect(0, 39, 160, 4);
+        for (let x = 0; x < 160; x += 20) {
+          line(g, x, 38, x + 20, 72, 2, '#536879');
+          line(g, x + 20, 38, x, 72, 2, '#536879');
+        }
+        g.fillStyle = '#344b60'; g.fillRect(0, 70, 160, 5);
+        line(g, 0, 71, 160, 71, 1, '#8a9da0');
+        line(g, 0, 20, 160, 20, 2, '#bac6bb');
+        for (let x = 5; x < 160; x += 10) line(g, x, 20, x, 27, 1, '#71858d');
+        [16, 144].forEach((x) => {
+          g.fillStyle = '#536572'; g.fillRect(x - 3, 7, 6, 23);
+          g.fillStyle = '#d1c9a9'; g.fillRect(x - 4, 6, 8, 2);
+          line(g, x, 10, x, 27, 1, '#aeb8ac');
+        });
+      }, { shade: 0.2, noOutline: true });
 
     reg2('boat_eastus2', 138, 44, function (g) {
         poly(g, [[3, 29], [134, 29], [126, 40], [16, 40], [7, 36]], lg(g, 0, 29, 0, 40, [[0, '#f4eee0'], [0.48, '#e2e4df'], [1, '#8e9ba5']]));
@@ -22,6 +95,10 @@
         txt(g, 'STATEN ISLAND', 45, 37, 0.48, '#f6f0df');
         poly(g, [[1, 41], [30, 42], [58, 41], [81, 43], [111, 41], [137, 42]], 'rgba(170,221,238,0.65)');
       }, { shade: 0.25 });
+  };
+
+  content.parts['groundFace_eastus2'] = function () {
+    return 'ground_face_eastus2';
   };
 
   AH.ArtModules.stages['worlds.new-york.art.73'] = function (C) {
@@ -45,7 +122,7 @@
 
   content.parts['SKIES_eastus2'] = function (C) {
 
-    return { stops: [[0, '#090d2c'], [0.3, '#253b77'], [0.56, '#94618d'], [0.78, '#ef8b73'], [1, '#ffd19a']], sun: { x: 405, y: 208, r: 56, c: ['#fff8d8', '#ffc56e', '#eb6370'] }, halo: ['rgba(255,201,138,0.48)', 'rgba(255,112,139,0.18)'], cl: ['rgba(49,62,126,0.48)', 'rgba(207,133,156,0.48)', 'rgba(255,220,180,0.35)'], hz: 'rgba(255,167,133,0.42)', stars: 75, seed: 29, stripes: false };
+    return { stops: [[0, '#090d2c'], [0.3, '#253b77'], [0.56, '#94618d'], [0.78, '#ef8b73'], [1, '#ffd19a']], sun: { x: 405, y: 208, r: 56, c: ['#fff8d8', '#ffc56e', '#eb6370'] }, halo: ['rgba(255,201,138,0.48)', 'rgba(255,112,139,0.18)'], cl: ['rgba(88,70,160,0.5)', 'rgba(255,146,196,0.58)', 'rgba(255,214,226,0.42)'], hz: 'rgba(255,167,133,0.42)', stars: 140, seed: 29, stripes: false };
   };
 
   content.parts['PAL_eastus2'] = function (C) {

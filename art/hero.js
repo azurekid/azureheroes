@@ -583,7 +583,7 @@
         };
       }
 
-    const HERO_FRAMES = ['idle', 'run0', 'run1', 'run2', 'run3', 'jump', 'attack', 'shield', 'fly', 'duck', 'slide'];
+    const HERO_FRAMES = ['idle', 'run0', 'run1', 'run2', 'run3', 'jump', 'attack', 'shield', 'fly', 'duck', 'slide', 'punch', 'kick'];
 
     function regHero(P, look, only) {
         applyLook(look);
@@ -605,6 +605,8 @@
         RUN.forEach((l, i) => reg2(P + 'run' + i, 32, 48, hero({ flare: 8, capeLen: 40, legs: l, back: [[10, 16], [6, 20], [4, 25]], front: [[22.6, 16], [26, 19], [29.6, 18]], fist: true, hx: 1 })));
         reg2(P + 'jump', 32, 48, hero({ flare: 6, capeLen: 42, legs: [[13, 8, 36, 9, 42], [19, 24, 34, 22, 43]], back: [[10, 16], [7, 12], [8, 7]], front: [[22.6, 16], [25, 11], [26.4, 5]], fist: true }));
         reg2(P + 'attack', 32, 48, hero({ flare: 5, capeLen: 40, legs: [[13, 8, 38, 6.4, 47], [19, 24, 38, 26, 47]], back: [[10, 16], [8, 20], [11, 21]], front: [[22.6, 16.4], [26.4, 18], [30.6, 17.6]], fist: true, hx: 1, punchFx: 17.6 }));
+        reg2(P + 'punch', 32, 48, hero({ flare: 4, capeLen: 39, legs: IDLE_LEGS, back: [[10, 16], [8, 18], [12, 17]], front: [[22.6, 16], [27, 16], [31, 15]], fist: true, hx: 1 }));
+        reg2(P + 'kick', 32, 48, hero({ flare: 7, capeLen: 37, legs: [[13, 12, 38, 10, 47], [19, 25, 31, 30, 29]], back: BK, front: [[22.6, 16], [25, 19], [23, 22]], fist: true, hx: -1 }));
         reg2(P + 'shield', 32, 48, hero({ flare: 0, capeLen: 42, legs: [[13, 12, 38, 9, 47], [19, 21.6, 38, 24, 47]], back: [[10, 16], [8, 22], [11, 26]], front: [[22.6, 16], [26, 15.4], [28.6, 15.8]], fist: true, hx: 0 }));
         ['duck', 'slide'].forEach(function (pose) {
           reg2(P + pose, 32, 48, function (g) {

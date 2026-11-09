@@ -1,5 +1,258 @@
 # Playtest report - Microsoft Azure Heroes 2027
 
+## Pipe-safe tokens, recovery time and varied mission placement
+
+- Bug: in street worlds, enter a pipe with an undefeated token carrier between
+  its entry and forward return. Expected: required work remains on the route,
+  with enough recovery time. Previously: the exit always skipped ahead and
+  immediately moved the checkpoint; revisits offered no time. Owners:
+  `systems/scenes.js` pipe return/checkpoints and `systems/mission.js`.
+- Fixed: pending required street work sends the exit back to the entry. Fully
+  completed work retains the forward shortcut. The checkpoint changes only when
+  the warp completes. Low-time pipe returns, nearby checkpoint revisits and
+  blocked boss entry share a distance/climb-based allowance, used at most once
+  per missed token per run. The HUD prioritizes missed carriers and released
+  drops. Token requirements, life-loss preservation and normal enemy combat stay.
+- Mission targets and nearby safe candidates vary from generated geometry:
+  cache/relay, gems, carrier assignments, wardrobe caches and weapon drops.
+  The existing terrain, encounters and objects already regenerate at each new
+  game/restart. No terrain RNG, legacy seeded-output digest, landmark art, music,
+  world IDs, account boundary or save schema changed.
+- Automated PASS: final `npm test` **171/171**. Includes all eleven worlds across
+  100 seeds (1,100 layouts), safe/reachable markers, idempotent mission rebuilding
+  and unchanged terrain RNG. Twelve successive new games in each world verify
+  at least ten distinct terrain/enemy/reward/object layouts, varied cache route
+  fractions and token carriers; Virginia intentionally uses racks, not props.
+  Focused checks cover undefeated/released/collected tokens, required versus
+  optional objectives, post-warp checkpoints, allowance distance/climb thresholds,
+  repeated grants, collected/ahead tokens, room/pause suppression and read-only HUD.
+- Real Chrome/Arcade/input scenario PASS: separate processes in Amsterdam
+  (seed 1), Paris (42) and New York (2027). Each selected a generated pipe whose
+  shortcut crossed an actual token carrier, landed on the pipe and used held S
+  to enter. Held S on the actual room exit returned to the original entry with
+  that safe checkpoint, zero free tokens and all three live carriers intact.
+  With 12s remaining before exit, returns left about 65s, 66s and 70s respectively.
+  Repeated recovery calls did not refill time. A second pipe in each world used
+  its normal forward return after required work was marked complete.
+- Assistance/gaps: the harness positioned the hero on entry/exit pipes and set
+  low time; it did not traverse entire rooms. The completed-shortcut branch used
+  explicitly assigned completed mission flags, not legitimate token collection.
+  No invulnerability, forced boss stun or production bypass was added. The
+  existing pinned Phaser artifact was supplied only to its exact CDN request.
+  Successful runs had no runtime exceptions; initial concurrent browser runs
+  timed out during the full suite, then passed on retry without runtime changes.
+  Return captures pause mid-fade. This is integration evidence, not unassisted
+  traversal/balance, real-device testing or an audition of unchanged music.
+
+## Hot steam and regional weather
+
+- New York now uses eight reusable, warm-white puffs per vent, rising about
+  100 logical pixels. HOT plates pulse before a timed, narrow 8-damage core;
+  the secret manhole remains decorative. Tokyo adds slow skyscraper parallax,
+  Japanese vertical neon signs, convenience shops, vending machines, tactile
+  paving, bike markings, umbrellas and sparse foreground wires/poles. Amsterdam
+  adds two rainy/overcast stretches with wet surface reflections and dry gaps.
+- Browser scenario checks PASS, not whole-level completion: separate headless
+  Chrome processes loaded seed 2027 New York, Tokyo and Amsterdam through the
+  actual script loader. A cached copy of the existing pinned Phaser artifact
+  replaced only its exact CDN request in the harness; production loading is
+  unchanged. No runtime exceptions occurred in the successful runs.
+- Assisted camera/clock positioning captured Tokyo and Amsterdam at day/night,
+  plus route fractions 0.12, 0.34, 0.50, 0.72 and 0.85. Inspected rainy Amsterdam
+  surfaces and its dry late stretch; Tokyo storefronts, signs, sparse framing,
+  tower silhouette, birds and pickups remain readable. Forced-touch captures
+  show the actual flight shield and ground melee controls above the effects.
+  Small street details remain background decoration, not flight obstacles.
+- In the real New York scene, placing the hero in an active vent reduced health
+  100 -> 92; a repeated same-frame check stayed at 92. Three sources were present
+  in this layout after safety filtering; the secret source was never hot.
+  The measured puff rise was 97.67 logical pixels. Pause froze steam and rain;
+  toggling bonus-room state hid/restored the weather layers.
+- Automated coverage checks warning/hot/cool phases, safe spawn/checkpoints,
+  mission items, tokens and pipe returns, normal damage invulnerability, shield
+  behavior, jumping above the core, pause/help/warp/boss suppression, weather
+  fades, wet-top alignment/exclusions and persistent allocation. Tests load
+  actual modules in explicit browser order. Eight seeded New York layouts
+  retained safe anchors and decorative manholes. Final `npm test` passed
+  **164/164**; changed JavaScript syntax checks and `git diff --check` passed.
+- Assistance/limitations: cameras, clocks, body position and active heat phase
+  were set directly; physics was paused for captures. This does not establish
+  unassisted hazard traversal, balance, every generated layout, actual warp
+  traversal or real-device behavior. Initial captures retained an unfinished
+  intro fade and two harness runs timed out at browser shutdown; camera FX and
+  exact-process cleanup were corrected and all five final runs exited normally.
+  Regional music is unchanged. Earlier new songs still await human listening.
+
+## Named songs, sewer steam, resume and player melee
+
+- Changes: N/MUSIC cycles Trance, House, Pop, Night Drive and Soft Skies.
+  The two named songs have independent original four-bar hooks and response
+  melodies, rather than regional melody reskins. New York has decorative,
+  reusable sewer steam. R resumes pause without resetting the run. Flight
+  direction controls aim backward/forward, and E/touch SHIELD now works in
+  flight. J/PUNCH, K/KICK and slides punish open ground bosses alongside blasts.
+- Automated: `npm test` passed **158/158**; changed JavaScript syntax checks and
+  `git diff --check` passed. Subsequent ground-boss OPEN wording and soft-alpha
+  refinements passed 24 focused combat/resume and 11 street-art tests respectively.
+  Added coverage includes named-song
+  persistence, malformed/blocked storage, mute/stop/context compatibility,
+  actual ordered module loading, steam bounds/freeze/suppression, pause-run
+  preservation, flight facing/shielding, shared melee cooldowns, once-per-target
+  damage, walls and the existing boss armor gate. Wardrobe rendering tests now
+  include punch/kick in both bodies, all regional bundles and headwear cases;
+  the expanded wardrobe suite separately passed 13/13.
+- Browser integration checks PASS for the tested scenarios, not whole levels:
+  separate Chrome processes opened New York, Tokyo, Rio and Mexico with
+  randomized layouts and forced-touch controls. Actual held keyboard R preserved
+  the generated layout, health, mission tokens and score. N visited all five
+  choices in order while paused; pointer events used the real MUSIC target.
+  Named choices persisted through preference reload and retained their selected
+  song across pipe/boss context routing.
+- New York: ground puffs visibly rise and fade; daytime/night screenshots used
+  assisted camera/clock positioning without the pause overlay. Seven sources
+  in the inspected layouts used four reusable puffs each. Paused time stayed
+  fixed, bonus-room flags hid all puffs/vents and returning restored them.
+  Actual canvas inspection verified 78 alpha levels, maximum 179/255 and no
+  opaque pixels: puffs retain soft edges instead of crisp opaque discs.
+  Keyboard punch/kick/slide changed boss HP 100 -> 90 -> 76 -> 64.
+  Actual mouse clicks on forced-touch PUNCH/KICK then changed HP to 54 and 40.
+  Cooldown waits used simulation time, not elapsed wall time.
+- Tokyo/Rio/Mexico: actual Left/F presses fired backward and defeated a trailing
+  regional bird with two hits, then damaged a trailing air boss from 100 to 90 HP.
+  E blocked a front-facing enemy bolt. Direct integration calls to the actual
+  air-boss bolt handler preserved 100 player HP for a front hit and reduced it
+  to 85 for a rear hit. SHIELD was present in each flight touch layout.
+- Assistance/gaps: bird targets were positioned behind the hero, other enemies
+  removed and hazard rectangles cleared to isolate firing. Boss targets used
+  assisted placement and an explicitly forced recovery window; New York boss
+  setup temporarily bypassed the mission gate only inside the browser harness.
+  No production bypass was added. These are real rendering/Arcade/input
+  integration checks, **not unassisted traversal, boss balance or natural-window
+  completion**. Forced-touch/mouse is not a real-device test. New steam warp/boss
+  suppression is regression-tested, but actual room/warp traversal, browser
+  account flows and every other world's new melee combat were not replayed.
+  Early harness runs raced title startup or used wall-clock cooldown waits;
+  those harness errors were corrected before the successful integration checks.
+- Actual Web Audio: OfflineAudioContext rendered two loops, a loop join and SFX
+  at 22050 Hz. Night Drive: peak 0.29436, RMS 0.02825, absolute DC < 0.000001,
+  maximum adjacent delta 0.25907, loop delta 0.000086. Soft Skies: peak 0.20554,
+  RMS 0.01510, absolute DC < 0.000003, maximum delta 0.25397, loop delta 0.000134.
+  Both passed the existing finite/headroom/loop numerical gates. WAV previews
+  and render reports are session artifacts, not downloaded game assets.
+  **Human headphone/speaker listening approval remains pending.** Numerical
+  rendering does not certify timbre, artistic quality or release readiness.
+  Maintainer review is required before merge; no deployment was performed.
+
+## Worldwide street art, armed guests and house arrangements
+
+- Scope: localized city tags in all eleven worlds, Japanese decorative glyphs,
+  AZURE HEROES/AZUREKID lettering, Octocats and Copilot figures in three spray
+  styles. Compact decals fit eligible walking-path fronts; flight worlds use
+  non-solid wall panels. Geometry-based placement does not consume gameplay RNG.
+  Shared city facades render behind landmark strips; New York keeps its authored
+  foreground. Guests and stale users are hacker-sized shooters with distinct
+  pistol/rifle art. House has faster main/boss grooves and softer menu/room
+  arrangements; regional hooks, styles and audio preferences remain in place.
+- Automated: focused tests exercise the real ordered modules, all city
+  descriptors/variants, decorative glyph coverage, collision rectangles and
+  visible-width placements across 20 seeded layouts per world. Both variants
+  fire, retain hacker-sized bodies, take two hits and clean up correctly. Audio
+  tests check house tempos, seventh chords, sparse lounge percussion, varied
+  rhythms, distinct scene hooks, regional routing, mute and persistence.
+- Visual integration: separate bounded Chrome processes opened each of eleven
+  worlds with seed 2027; desktop screenshots used assisted camera repositioning,
+  clock changes and paused physics. Inspected entry/day and later/night views.
+  All registered regions had three decal variants and a foreground; Centraal
+  Station is visible in the Amsterdam entry screenshot. Virginia's rack uses
+  its real gameplay layer. All eleven worlds were rechecked after the 200px
+  fitting change.
+  Eight synthetic generated challenge themes, three sections each, and cloud,
+  retro, Xbox and sewer secrets were inspected in New York with assisted camera
+  placement. They are art/composition checks, not room traversal or warp tests.
+- Enemy integration: in Amsterdam actual Arcade world stepping verified both
+  guest appearances have 32x37 art and 20x34 bodies, fire bolts, take 10 damage
+  unshielded and are blocked by a correctly facing shield, and die on two hits.
+  Fourteen guests were spawned into synthetic rooms across the eight themes;
+  after 60 physics steps their bodies were clear of solids. This is assisted,
+  stationary integration, not unassisted combat or all possible patrol routes.
+- Audio: actual OfflineAudioContext renders contain two loops and a loop join,
+  with coin/blast/hit SFX, for shared house title/main/pipe/boss/bonus, London
+  house main/pipe/boss, and unchanged London trance/pop main. All samples were
+  finite; peaks 0.194-0.303, RMS 0.0150-0.0289, absolute DC below 0.00020,
+  maximum adjacent delta below 0.269, loop delta below 0.00024. Live routing
+  switched all three styles through London main/pipe/boss, toggled mute and
+  stopped playback. Before-change London house main/pipe reference renders were
+  also generated. Browser QA used the existing Phaser distribution verified against
+  the unchanged SRI; production loading and network permissions were not changed.
+- Remaining gaps: human headphone/speaker listening and comparison are required
+  before music approval; the assistant did not audition the recordings. Rendered
+  WAVs are session artifacts under `files/house-audio/` and `files/house-before/`.
+  Full unassisted play, mobile/touch hardware, room traversal/return, additional
+  random seeds with live physics, and human visual review remain unverified.
+
+## Street spray art, cloud climbs and recoverable boss tokens
+
+- Scope: Amsterdam (1), London (2), New York (11) have city-owned painted
+  walking-path faces and six/seven-step extensions to existing cloud stairways.
+  Each summit has an MFA token and one of the three required enemy tokens.
+  Existing objectives, six gems, quota, level IDs, saves and regional music remain.
+  All worlds receive four additional alternating spread/beam pickups. Tap fire
+  cooldown is 0.10s, fully charged 0.30s; charge/release and Boost costs are unchanged.
+  Stale guests are crouched people with expired badges. Shared detective artwork
+  changes a rogue shooter's appearance, not its two-hit combat rules.
+- Automated evidence: full `npm test` (142/142 passing), plus changed/new JavaScript syntax and
+  whitespace checks. Focused tests load actual modules in HTML order and check
+  90 seeded cloud routes using numerical ascending/descending collision
+  trajectories; 330 world layouts check safe, distributed weapons. The existing
+  1,100 mission-layout checks and historical opt-out generation digest remain.
+  Actual scene cleanup tests reproduce falling and flight-offscreen carriers:
+  unfinished carriers return alive with remaining health, without granting a
+  token; released tokens persist and no longer require carrier recovery.
+- Browser evidence: the normal CDN was unavailable. QA intercepted only the
+  existing Phaser request with the exact 3.80.1 distribution obtained from its
+  public upstream repository and verified against the unchanged SHA-384/SRI.
+  No dependency, CDN URL or production loader was changed.
+- Separate bounded Chrome processes tested all three cities using actual Arcade
+  world updates and Player.update at manually stepped 60Hz: Amsterdam 7/7,
+  London 6/6, New York 7/7 ascending landings, plus all intervening descending
+  landings. Each required summit carrier was hit once, forced below the cleanup
+  threshold, recovered at its post with one health, then defeated. The released
+  token collected through actual mission-body overlap; incomplete missions still
+  kept the boss locked. The MFA token and safe summit anchor were also inspected.
+- Assistance: each trajectory began by positioning the hero on its preceding
+  platform with a running start. Enemies were parked offscreen; invulnerability,
+  time refill and automatic briefing acknowledgment isolated geometry. Carrier
+  hits/fall and final camera placement were scripted. These are real collision
+  integration checks, not unassisted combat completions or real-device tests.
+  Earlier wall-clock browser bots missed landings when several physics steps ran
+  per rendered frame; the bounded fixed-step checks above replaced that evidence.
+- Visual review: actual registered canvases show brick/stone surfaces, original
+  slanted lettering, overspray, speckles and drips in all three cities, plus human
+  guests and trench-coated/fedora detectives. Final summit screenshots confirm
+  an above-street viewport and anchored HUD. Regional tracks/SFX were not changed;
+  no new musical arrangement or listening approval is claimed.
+- Remaining gaps: unassisted full-route combat, live continuous traversal across
+  many seeds, keyboard/touch play on real mobile devices, new-route room/secret
+  round trips and human visual/listening approval. Existing automated room,
+  camera, combat, save, online and security-boundary checks remain enabled.
+  Preview browsers and server are stopped after QA.
+
+## New York walkway and bridges
+
+- The New York ground face now carries storefront details and large graffiti;
+  its shared collision top and all platform dimensions remain unchanged.
+  The formerly missing `bridge_eastus2` texture now depicts the existing solid
+  bridges. PR 2's close-range city layer is included.
+- Automated checks exercise actual ordered art modules and 30 seeded New York
+  layouts, including generated bridge texture references and unchanged collision
+  rectangles; they also check other cities and special platforms keep their art.
+- An assisted browser canvas composite displayed the registered New York sky,
+  foreground, walking-path wall and bridge at logical gameplay scale. This is
+  an artwork preview, not a live playtest or a collision-traversal test.
+- Live gameplay, other times of day and touch layout were not checked: the
+  local browser could not load the existing Phaser CDN script. Human visual
+  review and live playtesting are still required.
+
 ## Regional routes, mission briefings and inclusive wardrobe defaults
 
 - Redmond's guaranteed scenic stops now include Microsoft campus, Pike Place

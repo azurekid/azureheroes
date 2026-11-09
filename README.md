@@ -27,6 +27,14 @@ At each level's start a locally dressed guide explains the deployment key, relay
 two hidden gems and three enemy-carried boss tokens. Press **Enter / Space** or
 tap **BEGIN MISSION** to start; the timer and physics wait. Review these tasks
 with **Pause > MISSION** without resetting your progress.
+**R**, **P** or **Esc** resumes a paused level without resetting position, missions or score.
+In flying levels, **Left/A** turns you to shoot backward at birds behind you;
+**Right/D** turns you forward again. Touch direction buttons work the same way.
+Hold **E / SHIELD** to block front-facing attacks in flight as well as on foot.
+Shielding cancels charging and disables Boost until released.
+On foot, **J / PUNCH** and **K / KICK** add close-range attacks alongside blasts;
+moving while holding Down/S slides into an open boss. Armor still blocks all
+damage: bait a missed attack or shield-block attacks, then punish the green OPEN window.
 
 ![World map](docs/screenshots/world-map.png)
 
@@ -48,10 +56,27 @@ with **Pause > MISSION** without resetting your progress.
 
 New York uses East US 2 as its Azure hosting-region mapping; this does not imply a
 New York datacenter. Its map pin marks the city, with an offset to keep Virginia tappable.
+Stronger sewer steam rises from street grates. Orange HOT plates warn for two
+seconds before a three-second hot phase: the narrow plume core deals 8 damage,
+even through Shield. Wait for cooldown or jump over it; spawn, mission items and
+pipe returns stay safe. The secret manhole's steam is decorative. Steam freezes
+when paused and disappears indoors or during boss fights.
+
+Tokyo adds distant skyscrapers, neon Japanese signs, vending machines, narrow
+storefront alleys, overhead wires, umbrella pedestrians and painted wet-street
+reflections, while retaining its flight route. Amsterdam has rainy/overcast
+stretches with wet roads and platform tops, separated by dry stretches. These
+local code-drawn effects use layered parallax and additive light, not shaders;
+landmarks, collision geometry and regional music stay unchanged.
 
 Levels are generated at random each time a level starts, so platforms, lasers, enemies, coins, power-ups and MFA tokens land in new places on every run. Run levels mix gaps, steps up, drops and floating platforms at different heights, and every region has its own coins, enemy skins, scenery props, traffic, birds and sky objects (planes, balloons, blimps, helicopters). Outdoor worlds start at a random time of day, then smoothly cycle through night, sunrise, morning, day, afternoon and sunset every four minutes of active outdoor play. Pause/help, warps and underground visits freeze the outdoor clock; Virginia's data center keeps its indoor lighting.
 
-Every region also has cyber-threat enemies: **Phishing hoppers** leap at you, **Ransomware chargers** wind up and dash, and **DDoS botnet clouds** follow you and drop bombs. Street and data-center levels also feature pipeline bugs, vulnerable container images, overprivileged RBAC robots, exposed-endpoint turrets, stale guest-account crawlers and **Rogue Hackers** who fire from handheld terminals. Their bolts can be blocked with the MFA Shield. Defeating them reveals tips about GitHub Actions, Defender for Cloud, Entra MFA and access reviews, least privilege and Azure Private Link.
+Deployment caches, relays, hidden gems, token-carrier assignments, weapon drops
+and wardrobe caches also vary their safe positions within each generated route.
+Restart creates a fresh layout; death preserves the current layout and mission
+progress. Safe spawn areas, boss arenas and signature landmarks stay recognizable.
+
+Every region also has cyber-threat enemies: **Phishing hoppers** leap at you, **Ransomware chargers** wind up and dash, and **DDoS botnet clouds** follow you and drop bombs. Street and data-center levels also feature pipeline bugs, vulnerable container images, overprivileged RBAC robots, exposed-endpoint turrets, armed guest/stale-user shooters and **Rogue Hackers** who fire from handheld terminals. Their bolts can be blocked with the MFA Shield. Defeating them reveals tips about GitHub Actions, Defender for Cloud, Entra MFA and access reviews, least privilege and Azure Private Link.
 
 ### Missions and hidden Azure gems
 
@@ -128,8 +153,33 @@ Every level ends in a street-fighter style showdown with that region's boss: a c
 | Cosmos Beam | Replaces the blaster for 25 s: pierces three enemies, five when charged; stops at walls |
 
 **Tap F and release for a quick shot; hold F up to 1.2 seconds, then release for a stronger shot.**
-Quick shots now have a **0.16-second cooldown** (previously 0.30); full-charge
-cooldown is 0.36 seconds. Projectile speed, charging and Boost costs are unchanged.
+Quick shots have a **0.10-second cooldown**; full-charge cooldown is 0.30 seconds.
+Holding fire still charges for 1.2 seconds, rather than auto-firing. Projectile speed
+and Boost costs are unchanged. Four additional spread/beam pickups are distributed
+along each main route; weapons still expire after 25 seconds.
+
+Amsterdam, London and New York include six/seven-step cloud climbs with an MFA
+token and a required token carrier at the summit. Follow the CLOUD TOKENS sign;
+the camera follows upward and you can descend the same platforms. These existing
+worlds retain their regional music. Fallen unfinished carriers return to their
+posts instead of permanently removing a boss requirement. Trench-coated snooping
+detectives reuse rogue-shooter behavior.
+
+Every world has localized spray tags alongside AZUREKID, AZURE HEROES, Octocats
+and Copilot figures in bubble, stencil and angular wildstyle lettering. Their
+positions and later-wall selection vary with generated layouts without changing
+gameplay randomness. Compact street tags sit above the HUD and fit narrower
+walls without cropping. Tokyo uses a small code-drawn Japanese graffiti glyph set, separate from the
+UI font; Mexico City uses Spanish, Rio Brazilian Portuguese and Paris French.
+The other worlds use local phrases and palettes. Ground/room fronts carry painted
+decals; flight routes have non-solid wall panels between rock columns. Regional
+near-building layers add depth behind landmark facades, keeping Centraal Station,
+Erasmus Bridge and other highlights visible. New York retains its authored art.
+
+Stale users and unreviewed guests are now the same size as rogue hackers. Stale
+users carry long energy rifles; guests carry compact energy pistols. Both patrol
+and fire shield-blockable bolts. They are tall targets: blast, shield or stomp them
+instead of relying on a low slide attack. Worms and bugs retain their low silhouettes.
 The touch BLAST button works the same way. The HUD shows the weapon, remaining pickup
 time and charge; a glowing muzzle signals charge readiness. Charged Azure/Cosmos shots
 deal up to three normal hits and use up to 20 extra Boost. Spread pellets each deal one
@@ -205,7 +255,16 @@ Rooms shuffle seven distinct layout types: steps, catwalks, ducts, split-level r
 security-laser crossings, encounter arenas and switchbacks. Bay widths, lesson order,
 threats and rewards vary, and layouts do not repeat within a room. Duck or slide under
 ducts, or jump onto their roofs. Each room grants extra time once on entry. The exit
-pipe returns you farther along the street and sets a checkpoint.
+pipe returns you farther along the street only when that shortcut would not skip
+unfinished required street work. Otherwise it returns you to the entry so you can
+recover the carrier, token or objective. The checkpoint updates after the warp.
+
+When a missed token requires backtracking, pipe returns, nearby checkpoints
+(including revisits) and blocked boss entry offer a **one-time recovery allowance
+per token** if time is low: 60 seconds plus round-trip distance and climb time.
+The HUD prioritizes missed carriers/tokens and shows their direction. This does
+not award tokens or refill the clock indefinitely; the boss still requires all
+three tokens, the deployment key, relay and gem quota.
 
 Docker and AKS rooms are shipping-container docks with corrugated cargo stacks,
 locking bars, cranes, harbour water and work lights. GitHub Actions and Azure
@@ -287,16 +346,26 @@ Collect 5 MFA tokens for an extra life. Every enemy takes 2 hits and drops an Az
 
 ## Music
 
-Choose **trance, house or pop** by pressing **N** or tapping the
+Press **N** or tap the **MUSIC** button to cycle **Trance → House → Pop →
+Night Drive → Soft Skies → Trance**. Night Drive is a new 134 BPM House song
+with a syncopated hook and a contrasting response; Soft Skies is a separate
+108 BPM lounge tune with spacious keys and sparse percussion. They have original
+melodies, not just different instruments playing the same notes.
+Named songs continue across worlds, rooms and bosses until you select another
+option; selecting a genre restores the region's contextual soundtrack.
+
+Choose music using the
 **MUSIC** button on the title screen, world map, Hero Lab, leaderboard, or during a
 level (including pause). The button shows the current style and cycles through the
-choices. The selection is saved on this device only, separately from game progress;
+choices, including the named song. The selection is saved on this device only, separately from game progress;
 it is not synced to an online account. If browser storage is unavailable, the
 selection lasts for the current session.
 
 The original soundtrack is synthesised locally with Web Audio; no audio files are
 downloaded. **Trance** is the default: melodic arpeggios, builds and drops.
-**House** uses warm keys, four-on-the-floor grooves and offbeat bass. **Pop** uses
+**House** uses warm keys, four-on-the-floor grooves and offbeat bass, with
+faster street/boss beats and quieter lounge arrangements for menus and rooms.
+**Pop** uses
 original repeated hooks, verse/chorus contrast and a straight backbeat.
 All 11 cities retain local motifs through streets, underground rooms and boss
 fights. We no longer offer simulated rock, jazz, blues or country.
@@ -363,7 +432,7 @@ listening and musical taste remain human checks.
 | Low Azure Blast | F while ducking | Duck + Blast |
 | MFA Shield (blocks shots and boss hits from the front, works in the air) | E | Shield button |
 | Crouch guard (low shield) | Down / S while standing still | Duck button |
-| Pause / Restart / Mute | P or Esc / R / M | Pause button |
+| Pause / Resume / Restart / Mute | P or Esc / R while paused / R during play / M | Pause button; Resume in menu |
 | Change music style | N | MUSIC button |
 | Help (Hero Handbook) | H (title and in game) | HELP button |
 | Quit to title | Q, or QUIT in the pause menu | Pause > QUIT |

@@ -51,6 +51,15 @@
       fill: { k: 'X.....x...x.....', s: '....x.......x.x.', h: '..x...x...x...x.' }
     }
   };
+  const HOUSE_GROOVES = [
+    { k: 'X...x...x...x...', s: '....x.......x...', h: 'x...x.x...x.x.x.', o: '..x.......x.....' },
+    { k: 'X...x...x...x...', s: '....x.......x...', h: '..x.x...x.x...x.', o: '......x.......x.' },
+    { k: 'X...x...x...x...', s: '....x.......x...', h: 'x.x...x.x...x.x.', o: '..x.......x.....' },
+    { k: 'X...x...x...x...', s: '....x.......x..x', h: '..x...x...x.x...', o: '......x.........' }
+  ];
+  const LOUNGE_GROOVES = HOUSE_GROOVES.map((groove, i) => ({
+    ...groove, h: i % 2 ? '......x.......x.' : '..x.......x.....', o: '................'
+  }));
   const NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
   function degreeMelody(chord, pattern) {
     const ch = chordOf(chord);
@@ -95,21 +104,28 @@
       return note(tonic + interval + (contrast && i < 4 ? 12 : 0));
     }).join(' ');
     const harmony = (offset, quality) => NOTE_NAMES[(pc + offset) % 12] + quality;
-    const progression = [harmony(0, 'm'), harmony(8, ''), harmony(3, ''), harmony(0, 'm')].join(' ');
+    const pop = style === 'pop', house = style === 'house';
+    const lounge = house && ['title', 'pipe', 'bonus'].includes(context);
+    const progression = [harmony(0, house ? 'm7' : 'm'), harmony(8, house ? 'maj7' : ''),
+      harmony(3, house ? 'maj7' : ''), harmony(0, house ? 'm7' : 'm')].join(' ');
     const section = (contrast, resolve) => ({
       chords: progression, mel: hook.map((bar, i) => phrase(bar, contrast, resolve && i === 3))
     });
-    const pop = style === 'pop', house = style === 'house';
-    const bpm = (pop ? 114 : house ? 126 : 136) + (context === 'pipe' ? -10 : context === 'boss' ? 8 : 0);
+    const bpm = house ? ({ title: 104, main: 134, pipe: 108, bonus: 112, boss: 142 })[context]
+      : (pop ? 114 : 136) + (context === 'pipe' ? -10 : context === 'boss' ? 8 : 0);
+    const houseArps = lounge
+      ? ['..c---....c---..', '......c---..c-..', '..c---....c---..', '....c-....c---..']
+      : ['..c...c...c...c.', '..c...c....c..c.', '..c....c..c...c.', '..c...c...c..c..'];
     return {
       name: theme.name + ' ' + style.toUpperCase(), bpm, style, beats: 4, steps: 16,
       lead: pop ? 'brightkeys' : house ? 'keys' : 'supersaw',
-      arp: pop ? 'keys' : 'trancepluck', bass: pop ? 'round' : 'club', drums: style,
+      arp: pop || lounge ? 'keys' : 'trancepluck', bass: pop || lounge ? 'round' : 'club', drums: style,
       bassPat: pop ? 'R---..5-R-..8-..' : '..R-..R-..8-..5-',
-      arpPat: pop ? 'c---......c---..' : house
-        ? theme.feel === 'syncopated' ? '..c...c....c..c.' : '..c...c...c...c.' : '0.2.1.2.0.2.1.2.',
-      echo: pop ? 0.055 : house ? 0.09 : 0.13, echoSteps: 3, fillEvery: 8,
+      arpPat: pop ? 'c---......c---..' : house ? houseArps : '0.2.1.2.0.2.1.2.',
+      drumPatterns: house ? lounge ? LOUNGE_GROOVES : HOUSE_GROOVES : undefined,
+      echo: pop ? 0.055 : lounge ? 0.055 : house ? 0.09 : 0.13, echoSteps: 3, fillEvery: 8,
       production: { energy: context, colour: theme.colour, feel: theme.feel,
+        ...(house ? { lounge } : {}),
         mix: pop ? [0.9, 0.7, 0.7, 0.65] : [0.85, 0.65, 0.8, 0.8] },
       sections: { I: section(false, true), V: section(false, true), C: section(false, true),
         B: section(true, true), O: section(false, true) },
@@ -134,7 +150,8 @@
           e[3] *= bar.section === 'C' ? 0.85 : 0.6;
         }
         if (e[0] === 'h' || e[0] === 'o') e[3] *= 0.6;
-        if (raw.production.energy === 'pipe') e[3] *= 0.72;
+        if (raw.production.lounge) e[3] *= 0.6;
+        else if (raw.production.energy === 'pipe') e[3] *= 0.72;
         if (outro) e[3] *= 0.8;
         return e;
       }));
@@ -189,7 +206,7 @@
         if (n) ev[s].push(['bass', n, span(bp, s), s === 0 ? 1 : 0.85]);
       }
       // chord voice
-      const ap = raw.arpPat;
+      const ap = Array.isArray(raw.arpPat) ? raw.arpPat[bi % raw.arpPat.length] : raw.arpPat;
       for (let s = 0; s < steps; s++) {
         if (breakdown && s % 4 !== 2) continue;
         const c = ap[s];
@@ -204,7 +221,8 @@
       }
       if (dance) b.tones.forEach((n) => ev[0].push(['pad', n - 12, steps, 0.6]));
       const fillEvery = raw.fillEvery || 8;
-      const d = bi % fillEvery === fillEvery - 1 ? drums.fill : drums;
+      const d = raw.drumPatterns ? raw.drumPatterns[bi % raw.drumPatterns.length]
+        : bi % fillEvery === fillEvery - 1 ? drums.fill : drums;
       ['k', 's', 'h', 'o'].forEach((v) => {
         const p = d[v];
         if (!p) return;

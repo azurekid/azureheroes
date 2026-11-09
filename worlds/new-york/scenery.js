@@ -127,6 +127,88 @@
       }, FLAT);
   };
 
+  // Painted front-of-city layer: close rooftop details that scroll faster than the skyline behind them.
+  AH.ArtModules.stages['worlds.new-york.scenery.90'] = function (C) {
+    const { FLAT, ell, glowRect, lg, line, lit, poly, reg2, rrect, txt } = C;
+    const WIN = ['#ffd27a', '#8fe3ff', '#ff9ad0'];
+
+    function palm(g, x, base, height, lean) {
+      const tx = x + lean, ty = base - height;
+      g.strokeStyle = '#0a1230'; g.lineWidth = 2.4;
+      g.beginPath(); g.moveTo(x, base); g.quadraticCurveTo(x + lean * 0.2, base - height * 0.6, tx, ty); g.stroke();
+      for (let i = 0; i < 7; i++) {
+        const a = -Math.PI + (i / 6) * Math.PI, len = 17 + (i % 2) * 5;
+        const ex = tx + Math.cos(a) * len, ey = ty + Math.sin(a) * len * 0.5 + 9;
+        g.strokeStyle = i % 2 ? '#0d2442' : '#0a1a38'; g.lineWidth = 2;
+        g.beginPath(); g.moveTo(tx, ty); g.quadraticCurveTo(tx + Math.cos(a) * len * 0.6, ty + Math.sin(a) * len * 0.8 - 5, ex, ey); g.stroke();
+      }
+    }
+    function acUnit(g, x, y) {
+      rrect(g, x, y, 24, 17, 1.5, '#1a2a52'); line(g, x, y, x + 24, y, 1, '#5fb4ff');
+      ell(g, x + 9, y + 9, 6, 6, '#0d1636');
+      for (let i = 0; i < 4; i++) line(g, x + 9 - 5 + i * 3.3, y + 4, x + 9 - 5 + i * 3.3, y + 14, 0.6, '#3b5a96');
+      for (let i = 0; i < 4; i++) line(g, x + 17, y + 3 + i * 3.4, x + 22, y + 3 + i * 3.4, 0.7, '#32487c');
+    }
+    function waterTower(g, x, base) {
+      g.fillStyle = '#0c1433'; for (const dx of [4, 22, 38]) g.fillRect(x + dx, base - 26, 2.4, 26);
+      line(g, x + 5, base - 10, x + 39, base - 4, 0.8, '#22346a'); line(g, x + 39, base - 10, x + 5, base - 4, 0.8, '#22346a');
+      rrect(g, x, base - 52, 44, 27, 3, lg(g, 0, base - 52, 0, base - 25, [[0, '#2c3f7a'], [1, '#15214b']]));
+      for (let hx = 7; hx < 44; hx += 9) line(g, x + hx, base - 51, x + hx, base - 26, 0.8, '#0e1738');
+      poly(g, [[x - 3, base - 52], [x + 22, base - 66], [x + 47, base - 52]], '#1a2858');
+      line(g, x - 3, base - 52, x + 22, base - 66, 1, '#ff8fd8'); line(g, x + 22, base - 66, x + 47, base - 52, 1, '#ff8fd8');
+    }
+    function ladder(g, x, top, base) {
+      line(g, x, top, x, base, 1.2, '#2a3d78'); line(g, x + 8, top, x + 8, base, 1.2, '#2a3d78');
+      for (let y = top + 4; y < base; y += 6) line(g, x, y, x + 8, y, 0.8, '#4e6bb0');
+    }
+    function sign(g, x, y, text, neon) {
+      const w = text.length * 4 + 8;
+      rrect(g, x, y, w, 12, 2, '#0b1230'); line(g, x + 0.5, y + 0.5, x + w - 0.5, y + 0.5, 1, neon);
+      glowRect(g, neon, x + 1, y + 1, w - 2, 10);
+      txt(g, text, x + 4, y + 3, 0.6, neon);
+      line(g, x + 5, y + 12, x + 5, y + 20, 1, '#1d2b5e'); line(g, x + w - 5, y + 12, x + w - 5, y + 20, 1, '#1d2b5e');
+    }
+    function vines(g, x, top, length) {
+      for (let i = 0; i < 4; i++) {
+        const vx = x + i * 3.5, len = length - (i % 2) * 8;
+        line(g, vx, top, vx + (i % 2 ? 1.5 : -1.5), top + len, 1, '#0f3a45');
+        for (let y = top + 5; y < top + len; y += 6) ell(g, vx + ((y / 6 | 0) % 2 ? 2 : -2), y, 2.2, 1.4, i % 2 ? '#14525a' : '#0f4048');
+      }
+    }
+    function block(g, x, top, w, base, hue, win, rim) {
+      g.fillStyle = lg(g, 0, top, 0, base, [[0, hue[0]], [1, hue[1]]]); g.fillRect(x, top, w, base - top);
+      g.fillStyle = 'rgba(8,10,30,0.42)'; g.fillRect(x + w - 5, top, 5, base - top);
+      line(g, x, top + 0.5, x + w, top + 0.5, 1.2, rim);
+      g.fillStyle = 'rgba(255,255,255,0.08)'; g.fillRect(x, top + 2, w, 2);
+      let n = 0;
+      for (let y = top + 9; y < base - 8; y += 12) for (let wx = x + 5; wx < x + w - 9; wx += 11, n++) {
+        if ((n * 7 + (x | 0)) % 5 === 0) { g.fillStyle = '#0b1230'; g.fillRect(wx, y, 6, 8); }
+        else lit(g, wx, y, 6, 8, win[(n + (x | 0)) % win.length]);
+        line(g, wx - 1, y + 9, wx + 7, y + 9, 0.8, 'rgba(120,150,230,0.5)');
+      }
+    }
+
+    reg2('bg_fore_eastus2', 960, 200, function (g, w, h) {
+        // quiet mid-distance blocks first, then closer roofs, neon and greenery
+        const mid = [[10, 96, 70], [94, 120, 56], [160, 84, 80], [250, 112, 62], [326, 90, 76], [420, 126, 58], [492, 98, 72], [578, 114, 64], [656, 88, 78], [748, 108, 60], [820, 94, 72], [902, 118, 44]];
+        mid.forEach(function (b, i) { block(g, b[0], h - b[1] * 0.6, b[2], h, ['#1a2656', '#0d1538'], WIN, i % 2 ? '#7fd8ff' : '#ff8fd8'); });
+        // rooftop furniture
+        waterTower(g, 22, h - 98 * 0.6); acUnit(g, 114, h - 120 * 0.6 - 17); ladder(g, 182, h - 84 * 0.6 - 26, h - 84 * 0.6);
+        waterTower(g, 436, h - 126 * 0.6); acUnit(g, 596, h - 114 * 0.6 - 17); acUnit(g, 676, h - 88 * 0.6 - 17);
+        ladder(g, 836, h - 94 * 0.6 - 28, h - 94 * 0.6); acUnit(g, 760, h - 108 * 0.6 - 17);
+        // neon street signs
+        sign(g, 262, h - 112 * 0.6 + 14, 'PIZZA', '#ff6fd0'); sign(g, 508, h - 98 * 0.6 + 14, 'DELI', '#6fe0ff');
+        sign(g, 666, h - 88 * 0.6 + 14, 'NYC', '#ffd36f'); sign(g, 906, h - 118 * 0.6 + 12, 'BAR', '#ff6fd0');
+        // palms and trailing vines in the gaps between roofs
+        palm(g, 88, h, 54, 5); palm(g, 246, h, 46, -4); palm(g, 414, h, 60, 6); palm(g, 574, h, 50, -5);
+        palm(g, 742, h, 58, 4); palm(g, 896, h, 48, -3);
+        vines(g, 156, h - 84 * 0.6, 30); vines(g, 480, h - 98 * 0.6, 34); vines(g, 650, h - 88 * 0.6, 28);
+        // neon strip along the lower edge keeps the foreground grounded
+        g.fillStyle = 'rgba(8,10,30,0.7)'; g.fillRect(0, h - 10, w, 10);
+        for (let x = 6; x < w - 20; x += 62) { line(g, x, h - 6, x + 24, h - 6, 1.2, x % 124 ? '#ff8fd8' : '#7fd8ff'); }
+      }, FLAT);
+  };
+
   AH.ArtModules.stages['worlds.new-york.scenery.82'] = function (C) {
     const { MP, SC, ell, lamp, lg, line, lit, msLogo, nyBridge, nyChrysler, nyEmpire, nyFireEscape, nyLiberty, poly, rrect, silFill, tree, txt } = C;
 

@@ -6,6 +6,13 @@
   const world = AH.Worlds['virginia'] = AH.Worlds['virginia'] || {};
   const content = world.art = world.art || { parts: {} };
   AH.ArtModules.regions['eastus'] = content;
+  content.parts.foreground_eastus = () => ({
+    shape: 'rack', detail: 'cable', roof: '#293149', wall: '#53566e',
+    light: '#9fb2c7', accent: '#7f9fba'
+  });
+  content.parts.graffiti_eastus = () => ({
+    tags: ['VIRGINIA CLOUD', 'CREATE CONNECT', 'BUILD THE FUTURE'], paint: '#9bbdf5', accent: '#ef9acb'
+  });
 
   content.parts['SKIES_eastus'] = function (C) {
 

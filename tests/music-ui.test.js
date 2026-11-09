@@ -7,13 +7,14 @@ const vm = require('node:vm');
 const { EventEmitter } = require('node:events');
 
 test('music control shows the current style, has a fixed touch target and is disabled by help', () => {
-  const styles = ['dance', 'jazz', 'country', 'blues', 'rock'];
+  const selections = ['TRANCE', 'HOUSE', 'POP', 'NIGHT DRIVE', 'SOFT SKIES'];
   let inits = 0;
   const AH = {
     Audio: {
-      style: 'dance',
+      selection: 0,
       init() { inits++; },
-      nextStyle() { this.style = styles[(styles.indexOf(this.style) + 1) % styles.length]; }
+      nextSelection() { this.selection = (this.selection + 1) % selections.length; },
+      selectionLabel() { return selections[this.selection]; }
     },
     PixelText: class {
       constructor(scene, x, y, text) { this.text = text; }
@@ -39,22 +40,26 @@ test('music control shows the current style, has a fixed touch target and is dis
     }
   };
   const label = AH.UI.musicButton(scene, 630, 144);
-  assert.equal(label.text, 'N: MUSIC DANCE');
+  assert.equal(label.text, 'N: MUSIC TRANCE');
   assert.deepEqual([scene.hit.width, scene.hit.height], [128, 44]);
   scene.hit.pointerdown();
-  assert.equal(label.text, 'N: MUSIC JAZZ');
+  assert.equal(label.text, 'N: MUSIC HOUSE');
   assert.equal(inits, 1);
   scene.help = { open: true };
   scene.hit.pointerdown();
-  assert.equal(label.text, 'N: MUSIC JAZZ');
+  assert.equal(label.text, 'N: MUSIC HOUSE');
   assert.equal(inits, 1);
   scene.help = null;
   AH.UI.nextMusic(scene);
-  assert.equal(label.text, 'N: MUSIC COUNTRY');
+  assert.equal(label.text, 'N: MUSIC POP');
   scene.events.emit('shutdown');
   assert.equal(scene.events.listenerCount('music-changed'), 0);
   const compact = AH.UI.musicButton(scene, 630, 144, true);
-  assert.equal(compact.text, 'MUSIC COUNTRY');
+  assert.equal(compact.text, 'MUSIC POP');
   scene.hit.pointerdown();
-  assert.equal(compact.text, 'MUSIC BLUES');
+  assert.equal(compact.text, 'MUSIC NIGHT DRIVE');
+  scene.hit.pointerdown();
+  assert.equal(compact.text, 'MUSIC SOFT SKIES');
+  scene.hit.pointerdown();
+  assert.equal(compact.text, 'MUSIC TRANCE');
 });

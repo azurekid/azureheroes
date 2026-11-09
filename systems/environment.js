@@ -24,9 +24,14 @@
       this.strip = scene.children.list.filter((o) => o.depth === -18 && o.setTint);
       this.sections = ((AH.Art.environments || {})[scene.L.region] || []).map((section) => ({
         ...section,
-        image: scene.add.image(0, 0, section.key).setOrigin(0).setScrollFactor(0).setDepth(-17.5).setAlpha(0)
+        image: scene.add.image(0, 0, section.key).setOrigin(0).setScrollFactor(0, scene.L.skyRoute ? 1 : 0).setDepth(-17.5).setAlpha(0)
       }));
       this.replacedKeys = new Set(this.sections.flatMap((section) => section.replaces || []));
+      this.atmosphere = (AH.Art.atmospheres || {})[scene.L.region];
+      this.atmosphereTime = 0;
+      this.weatherLayers = [];
+      this.wetSurfaces = [];
+      if (this.atmosphere) this.buildAtmosphere();
       if (scene.tod) {
         this.skyBlend = scene.add.image(0, 0, scene.sky.texture.key).setOrigin(0).setScrollFactor(0).setDepth(-29.9);
         this.wash = scene.add.image(0, 110, 'tod_wash').setOrigin(0).setDisplaySize(640, 220)
@@ -34,6 +39,53 @@
         this.dark = scene.add.rectangle(0, 0, 640, 360, 0x06041c, 1).setOrigin(0).setScrollFactor(0).setDepth(900);
       }
       this.update(0);
+    }
+    buildAtmosphere() {
+      const s = this.scene, a = this.atmosphere;
+      for (const layer of a.layers) {
+        const image = s.add.tileSprite(0, layer.y, 640, layer.height, layer.key)
+          .setOrigin(0).setScrollFactor(0, s.L.skyRoute ? 1 : 0).setDepth(layer.depth);
+        if (layer.additive) image.setBlendMode(Phaser.BlendModes.ADD);
+        this.weatherLayers.push({ ...layer, image });
+      }
+      if (a.rain) this.rain = s.add.tileSprite(0, 0, 640, 360, a.rain.key)
+        .setOrigin(0).setScrollFactor(0).setDepth(80).setAlpha(0);
+      if (a.overcast) this.overcast = s.add.image(0, 0, a.overcast.key)
+        .setOrigin(0).setScrollFactor(0).setDepth(-29.8).setAlpha(0);
+      if (a.wet?.road) this.wetRoad = s.add.tileSprite(0, a.wet.roadY, 640, 22, a.wet.road)
+        .setOrigin(0).setScrollFactor(0, s.L.skyRoute ? 1 : 0).setDepth(-18.3).setAlpha(0);
+      if (a.wet?.key) for (const p of s.L.platforms || []) {
+        if (p.y < 220 || p.h < 60 || p.cloud || p.ceil || p.pipe || p.bridge || p.cloudKind ||
+            p.x >= s.L.boss.left) continue;
+        const image = s.add.tileSprite(p.x, p.y, p.w, Math.min(8, p.h), a.wet.key)
+          .setOrigin(0).setDepth(21).setAlpha(0);
+        this.wetSurfaces.push(image);
+      }
+    }
+    updateAtmosphere(dt, progress, coverage) {
+      if (!this.atmosphere) return;
+      const s = this.scene, outdoors = !s.inPipe && !s.inBonus && !s.warping;
+      if (outdoors && s.state === 'play') this.atmosphereTime += dt;
+      const a = this.atmosphere;
+      const strength = effect => outdoors && effect ?
+        Math.min(1, effect.sections.reduce((n, section) => n + weight(section, progress), 0)) : 0;
+      const rain = strength(a.rain), cloud = strength(a.overcast);
+      for (const layer of this.weatherLayers) {
+        const night = layer.night ? 0.5 + 0.5 * Math.max(0, Math.cos(this.seconds / CYCLE * Math.PI * 2)) : 1;
+        layer.image.setVisible(outdoors).setAlpha(layer.alpha * night * (1 - coverage));
+        layer.image.tilePositionX = s.cameras.main.scrollX * layer.scroll * AH.Art.D;
+      }
+      if (this.rain) {
+        this.rain.setVisible(outdoors).setAlpha(rain);
+        this.rain.tilePositionY = -this.atmosphereTime * 260 * AH.Art.D;
+        this.rain.tilePositionX = this.atmosphereTime * 40 * AH.Art.D;
+      }
+      if (this.overcast) this.overcast.setVisible(outdoors).setAlpha(cloud);
+      if (this.wetRoad) {
+        this.wetRoad.setVisible(outdoors).setAlpha(rain * (1 - coverage));
+        this.wetRoad.tilePositionX = s.cameras.main.scrollX * 0.5 * AH.Art.D;
+      }
+      this.wetSurfaces.forEach(image => image.setVisible(outdoors).setAlpha(rain * 0.85));
     }
     update(dt) {
       const s = this.scene, outdoors = !s.inPipe && !s.inBonus;
@@ -45,8 +97,10 @@
         total += alpha; return alpha;
       });
       const coverage = Math.min(1, total);
+      this.updateAtmosphere(dt, progress, coverage);
       this.sections.forEach((section, i) => section.image.setAlpha(weights[i] / Math.max(1, total)));
       s.far.setAlpha(1 - coverage); s.near.setAlpha(1 - coverage);
+      if (s.fore) s.fore.setAlpha(1 - coverage);
       this.strip.forEach((o) => o.setAlpha(this.replacedKeys.has(o.texture.key) ? 0 : 1 - coverage));
       if (s.road) s.road.setAlpha(0.55 * (1 - coverage));
       if (s.railLine) s.railLine.setAlpha(0.7 * (1 - coverage));
@@ -58,6 +112,7 @@
       if (this.skyBlend.texture.key !== sky(state.to)) this.skyBlend.setTexture(sky(state.to));
       this.skyBlend.setAlpha(t);
       s.far.setTint(mix(a.far, b.far, t)); s.near.setTint(mix(a.near, b.near, t));
+      if (s.fore) s.fore.setTint(mix(a.near, b.near, t));
       const tint = mix(a.strip, b.strip, t);
       this.strip.forEach((o) => o.setTint(tint));
       this.sections.forEach((section) => section.image.setTint(tint));

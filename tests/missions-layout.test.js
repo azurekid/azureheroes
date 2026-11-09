@@ -9,6 +9,7 @@ const withoutMission = (L) => {
   const copy = plain(L);
   delete copy.mission;
   delete copy.wardrobeSpots;
+  delete copy.weaponDrops;
   copy.enemies.forEach((enemy) => { delete enemy.bossToken; });
   return copy;
 };
@@ -130,7 +131,7 @@ test('missions have ordered safe objectives and six reachable gems across every 
       }
       undergroundGems += L.mission.gems.filter((p) => p.zone !== undefined).length;
       const baseTime = L.mode === 'fly' ? Math.round(L.width / L.scroll + 90) : Math.round(L.width / 1000 * (L.theme === 'rack' ? 30 : 26) + 110);
-      assert.equal(L.time - baseTime, L.mode === 'fly' ? 45 : 90);
+      assert.equal(L.time - baseTime, (L.mode === 'fly' ? 45 : 90) + (L.skyRoute ? 45 : 0));
       layouts++;
     }
   }
@@ -163,5 +164,32 @@ test('impossible mission layouts fail explicitly instead of producing invalid pl
     const L = { id: 99, mode, width: 4000, platforms: [], enemies: [], boss: { left: 3400 } };
     assert.throws(() => AH.LevelGenerator.addMission(L), /MISSION PLACEMENT FAILED: CACHE IN LEVEL 99/);
     assert.equal(L.mission, undefined);
+  }
+});
+
+test('every world regenerates structures, encounters, objects and mission placements on repeated games', () => {
+  for (const id of loadScripts(levelScripts()).Levels.ids) {
+    const { Levels } = loadScripts(levelScripts(), { seed: 2027 });
+    const layouts = new Map(['platforms', 'enemies', 'props', 'mfaTokens', 'powerups', 'mission']
+      .map(field => [field, new Set()]));
+    const markerPositions = new Set(), carrierPositions = new Set();
+    let previous;
+    for (let run = 0; run < 12; run++) {
+      const L = Levels.make(id);
+      for (const [field, values] of layouts) values.add(JSON.stringify(L[field]));
+      markerPositions.add(Math.round(L.mission.objectives[0].x / L.boss.left * 100));
+      carrierPositions.add(L.mission.tokens.map(p => Math.round(p.x / L.boss.left * 100)).join(','));
+      if (previous) {
+        assert.notEqual(L.platforms, previous.platforms);
+        assert.notEqual(L.mission.tokens, previous.mission.tokens);
+      }
+      previous = L;
+    }
+    for (const [field, variants] of layouts) {
+      if (field === 'props' && id === 10) continue; // Indoor racks replace outdoor props.
+      assert.ok(variants.size >= 10, `${field} varies in world ${id}: ${variants.size}/12`);
+    }
+    assert.ok(markerPositions.size >= 3, 'cache route fraction varies in world ' + id);
+    assert.ok(carrierPositions.size >= 6, 'token carriers vary in world ' + id);
   }
 });

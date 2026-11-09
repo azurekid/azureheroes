@@ -36,10 +36,13 @@ test('seeded world generation preserves the pre-refactor output digest', () => {
     delete Levels.meta(9).ambient.railY;
     for (const meta of Levels.worlds) {
       const key = `${seed}:${meta.id}:${meta.city}`;
+      // Tall routes are opt-in additions; retain the original terrain fixture.
+      meta.opt.skyClimb = false;
       const generated = Levels.make(meta.id);
       delete generated.mission;
       delete generated.wardrobeSpots;
-      generated.enemies.forEach((enemy) => { delete enemy.bossToken; });
+      delete generated.weaponDrops;
+      generated.enemies.forEach((enemy) => { delete enemy.bossToken; delete enemy.appearance; });
       generated.time -= generated.mode === 'fly' ? 45 : 90;
       const output = JSON.stringify(generated);
       hashes.push([key, crypto.createHash('sha256').update(output).digest('hex')]);
@@ -95,6 +98,9 @@ test('New York birds and neighborhood scenery retain local identity and register
   const brownstones = Art.textureCanvas('sc_ny_brownstones');
   assert.ok(brownstones.ops.some((op) => op[0] === 'fillStyle' && op[1] === '#35c9df'), 'street-facing brownstone mural uses bright spray paint');
   assert.ok(brownstones.ops.some((op) => op[0] === 'fillStyle' && op[1] === '#f04f91'), 'mural layers distinct neighborhood colors');
+  const fore = Art.textureCanvas('bg_fore_eastus2');
+  assert.ok(fore.ops.length > 300, 'painted close-range New York foreground layer is detailed');
+  assert.equal(fore.width / Art.D, 960, 'foreground retains its logical tile width');
   const park = Art.textureCanvas('sc_ny_centralpark');
   assert.ok(park.ops.filter((op) => op[0] === 'quadraticCurveTo').length >= 4, 'arched Bow Bridge and park paths');
   for (const key of ['sc_ny_brownstones', 'sc_ny_centralpark']) {
@@ -208,6 +214,53 @@ test('challenge platforms use finite exact-size art without changing collision g
   assert.deepEqual(zones[0], [155, 250, 110, 100]);
   assert.deepEqual(zones[1], [1750, 350, 3500, 100]);
   assert.equal(scene.rects.length, 16);
+});
+
+test('New York ground faces and generated bridges use registered local art without changing collision', () => {
+  const Art = artwork(), calls = [], zones = [];
+  const display = {
+    setOrigin() { return this; }, setDepth() { return this; },
+    setDisplaySize() { return this; }, setAlpha() { return this; }
+  };
+  const AH = load('systems/scenes.js', { Levels: { ids: [11] }, Art }, 1, { Phaser: { Scene: class {} } });
+  const scene = new AH.Scenes[5]();
+  scene.mode = 'run'; scene.L = { region: 'eastus2', ground: 'quay', theme: 'roof' };
+  scene.rects = []; scene.solids = { add() {} };
+  scene.add = {
+    tileSprite(...args) { calls.push(['tile', ...args]); return display; },
+    image(...args) { calls.push(['image', ...args]); return display; },
+    zone(...args) { zones.push(args); return {}; }
+  };
+  assert.equal(Art.groundFaces.eastus2, 'ground_face_eastus2');
+  const face = Art.textureCanvas(Art.groundFaces.eastus2);
+  assert.deepEqual([face.width, face.height], [320 * Art.D, 64 * Art.D]);
+  const graffiti = Art.textureCanvas(Art.graffiti.eastus2[0] + '_front');
+  for (const color of ['#ffd277', '#ed86b5']) {
+    assert.ok(graffiti.ops.some(op => op[0] === 'fillStyle' && op[1] === color), 'visible wall graffiti: ' + color);
+  }
+  scene.addPlatform({ x: 0, y: 300, w: 420, h: 100 });
+  assert.ok(calls.some(c => c[0] === 'tile' && c[2] === 308 && c[5] === 'ground_face_eastus2'));
+  assert.ok(calls.some(c => c[0] === 'image' && c[2] === 308 && c[3] === 'graffiti_eastus2_0_front'));
+  assert.ok(calls.some(c => c[0] === 'tile' && c[2] === 300 && c[5] === 'quay_top'));
+  assert.deepEqual(zones[0], [210, 350, 420, 100]);
+  scene.L.region = 'australiaeast';
+  scene.addPlatform({ x: 450, y: 300, w: 220, h: 100 });
+  assert.ok(calls.some(c => c[0] === 'tile' && c[1] === 450 && c[5] === 'quay'), 'other cities keep their ground');
+  scene.L.region = 'eastus2';
+  scene.addPlatform({ x: 700, y: 240, w: 100, h: 14, bliss: 'grass' });
+  assert.ok(calls.some(c => c[0] === 'tile' && c[1] === 700 && c[5] === 'grass'), 'special platforms keep their own material');
+  let bridges = 0;
+  for (let seed = 1; seed <= 30; seed++) {
+    const level = levels(seed).make(11);
+    for (const bridge of level.platforms.filter(p => p.bridge && !p.draw)) {
+      bridges++;
+      const key = 'bridge_' + level.region;
+      assert.ok(Art.textureCanvas(key), key + ' is registered for generated bridges');
+      scene.addPlatform(bridge);
+      assert.ok(calls.some(c => c[0] === 'image' && c[1] === bridge.x && c[3] === key));
+    }
+  }
+  assert.ok(bridges > 0, 'seeded layouts exercise ordinary New York bridges');
 });
 
 test('room scenery variants cover street ambience and parallax is isolated and density-aware', () => {

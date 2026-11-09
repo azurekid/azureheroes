@@ -6,6 +6,13 @@
   const world = AH.Worlds['venice'] = AH.Worlds['venice'] || {};
   const content = world.art = world.art || { parts: {} };
   AH.ArtModules.regions['italynorth'] = content;
+  content.parts.foreground_italynorth = () => ({
+    shape: 'gable', detail: 'balcony', roof: '#40364b', wall: '#8a6562',
+    light: '#d3b493', accent: '#9a888b'
+  });
+  content.parts.graffiti_italynorth = () => ({
+    tags: ['CIAO VENEZIA', 'SOGNI SUI MURI', 'INSIEME'], paint: '#ffd279', accent: '#eb91bd'
+  });
 
   AH.ArtModules.stages['worlds.venice.art.91'] = function (C) {
     const { FLAT, PAL, SKIES, ell, line, lit, makeSky, poly, reg2, rng } = C;

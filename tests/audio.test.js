@@ -116,7 +116,7 @@ test('city themes extend metadata without depending on audio, storage or band in
 test('only trance, house and pop exist, with well-formed finite musical events', () => {
   const { A } = setup();
   assert.deepEqual(Array.from(A.STYLES), ['trance', 'house', 'pop']);
-  assert.equal(Object.keys(A.SONGS).length, 125);
+  assert.equal(Object.keys(A.SONGS).length, 127);
   for (const [key, song] of Object.entries(A.SONGS)) {
     assert.ok(A.STYLES.includes(song.style), key);
     assert.ok(song.bars.length >= 16 && song.bpm >= 100 && song.bpm <= 144, key);
@@ -198,6 +198,28 @@ test('house and trance keep offbeat bass and club groove with a real breakdown',
   }
 });
 
+test('house develops four-bar grooves and distinct original lounge scene hooks', () => {
+  const { A } = setup();
+  for (const song of Object.values(A.SONGS).filter(song => song.production && song.style === 'house')) {
+    const lounge = ['title', 'pipe', 'bonus'].includes(song.production.energy);
+    assert.equal(song.production.lounge, lounge);
+    assert.equal(song.bpm, { title: 104, main: 134, pipe: 108, bonus: 112, boss: 142 }[song.production.energy]);
+    assert.equal(song.arp, lounge ? 'keys' : 'trancepluck');
+    assert.equal(song.bass, lounge ? 'round' : 'club');
+    const chorus = song.bars.slice(8, 12);
+    assert.ok(new Set(chorus.map(bar => positions(bar, 'arp').join(','))).size >= 3, 'developed chord rhythm');
+    assert.ok(new Set(chorus.map(bar => positions(bar, 'h').join(','))).size >= 2, 'changing hats');
+    if (lounge) {
+      assert.ok(chorus.every(bar => positions(bar, 'h').length <= 2 && positions(bar, 'o').length === 0));
+      assert.ok(chorus.flatMap(bar => eventsOf(bar, 'lead')).every(e => e[3] <= 0.57));
+    }
+    assert.ok(chorus.every(bar => bar.chord.iv.length === 4), 'warm seventh chords');
+  }
+  const hooks = ['title', 'main', 'pipe', 'boss', 'bonus'].map(kind =>
+    A.SONGS['house_' + kind].bars.slice(8, 12).map(bar => bar.mel.join(',')).join('|'));
+  assert.equal(new Set(hooks).size, 5, 'new scene tunes are not one melody at different tempos');
+});
+
 test('arrangements phrase in a stable tonic, leave rests and resolve cleanly at the loop', () => {
   const { A } = setup();
   for (const song of Object.values(A.SONGS).filter((song) => song.production)) {
@@ -226,6 +248,66 @@ test('all allowlisted styles persist locally without game-progress writes, inclu
     assert.throws(() => A.setStyle(invalid), /Unsupported music style/);
     assert.equal(A.style, 'pop');
   }
+});
+
+test('N selections include independent songs and preserve genre-only compatibility', () => {
+  const { A, saves, storage } = setup();
+  assert.deepEqual(Array.from(A.SELECTIONS), ['trance', 'house', 'pop', 'night-drive', 'soft-skies']);
+  A.init(); A.music('main', 'westeurope');
+  const choices = [];
+  for (let i = 0; i < 5; i++) choices.push(A.nextSelection());
+  assert.deepEqual(choices, ['house', 'pop', 'night-drive', 'soft-skies', 'trance']);
+  for (const [selection, key, label] of [
+    ['night-drive', 'house_night_drive', 'NIGHT DRIVE'], ['soft-skies', 'house_soft_skies', 'SOFT SKIES']
+  ]) {
+    A.setSelection(selection);
+    assert.equal(A.style, 'house'); assert.equal(A.selectionLabel(), label);
+    assert.equal(storage.get('azureheroes2027_music'), selection);
+    const seq = A.seq;
+    for (const context of ['title', 'main', 'pipe', 'metro', 'bonus', 'boss']) {
+      A.music(context, 'uksouth');
+      assert.equal(A.seq.key, key); assert.equal(A.seq, seq, 'selected song continues on context changes');
+    }
+    const reloaded = setup({ storage }).A;
+    reloaded.loadStyle(); assert.equal(reloaded.selection, selection); assert.equal(reloaded.style, 'house');
+    A.music(null); A.nextSelection(); assert.equal(A.seq, null, 'selection does not restart stopped music');
+    A.setSelection(selection); A.music('main', 'westeurope');
+    A.setStyle('house'); assert.equal(A.selection, 'house');
+    assert.equal(A.seq.key, 'house_amsterdam_main', 'genre restores regional context');
+  }
+  assert.equal(saves(), 0);
+});
+
+test('new songs have different melodies, authored responses and quiet/loud contrast', () => {
+  const { A } = setup(), drive = A.SONGS.house_night_drive, skies = A.SONGS.house_soft_skies;
+  const melody = song => song.bars.slice(8, 12).map(bar => bar.mel.join(',')).join('|');
+  const existing = Object.values(A.SONGS).filter(s => ![drive, skies].includes(s)).map(melody);
+  for (const song of [drive, skies]) {
+    assert.ok(!existing.includes(melody(song)), 'new notes, not another arrangement of an existing hook');
+    assert.notEqual(melody(song), song.bars.slice(12, 16).map(bar => bar.mel.join(',')).join('|'), 'authored response');
+    assert.ok(song.bars.slice(4, 8).flatMap(b => eventsOf(b, 'lead')).length <
+      song.bars.slice(8, 12).flatMap(b => eventsOf(b, 'lead')).length);
+  }
+  assert.notEqual(melody(drive), melody(skies));
+  assert.equal(drive.bpm, 134); assert.equal(skies.bpm, 108);
+  assert.equal(skies.production.lounge, true);
+});
+
+test('named-song preferences reject invalid data and survive blocked storage and mute', () => {
+  const { A, timers, storage } = setup();
+  A.init(); A.music('main', 'eastus2'); A.setMuted(true);
+  for (const selection of ['night-drive', 'soft-skies']) {
+    A.setSelection(selection); assert.equal(A.muted, true); assert.equal(timers.size, 1);
+  }
+  for (const invalid of ['__proto__', 'constructor', '', null, 'NIGHT DRIVE', 'house_night_drive']) {
+    assert.throws(() => A.setSelection(invalid), /Unsupported music selection/);
+    assert.equal(A.selection, 'soft-skies');
+  }
+  const blocked = setup({ blockWrite: true });
+  blocked.A.setSelection('night-drive');
+  assert.equal(blocked.A.selection, 'night-drive'); assert.equal(blocked.warnings.length, 1);
+  A.music(null); A.setSelection('night-drive'); assert.equal(timers.size, 0);
+  assert.equal(storage.has('azureheroes2027'), false);
 });
 
 test('legacy dance migrates silently, removed genres warn and reset, malformed preferences are safe', () => {

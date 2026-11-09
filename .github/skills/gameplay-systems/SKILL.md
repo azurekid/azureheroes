@@ -11,6 +11,13 @@ description: 'Build Azure Heroes movement, charged shots, duck/slide combat, clo
   the outdoor state on return. Reuse persistent display layers, never allocate
   lighting objects every update. City section art/data follow game-contract.
 - Movement: Arrow/WASD, Space jump, double jump, Shift flight boost, F Azure Blast.
+- R resumes a paused level without resetting it; outside pause it still restarts.
+- Flight Left/A and Right/D set facing and blast direction, including touch;
+  vertical-only movement and release retain facing so trailing birds remain shootable.
+- Flight E / touch SHIELD blocks front-facing attacks, cancels charge and prevents Boost.
+- Ground J / PUNCH and K / KICK have shared cooldowns and one hit per target,
+  directional wall-blocked reach and no Boost cost. Slides hit open ground bosses
+  once per slide. All attacks preserve boss armor and vulnerability windows.
 - Wall slide / wall jump (`systems/player.js`): airborne + pushing into a solid side caps the fall at `WALL_SLIDE`;
   jump within the 0.14s `wallT` grace calls `wallJump()` (kick away, `wallLock` 0.12s, `jumps = 1`). Priority:
   ground/coyote jump, then wall jump, then double jump. Not while riding, ducking or shielding.
@@ -30,6 +37,10 @@ description: 'Build Azure Heroes movement, charged shots, duck/slide combat, clo
 - Slides hit each low enemy once per slide; low blasts originate near the feet.
 - Cloud threats reuse shared AI behaviors without changing the two-hit/one-credit invariant.
   Keep remediation tips educational: fix insecure configuration, do not portray guest access itself as malicious.
+- Guest/stale-user shooters share hacker-sized collision bodies and robot patrol/
+  firing, not low crawling/slide behavior. Distinct guns are visual; both use the
+  existing energy bolt speed, damage and shield blocking. `appearance:'stale-user'`
+  selects the rifle texture/nameplate; default guest uses a compact pistol.
 - The ground `hacker` is a rogue shooter using the existing robot patrol and bolt logic;
   its identity-category defeat tip recommends Entra MFA. Do not change the playable
   Cloud Hacker's abilities or add account permissions for either character.
@@ -56,11 +67,19 @@ description: 'Build Azure Heroes movement, charged shots, duck/slide combat, clo
 - Three guaranteed marked enemy tokens also gate boss access. Track released and
   collected tokens through death; respawn unfinished carriers even behind flight
   checkpoints. Drops use safe anchors, never physics that can lose them in pits.
+- Pipe returns must not bypass pending street requirements; use `Mission.pipeReturn`
+  and set the checkpoint after warp completion. Pipe exits, nearby checkpoint
+  revisits and blocked boss entry share `Mission.recoveryTime` for a one-time
+  distance/climb allowance per missed token, only when time is low. Preserve
+  grant state through death; never reset clocks indefinitely or award free tokens.
+- Recover unfinished carriers at their home position before fall/offscreen cleanup;
+  preserve their remaining health. Tall cloud routes use `skyRoute.top` for outdoor
+  camera bounds, restoring the original y=0 bounds in rooms and boss arenas.
 - `systems/wardrobe-pickups.js` owns optional regional collection. Use full progress
   objects for ownership; clears no longer grant clothes. Preserve fixed legacy
   migration entitlements, always-open religious headwear and bounded online unions.
   Hacker sandbox (`AH.Gold`) uses Cloud Hacker and must not persist collections.
-- Tap-shot cooldown is 0.16s plus 0.20s at full charge. Preserve the 1.2s hold,
+- Tap-shot cooldown is 0.10s plus 0.20s at full charge. Preserve the 1.2s hold,
   release-to-fire, Boost costs and projectile speed on keyboard and touch.
 - Accounts and leaderboard: client in `systems/online.js`, server in `server.js` (zero dependencies, Node 18+). Any API change needs a test in `tests/server.test.js` and must keep guest mode (no server) working.
 - Resume and save rules are in the game-contract skill. Use `AH.Save.setResume`.
@@ -81,7 +100,8 @@ description: 'Build Azure Heroes movement, charged shots, duck/slide combat, clo
   Selectable trance, house and pop have distinct original rhythms, voices
   and lounge/world/challenge/boss arrangements. Keep house/trance kick-ducking off pop
   styles, preserve context routing and store the validated choice locally without
-  changing game progress. N and the MUSIC button cycle styles. Preserve mute,
+  changing game progress. N and the MUSIC button cycle the three genres and the
+  named Night Drive / Soft Skies selections defined in game-contract. Preserve mute,
   suspended-context resume, SFX and node cleanup; muting during Gold Mode may
   persist the preference locally but must never push run progress online.
   Add no downloaded tracks, dependencies or outbound services. Validate timing,

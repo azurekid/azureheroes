@@ -6,6 +6,13 @@
   const world = AH.Worlds['paris'] = AH.Worlds['paris'] || {};
   const content = world.art = world.art || { parts: {} };
   AH.ArtModules.regions['francecentral'] = content;
+  content.parts.foreground_francecentral = () => ({
+    shape: 'terrace', detail: 'balcony', roof: '#3a3d56', wall: '#766572',
+    light: '#d3b8a0', accent: '#9d919d'
+  });
+  content.parts.graffiti_francecentral = () => ({
+    tags: ['BONJOUR PARIS', 'LIBERTE', 'REVONS ENSEMBLE'], paint: '#f5a0c8', accent: '#83dce9'
+  });
 
   AH.ArtModules.stages['worlds.paris.art.78'] = function (C) {
     const { FLAT, depthFace, ell, glowRect, lg, line, lit, msLogo, poly, reg2, rng, rrect, shade, txt, txtW } = C;

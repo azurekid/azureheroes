@@ -80,7 +80,33 @@ description: Use before any game code change. Defines the shared interfaces for 
 
 ### Collected regional wardrobe, boss tokens and Hacker sandbox
 
-- Each run marks three existing, reachable main-world enemies with optional
+- Pipe exits use `mission.pipeReturn(entry,back)`: if unfinished required work
+  lies on the skipped street, return to the entry instead of bypassing it.
+  Update the respawn checkpoint only after the return warp completes.
+  `mission.recoveryTime(x,timeLeft)` offers a bounded backtracking reserve for
+  missed tokens behind the hero: 60s plus round-trip travel at 150px/s and
+  vertical climb allowance. Grant each token's reserve at most once per run,
+  only when it increases remaining time; preserve it through life loss.
+  Pipe returns, nearby revisited checkpoints and blocked boss entry use this
+  same allowance. No unlimited checkpoint clock resets or free token awards.
+- Mission placement varies deterministically with each newly generated layout:
+  cache/relay, gems, carrier selection, weapons and wardrobe caches use varied
+  safe candidates/route targets without consuming terrain RNG. Rebuilding a
+  mission on the same layout remains idempotent. Gameplay terrain, encounters
+  and objects continue to regenerate on every new game/restart; safe spawn,
+  boss arenas and authored regional landmarks are deliberate stable anchors.
+
+- Unfinished token carriers removed by falling or flight-camera cleanup return
+  to their original safe position with remaining health; cleanup never destroys
+  a required token. Released drops remain at their fixed anchors through death.
+- Optional city `world.opt.skyClimb` adds a six/seven-platform cloud ascent to
+  existing street levels. `level.skyRoute = {x,steps,top}` describes its camera
+  ceiling; platform `skySummit` identifies the safe summit. One of the three
+  required carriers and an MFA token are placed there. Main-world cameras can
+  scroll above y=0; indoor rooms and boss arenas retain their original bounds.
+  Existing IDs, controls, saves and soundtrack contexts remain unchanged.
+
+- Each run marks three reachable main-world enemies with optional
   `bossToken: {id,x,y}`. These visibly labelled carriers release guaranteed access
   tokens on defeat at a safe fixed anchor, not random drops over gaps. Three tokens
   join (not replace) the existing objectives/gem quota. Token state belongs to
@@ -110,11 +136,23 @@ description: Use before any game code change. Defines the shared interfaces for 
   all-world access, 30 lives and no-persistence/no-score-submission rules remain.
   No new cheat, account privilege or invulnerability is introduced. Sandbox
   wardrobe pickups never persist or upload collection progress.
-- Faster firing: uncharged blast cooldown is 0.16s (previously 0.30s);
-  fully charged cooldown is 0.36s. Keep 1.2s charge/release, Boost costs,
+- Faster firing: uncharged blast cooldown is 0.10s (previously 0.16s);
+  fully charged cooldown is 0.30s. Keep 1.2s charge/release, Boost costs,
   projectile velocities, keyboard/touch parity and no held-fire auto-repeat.
 
 ### Outdoor environment sections and continuous lighting
+
+- Optional city `atmosphere_<region>` exposes `{layers,rain?,overcast?,wet?}`
+  via `AH.Art.atmospheres`. Layers are local tiled texture descriptors
+  `{key,width,height,y,depth,scroll,alpha,additive?,night?}`; rain/overcast use
+  `{key,sections:[{start,end,fade}]}` normalized route ranges. Wet textures
+  decorate eligible platform tops and background roads, never gaps or clouds.
+  `AH.Environment` owns persistent layers, section fades and rain animation;
+  hide them indoors/warps and freeze time on pause/help. Additive neon and
+  painted reflections emulate light without new shaders, dependencies or
+  changing the renderer. Keep landmarks, threats, hero and HUD readable.
+  Tokyo stays flight with its existing regional soundtrack; Amsterdam retains
+  its canals, highlights and weather-free stretches. No layout/RNG/save changes.
 
 - Optional city art part `environments_<region>` returns ordered descriptors
   `{key,start,end,fade}`: a local 640x360 background texture and normalized
@@ -143,6 +181,60 @@ description: Use before any game code change. Defines the shared interfaces for 
   consumes no random numbers. Collision tops, controls, route widths, IDs, saves,
   room generation and music remain unchanged.
 
+### Optional close-range foreground layer
+
+- Optional city art `steam_<region>` returns `{puff,vent,warning?,heat?}` registered
+  texture keys and optional heat flag, exposed in `AH.Art.steam`. Scenes place
+  non-solid vents on eligible outdoor ground and the existing secret manhole.
+  Eight reusable puffs per vent rise, expand and fade using outdoor play time.
+  Puff textures preserve graduated transparency, not opaque crisped discs.
+  Hide steam indoors, during warps and boss fights; pause freezes animation.
+  Heat-enabled vents cycle 7s: 0-1s cool, 1-3s orange warning, 3-6s active hot
+  plume, 6-7s cooldown. Active core (34px wide, 64px high) deals 8 damage through
+  normal `player.hurt` invulnerability; shield does not block environmental heat.
+  Keep spawn/checkpoints, mission items, pipe returns and entrances safe; the
+  secret manhole plume is decorative. Existing descriptors without heat stay
+  decorative. No solid collision, progress, music or control changes.
+
+- City art `foreground_<region>` optionally returns `{roof,wall,light,accent,
+  shape,detail}` for shared `C.registerForeground`, a deterministic 960x200
+  near-building layer. City descriptors select local facade silhouettes and props;
+  no city switches in shared drawing/runtime. Registered `bg_fore_<region>`
+  works in street, flight and data-center worlds. `AH.Art.foregrounds` exposes
+  the optional descriptors; these shared layers use depth -18.2, behind landmark
+  facades (-18), with unchanged parallax, lighting and section/room suppression.
+  New York's hand-drawn layer
+  is retained. This is drawing only; no routes, physics or music changes.
+- A city may directly register `bg_fore_<region>` (horizontally repeating, bottom-aligned,
+  drawn without random numbers). Levels tile it at scroll factor 0.75, depth
+  -17.4: in front of the scenery strip, behind every platform, hazard, pickup and
+  character. It fades out under `environments_<region>` sections and takes the
+  outdoor tint. Purely visual: no collision, route, RNG, save or music change.
+  New York is the first adopter (rooftops, water towers, neon signs, palms).
+- Optional city art part `groundFace_<region>` names a registered repeating
+  texture for the visible face of ordinary regional ground platforms. Its top
+  edge, collision geometry and other platform types still use existing assets.
+  Cities without it retain their original ground face.
+- Shared drawing-only `C.sprayTag(g,text,x,y,scale,paint,outline)` draws original
+  painted lettering, deterministic overspray and drips without consuming RNG.
+- City art part `graffiti_<region>` returns `{tags:[string,string,string],paint,
+  accent,glyphs?}`. Shared `C.registerGraffiti` creates three 320x64 transparent
+  painted decals containing AZUREKID, AZURE HEROES and an Octocat, plus local tags.
+  Each key also has a 320x24 `_front` variant with side-by-side lettering above
+  the bottom HUD. Faces at least 200px wide receive a complete decal, fitted to
+  the face width without cropping any brand, local phrase or figure; smaller
+  ledges, cloud silhouettes, pipes and bridges retain their original art.
+  Variants use rounded bubble letters, cut stencil letters and angular wildstyle
+  lettering. Main-world fronts cycle variants without RNG; the entry tag reads
+  AZURE HEROES, followed by AZUREKID. These are decorative styles, not UI fonts.
+  Copilot figures join Octocats on the stencil variant. Decal offsets, later-face
+  selection and flight panel placement are hashed from generated geometry, giving
+  each randomized layout different decoration without consuming gameplay RNG.
+  `AH.Art.graffiti[region]` lists their texture keys. Solid fronts receive decals
+  without changing collision; flight worlds use non-solid wall panels between
+  columns. Decorative glyphs may be city-owned pixel arrays (Tokyo Japanese,
+  explicitly approved); the UI font and supported gameplay strings are unchanged.
+
 ### City-owned secret rooms
 
 - Optional city `.bonus` describes `{theme, floor, platform, width, title, y,
@@ -169,6 +261,24 @@ description: Use before any game code change. Defines the shared interfaces for 
   must not activate main-world checkpoints. Flight retains its airborne markers.
 
 ### Electronic soundtrack policy
+
+- N and the MUSIC button cycle selections `trance`, `house`, `pop`,
+  `night-drive`, `soft-skies`. The last two are original named House songs,
+  not new genres or alternative instrumentation of a regional hook.
+  `AH.Audio.selection` and `SELECTIONS` track the device-local choice;
+  `setSelection`, `nextSelection` and `selectionLabel` expose selection.
+  Existing `style`, `STYLES`, `setStyle` and `nextStyle` keep genre-only
+  compatibility. Selecting a genre restores contextual regional arrangements.
+  Named songs continue across world/room/boss contexts until changed; `music(null)`
+  still stops. The existing music preference key stores an allowlisted selection,
+  with legacy genre values and migration behavior preserved. No progress writes.
+
+- House arrangements use 134 BPM main routes and 142 BPM bosses; title, pipe and
+  bonus contexts use gentler 104/108/112 BPM lounge arrangements. Original city
+  hooks and legacy compositions remain intact. Optional composition arrays
+  `arpPat` and `drumPatterns` develop four-bar grooves; `production.lounge` marks
+  quieter keys, seventh chords and sparse hats, without adding a selectable style.
+  Music changes require actual renders and human listening approval.
 
 - The only selectable styles are `trance`, `house` and `pop`, default `trance`.
   Legacy `dance` preferences migrate to `trance`; removed jazz/country/blues/rock
@@ -250,7 +360,22 @@ Input contract: Arrows/WASD move, Space jump (press again in the air = double ju
 pushing into a wall = wall slide, Space then wall-jumps away and restores the double jump),
 F Azure Blast (low while ducking; blasts also destroy enemy and boss bullets), Shift Flight Boost,
 E = MFA Shield (ground and air), S / Down = duck (standing still = crouch guard with the shield,
-moving starts a slide attack), P / Esc pause, H help overlay, Q quit to title, R restart, M mute, N cycle music style.
+moving starts a slide attack), P / Esc pause, H help overlay, Q quit to title,
+R resumes when paused and restarts otherwise, M mute, N cycle music selection.
+In flight, Left/A and Right/D turn the hero and aim blasts in that direction;
+releasing horizontal input preserves facing, including vertical-only movement.
+E / touch SHIELD also works in flight, blocks only front-facing hits, cancels
+charged fire and prevents boosting while held; free directional flight remains.
+Ground combat adds J / touch PUNCH and K / touch KICK, alongside existing blasts.
+`AH.Input.read()` adds `punch` and `kick` press flags. `player.melee(kind)`
+starts a short attack (punch 0.18s, kick 0.26s) with a shared 0.4s / 0.6s
+cooldown, one hit per target, no Boost cost, and cancels held blasts.
+`scene.hitMelee(player,kind,hits)` resolves directional, wall-blocked reach
+(punch 38px, kick 52px) against enemies and bosses. Damage is one enemy hit,
+10 boss HP for punch and 14 for kick. Sliding can hit an open ground boss
+once per slide for 12 HP. Boss armor/open-window rules remain unchanged.
+Flight has ranged combat and shield, not ground melee. New hero `punch` and
+`kick` frames preserve the shared rig, all wardrobes and collision dimensions.
 `AH.Input.read()` returns `help`, `quit`, `esc` and `nav` (-1/0/1 page turns) besides the movement flags.
 Touch run controls include DUCK, SHIELD, PAUSE and HELP. On the title screen E opens the Hero Lab and H opens help.
 
@@ -305,7 +430,8 @@ Touch run controls include DUCK, SHIELD, PAUSE and HELP. On the title screen E o
 ### Cloud challenge and low combat revision
 - Additional two-hit enemy types: `bug` (pipeline hopper), `image` (vulnerable container charger),
   `rbac` (overprivileged role shooter), `endpoint` (stationary exposed-endpoint turret),
-  `guest` (stale guest-account crawler). Shared textures/animations use the type as prefix.
+  `guest` (unreviewed or stale account shooter; see the charged weapons revision).
+  Shared textures/animations use the type as prefix.
 - Player additions: `ducking`, `sliding` booleans. Ducking shrinks the collision body while
   preserving feet position; standing is blocked under solid ceilings. Slides hit each low
   enemy once per slide; F fires at feet height while ducking.
@@ -323,6 +449,16 @@ Touch run controls include DUCK, SHIELD, PAUSE and HELP. On the title screen E o
 ### Charged weapons, boss signals and varied rooms
 - Optional powerup kinds `spread` and `pierce` equip a temporary weapon for 25 seconds;
   replacement refreshes the timer, expiry and respawn restore Azure Blast. No save changes.
+- Optional `weaponDrops: [{kind:'spread'|'pierce',x,y}]` distributes four additional
+  safe main-route weapons through each level, separate from legacy powerups.
+- Optional enemy `appearance:'detective'` renders a trench-coated, fedora-wearing
+  rogue investigator using the hacker's existing two-hit patrol/shooter behavior;
+  its nameplate identifies it as a SNOOPING DETECTIVE, not a friendly guide.
+  Guest/stale-user enemies use hacker-sized 32x37 art and 20x34 collision bodies,
+  existing robot patrol/shoot behavior and two-hit/one-credit rules. Optional
+  `appearance:'stale-user'` selects a rifle and STALE USER label; other guests
+  carry a compact pistol. Both fire existing shield-blockable energy bolts.
+  They are now tall targets, not low slide targets; low worms/bugs remain.
 - Input adds `fireHeld` alongside `fire` (press). Tap fires on release; hold up to 1.2s
   for a charged shot, then release. Cancel charge on hurt, shield, pause/help and warp.
   Keyboard F and the touch BLAST button share these rules.
@@ -423,7 +559,8 @@ Touch run controls include DUCK, SHIELD, PAUSE and HELP. On the title screen E o
   unavailable storage falls back to trance with a warning. `setStyle(style)` rejects
   invalid values, persists locally where possible and switches the current music
   context without changing mute, scores, progress or online accounts.
-  `nextStyle()` cycles the same ordered list. N and the visible MUSIC button work
+  `nextStyle()` cycles the genre-only list; N/MUSIC use `nextSelection()` as
+  described in the electronic soundtrack revision. The controls work
   on the title, map, Hero Lab, leaderboard and during play or pause.
 - All three styles have original scene and regional arrangements.
   All sounds are synthesised locally. Kick-ducking applies to house/trance only.

@@ -4,6 +4,7 @@
   const AH = (window.AH = window.AH || {});
   const MUSIC_KEY = 'azureheroes2027_music';
   const MUSIC_STYLES = AH.Music.styles;
+  const MUSIC_SELECTIONS = AH.Music.selections;
   const SONGS = AH.Music.SONGS, REGION_SONG = AH.Music.REGION_SONG;
   const LOOKAHEAD = 0.15, TICK_MS = 25, MUSIC_VOL = 0.28;
 
@@ -14,6 +15,7 @@
     musicBus: null,
     muted: false,
     style: 'trance',
+    selection: 'trance',
     musicTimer: null,
     musicKind: null,
     musicRegion: null,
@@ -21,6 +23,7 @@
     SONGS: SONGS,
     REGION_SONG: REGION_SONG,
     STYLES: MUSIC_STYLES,
+    SELECTIONS: MUSIC_SELECTIONS,
 
     loadStyle() {
       let stored;
@@ -28,14 +31,16 @@
       catch (e) {
         console.warn('Music preference is unavailable; using trance for this session.');
         this.style = 'trance';
+        this.selection = 'trance';
         return this.style;
       }
-      if (stored !== null && stored !== 'dance' && !MUSIC_STYLES.includes(stored)) {
+      if (stored !== null && stored !== 'dance' && !MUSIC_SELECTIONS.includes(stored)) {
         console.warn('Removed or invalid music preference; using trance.');
       }
-      this.style = MUSIC_STYLES.includes(stored) ? stored : 'trance';
-      if (stored !== null && stored !== this.style) {
-        try { localStorage.setItem(MUSIC_KEY, this.style); }
+      this.selection = MUSIC_SELECTIONS.includes(stored) ? stored : 'trance';
+      this.style = AH.Music.selectedSongs[this.selection]?.style || this.selection;
+      if (stored !== null && stored !== this.selection) {
+        try { localStorage.setItem(MUSIC_KEY, this.selection); }
         catch (e) { console.warn('Migrated music preference could not be saved; using trance for this session.'); }
       }
       return this.style;
@@ -43,12 +48,27 @@
 
     setStyle(style) {
       if (!MUSIC_STYLES.includes(style)) throw new Error('Unsupported music style');
-      if (this.style === style) return this.style;
-      this.style = style;
-      try { localStorage.setItem(MUSIC_KEY, style); }
+      this.setSelection(style);
+      return this.style;
+    },
+
+    setSelection(selection) {
+      if (!MUSIC_SELECTIONS.includes(selection)) throw new Error('Unsupported music selection');
+      if (this.selection === selection) return this.selection;
+      this.selection = selection;
+      this.style = AH.Music.selectedSongs[selection]?.style || selection;
+      try { localStorage.setItem(MUSIC_KEY, selection); }
       catch (e) { console.warn('Music preference could not be saved; selection is for this session only.'); }
       if (this.musicKind) this.music(this.musicKind, this.musicRegion);
-      return this.style;
+      return this.selection;
+    },
+
+    nextSelection() {
+      return this.setSelection(MUSIC_SELECTIONS[(MUSIC_SELECTIONS.indexOf(this.selection) + 1) % MUSIC_SELECTIONS.length]);
+    },
+
+    selectionLabel() {
+      return AH.Music.selectedSongs[this.selection]?.label || this.style.toUpperCase();
     },
 
     nextStyle() {
@@ -116,6 +136,7 @@
     // Regional hooks keep their identity through streets, rooms and fights.
     songFor(kind, region) {
       if (!kind) return null;
+      if (AH.Music.selectedSongs[this.selection]) return AH.Music.selectedSongs[this.selection].key;
       const context = kind === 'boss' ? 'boss'
         : kind === 'pipe' || kind === 'metro' ? 'pipe'
           : kind === 'title' || kind === 'bonus' ? kind : 'main';

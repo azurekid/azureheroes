@@ -7,6 +7,11 @@ description: 'Verify Azure Heroes controls, procedural reachability, cloud rooms
 - Verification may add/update automated tests in `tests/` and evidence in `tests/playtest.md`.
   Do not change runtime code during the QA step; hand failures to the owning implementation step and retest.
 - Test: start screen, all controls, jump reach, enemy hits, coin collection, checkpoint, boss, game over, restart, mobile touch buttons.
+- Pause then press R: preserve position, health, mission tokens, score and timers.
+  In flight, test Left/A and Right/D backward/forward blasts and E / touch shield
+  on front/rear enemy and boss hits. Shield must cancel charge and prevent Boost.
+  Test J / touch PUNCH and K / touch KICK cooldowns, once-per-target hits, walls,
+  cancelled attacks and boss armor/open windows; slide hits a ground boss once.
 - Report each bug as: Level, Steps, Expected, Actual, File suspected.
 - Mark PASS / FAIL per level, do not mark the game done if one level fails.
 - Also test: world map (select, deploy, cleared routes), Continue after game over and after a clear, Hero Lab, warp pipes, secret rooms, and with `npm start`: register, login, score posting and the leaderboard. Run `npm test` for the API.
@@ -35,13 +40,17 @@ and Australian 4x4 sizes.
   scenery scroll factors must be accounted for when centering landmarks.
 - Outdoor atmosphere: verify the continuous 240-second cycle, wrap continuity,
   deterministic `?tod` starting phase, pause/help/warp freeze and room-return
-  restoration. Indoor art and HUD keep their authored lighting. For full-background
+  restoration. Test timed hot-steam warning/cooldown, safe mission/pipe/checkpoint positions and
+  jumping above the active core. Verify local rain fades, wet tops only on
+  outdoor solids, additive neon, sparse framing and landmark readability.
+  Indoor art and HUD keep their authored lighting. For full-background
   sections inspect each fade boundary and centre, city/transit suppression and
   harbour return at day/sunset/night/sunrise, including forced-touch layout.
   Assisted camera/clock positioning is visual evidence, not unassisted completion.
 - Music checks: follow [music-producer](../music-producer/SKILL.md)'s actual-render and human
   listening gates; do not approve timbre from fake Web Audio nodes.
-  Select trance, house and pop by keyboard and touch; check migration of old styles.
+  Cycle trance, house, pop, Night Drive and Soft Skies by keyboard and touch;
+  check migration of old styles and restoration of contextual music after named songs.
   Verify the choice persists locally across reloads, all scene contexts follow it,
   old/invalid preferences fall back safely, and selecting music or muting in Gold
   Mode never pushes progress.
@@ -55,7 +64,7 @@ and Australian 4x4 sizes.
   not grant clothing. Hacker Mode must use Cloud Hacker and never save collections.
   Check local guide garments/headwear, guaranteed three-token carrier drops,
   collision collection, death/checkpoint recovery and boss gating. Tap cooldown
-  is 0.16s with unchanged charge/Boost costs and keyboard/touch release behavior.
+  is 0.10s with unchanged charge/Boost costs and keyboard/touch release behavior.
 - Verify textured hair without progress and New York/cork/cowboy hats locked
   even on legacy completed saves; collect cowboy in each eligible US world.
 - Regional routing: select each represented sign-up region, preserve old saves,
@@ -84,6 +93,11 @@ and Australian 4x4 sizes.
   optional duck scan, hidden gem quota, inaccessible boss/exit while incomplete,
   no duplicate scoring and unchanged saved progress. Die before/after objectives;
   verify flight camera recovery and underground bonus gems with actual collisions.
+- Pipe exits: leave a carrier/drop/required objective on the skipped street,
+  verify entry-side return, then complete the work and verify the forward shortcut.
+  Check post-warp checkpoints, low-time recovery grants and repeated visits/deaths
+  cannot farm time. Confirm fresh games vary encounters and mission positions
+  across all worlds while death preserves the active layout.
 - Check grounded flag/guide/terminal feet and pipe bases against platform tops,
   active checkpoint labels and readable Azure/Entra/Defender/Microsoft 365 lessons.
   Rooms must not activate main-world checkpoints. Konami Gold Mode opens all map
