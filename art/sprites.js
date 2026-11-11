@@ -24,7 +24,7 @@
 
     Object.keys(SC).forEach(function (r) {
         sceneryKeys[r] = Object.keys(SC[r]);
-        Object.keys(SC[r]).forEach(function (k) { const d = SC[r][k]; reg2(k, d[0], d[1], function (g, w, h) { d[2](g, w, h, MP[r]); }, FLAT); });
+        Object.keys(SC[r]).forEach(function (k) { const d = SC[r][k]; reg2(k, d[0], d[1], function (g, w, h) { d[2](g, w, h, MP[r]); }, Object.assign({}, FLAT, { lazy: true })); });
       });
 
     reg('title_burst', 8, 8, function (g) { R(g, '#ffffff', 0, 0, 8, 8); }, true);
@@ -43,14 +43,14 @@
         const ts = GO.GameObjectFactory.prototype.tileSprite;
         GO.GameObjectFactory.prototype.tileSprite = function (x, y, w, h, key, frame) {
           const t = ts.call(this, x, y, w, h, key, frame);
-          if (defs[key]) t.setTileScale(1 / D, 1 / D);
+          if (Object.hasOwn(defs, key)) t.setTileScale(1 / D, 1 / D);
           return t;
         };
         [GO.Image, GO.Sprite].forEach(function (C) {
           const orig = C.prototype.setTexture;
           C.prototype.setTexture = function (key, frame) {
             orig.call(this, key, frame);
-            if (!this._hr && defs[key]) {
+            if (!this._hr && Object.hasOwn(defs, key)) {
               this._hr = true;
               if (this.setTileScale) this.setTileScale(1 / D, 1 / D);
               else this.setScale(this.scaleX / D, this.scaleY / D);
@@ -179,8 +179,43 @@
         },
         generate: function (scene) {
           patchScaling();
+          const textures = scene.textures;
+          const lazy = C.lazyTextures;
+          const exists = textures.exists.bind(textures);
+          const get = textures.get.bind(textures);
+          const creating = new Set();
+          const ensure = (key) => {
+            if (!lazy.has(key) || exists(key) || creating.has(key)) return;
+            creating.add(key);
+            try { textures.addCanvas(key, defs[key]); } finally { creating.delete(key); }
+          };
+          textures.exists = function (key) { ensure(key); return exists(key); };
+          textures.get = function (key) { ensure(key); return get(key); };
+          const releaseUnused = () => {
+            const retained = new Set();
+            const visit = (object) => {
+              for (const texture of [object.texture, object.displayTexture, object.frame && object.frame.texture]) {
+                if (texture) retained.add(texture.key);
+              }
+              if (Array.isArray(object.list)) object.list.forEach(visit);
+            };
+            scene.sys.game.scene.scenes.forEach((current) => {
+              if (current.sys.displayList) current.sys.displayList.getChildren().forEach(visit);
+            });
+            for (const [key, entry] of lazy) {
+              if (!retained.has(key) && entry.canvas) {
+                if (exists(key)) textures.remove(key);
+                entry.canvas.width = 0;
+                entry.canvas.height = 0;
+                entry.canvas = null;
+              }
+            }
+          };
+          scene.sys.game.scene.scenes.forEach((current) => {
+            current.sys.events.on('shutdown', () => scene.sys.game.events.once('poststep', releaseUnused));
+          });
           Object.keys(defs).forEach(function (k) {
-            if (!scene.textures.exists(k)) scene.textures.addCanvas(k, defs[k]);
+            if (!lazy.has(k) && !exists(k)) textures.addCanvas(k, defs[k]);
           });
           const a = scene.anims;
           const mk = (key, frames, rate) => {

@@ -101,7 +101,7 @@ test('life loss preserves completed state while new runs reset it and legacy lev
 
 test('boss entry and direct completion refuse incomplete missions', () => {
   const AH = loadScripts(['systems/scenes.js'], {
-    AH: { Levels: { ids: [1] } }, globals: { Phaser: { Scene: class {} } }
+    AH: { Levels: { ids: [1] }, Art: { D: 2 } }, globals: { Phaser: { Scene: class {} } }
   });
   const scene = new AH.Scenes[5](), notices = [];
   scene.player = { x: 0 };
@@ -171,7 +171,7 @@ test('HUD prioritizes a missed carrier without mutating mission state', () => {
 test('actual pipe return selection keeps checkpoint unchanged until the warp completes', () => {
   const { loadScripts, levelScripts } = require('./helpers/load-game');
   const AH = loadScripts(['systems/mission.js', 'systems/scenes.js'], {
-    AH: { Levels: { ids: [1] }, Audio: { play() {} } }, globals: { Phaser: { Scene: class {} } }
+    AH: { Levels: { ids: [1] }, Art: { D: 2 }, Audio: { play() {} } }, globals: { Phaser: { Scene: class {} } }
   });
   const L = loadScripts(levelScripts(), { seed: 42 }).Levels.make(1);
   const s = new AH.Scenes[5](), Z = L.pipeZones[0], entry = L.pipes[0];
@@ -195,7 +195,7 @@ test('actual pipe return selection keeps checkpoint unchanged until the warp com
 
 test('completed return warp sets the actual safe checkpoint and budgets the skipped street', () => {
   const AH = loadScripts(['systems/mission.js', 'systems/scenes.js'], {
-    AH: { Levels: { ids: [1] }, Audio: { play() {} } }, globals: { Phaser: { Scene: class {} } }
+    AH: { Levels: { ids: [1] }, Art: { D: 2 }, Audio: { play() {} } }, globals: { Phaser: { Scene: class {} } }
   });
   const s = new AH.Scenes[5]();
   const mission = new AH.Mission({ mode: 'run', mission: {

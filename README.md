@@ -18,6 +18,24 @@ npm start            # http://localhost:8080 (PORT and DATA_DIR env vars are opt
 npm test             # gameplay, skills, security boundaries and API tests
 ```
 
+### Startup and level memory
+
+Artwork is drawn locally, not downloaded as image packs. Backgrounds, regional scenery,
+room layers and the world map are generated only when requested by a screen or level.
+Leaving a screen releases lazy canvases and GPU textures that no remaining scene uses.
+Touch devices use 1x artwork; desktop keeps 2x. The logical view stays 640x360.
+The small code modules still load in the explicit HTML dependency order.
+
+On phones and tablets, subtle translucent circular controls float at the edges
+of the game view. The centre, ground contact line and bottom HUD stay clear;
+the movement pad sits above the starting hero. There is no separate control dock.
+The complete game view fits either orientation; landscape gives the largest view.
+Hold direction and an action together using multiple fingers. Buttons release
+on touch cancellation, leaving the app or ending the level.
+
+Every level start or restart generates a fresh randomized layout. Losing a life keeps
+the current layout and mission state; artwork caching never caches level layouts.
+
 ## World map
 
 Levels are picked on an **Azure world map**. Each pin is an Azure region. Cleared pins get a green tick and are joined by gold flight routes, and a plane flies the latest leg. Select a pin with the arrow keys or a tap, then press Enter or tap it again to deploy.

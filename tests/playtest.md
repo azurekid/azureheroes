@@ -1,5 +1,89 @@
 # Playtest report - Microsoft Azure Heroes 2027
 
+## Translucent touch overlays and visible ground
+
+- Bug: Amsterdam on phones/tablets. Start a street run with touch controls.
+  Expected: visible hero feet and platform tops show where walking is possible.
+  Actual: in-canvas buttons at y=222-296 obscure the hero above ground at y=300.
+  Owners: `systems/input.js` and the canvas layout in `index.html`.
+- Fixed: translucent circular DOM buttons at the canvas edges, replacing the
+  initially tested square dock at the maintainer's request. Normal fill opacity
+  is 0.12, with a subtle ring and stronger pressed feedback; targets are 44-56px.
+  Ground controls sit above the walking contact line and clear the starting hero;
+  flight controls use a separate arrangement. The full logical 640x360 view and
+  terrain/body coordinates stay unchanged. Phaser alone centers the touch canvas;
+  overlays follow actual canvas bounds through resize and are removed on shutdown.
+  Pointer capture retains simultaneous holds and clears inputs on cancel, lost
+  capture, blur, hiding and shutdown.
+- Amsterdam integration PASS: Chrome touch emulation at 852x393, DPR 3, density 1.
+  Real multi-touch moved x=60 to 117, combined right/jump raised feet from 300 to
+  239.5, and release landed back at 300. Ground artwork top, static body top and
+  hero feet all measured 300; painted/body widths both measured 420. Two additional
+  fresh documents generated distinct layouts and repeated walking/jumping/landing
+  checks. Forced-touch density 2 also retained top=300, width=420, 32x48 hero
+  display size and a 640x360 camera.
+- Final overlay/layout PASS: phone 852x393 and 393x852, tablet 1024x768 and 768x1024.
+  Measured overlays match canvas bounds; all circular targets stay inside the canvas,
+  do not overlap each other and clear the spawn hero. Street controls end above the
+  y=300 contact line, leaving the ground and bottom HUD exposed. Minimum target
+  diameter is 44px, border radius 50%, background alpha 0.12. Inspected final phone
+  street and tablet flight screenshots. Portrait preserves the complete view but
+  is smaller; landscape is recommended.
+- Ground actions PASS: actual touch DUCK, PUNCH, KICK, full 1.2s BLAST charge/release,
+  SHIELD, PAUSE/resume and HELP. Pause/resume kept position and health; quitting
+  removed controls and restored the title layout. These actions were tested with
+  the initial input variant; the final circular-overlay retest also verified
+  simultaneous RIGHT/JUMP, landing at y=300, full charge/release and PAUSE.
+- Tokyo integration PASS: fresh document, forced touch at density 2. Simultaneous
+  UP/LEFT raised the hero and turned facing backward. SHIELD blocked BOOST, and
+  touch cancellation released both actions. The final circular-overlay retest
+  verified all four viewport layouts, UP/LEFT and SHIELD blocking BOOST.
+  Flight has nine controls and no melee.
+- Automated PASS: `npm test` 185/185, final focused input/combat suite 26/26.
+  Added actual-module tests for all ground/flight actions, multi-pointer holds,
+  cancellation, consumed press flags, blur/visibility cleanup and idempotent shutdown.
+- Assistance/gaps: browser scripts selected levels and acknowledged briefings;
+  movement/actions used browser-generated touch input and real Arcade physics.
+  No teleports, invulnerability, refills or boss stuns. These are entry-area
+  integration tests, not full-world/room/boss completion or physical iPad/iPhone
+  Safari tests. Existing favicon 404 remains; no runtime exceptions occurred in
+  the   final scenarios. Development reloads encountered stale cached input code; the
+  final checks explicitly fetched the updated module. Maintainer review and
+  real-device verification remain required.
+
+## On-demand artwork and mobile startup
+
+- Report: iPhone 17 Pro repeatedly reloads the entire page during startup. Desktop
+  browser measurements found roughly 433 MiB of retained artwork canvases plus
+  433 MiB of GPU textures. This suggests memory pressure, not a proven device
+  crash diagnosis; no physical iPhone crash log was available.
+- Backgrounds, region scenery, indoor layers and the world map now register local
+  lazy drawing factories. Texture requests draw/upload only requested artwork.
+  Scene shutdown releases unreferenced lazy textures after display-list teardown,
+  retaining container, TileSprite and sleeping-scene references. Returning redraws
+  from local seeded factories. Hero/fighter look-dependent drawing remains eager.
+  Readback-friendly canvas contexts and coarse-pointer 1x density reduce mobile
+  memory further; desktop remains 2x. No new image downloads, imports or dependencies.
+- Browser checks: desktop title used about 76 MiB of artwork canvases and 77 MiB of
+  textures instead of 433 MiB each. Mobile Chrome emulation (852x393, touch, DPR 3,
+  4x CPU slowdown) used about 19 MiB of canvases and 20 MiB of textures on the title;
+  measured load event was 2.06s. Only the title's three lazy backgrounds were drawn.
+  Three starts of Amsterdam produced three distinct platform layouts. Returning
+  from the level to title evicted regional/indoor artwork.
+- Automated PASS: `npm test` 184/184, changed JavaScript syntax checks and diff
+  checks. New tests cover deferred allocation, repeat-request reuse, deterministic
+  redraw, upload recursion, container/TileSprite retention, teardown eviction,
+  mobile memory bounds and matching artwork/camera density. Existing seeded
+  layout, drawing-order, account, security and save checks remain intact.
+- Assistance/gaps: browser scripts selected scenes and restarted the level for
+  these checks. An earlier mobile scenario acknowledged the briefing and emitted
+  touch-button pointer events, moving the hero with unchanged health. The final
+  lazy-artwork scenario likewise moved the hero via touch, retained a 640x360
+  logical camera and returned to title with only its three lazy layers remaining. These are
+  integration checks, not unassisted completion, all-world visual review, real
+  iPhone testing or music approval. No gameplay cheats or persistence bypasses
+  were introduced. Physical Safari verification remains required after deployment.
+
 ## Pipe-safe tokens, recovery time and varied mission placement
 
 - Bug: in street worlds, enter a pipe with an undefeated token carrier between

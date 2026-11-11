@@ -38,6 +38,7 @@ AH.ArtModules.stages['art.core.0'] = C => {
 loadScripts(['art/sprites.js'], { AH, globals: { document } });
 const Art = AH.Art;
 const keys = regions.flatMap(region => Array.from(Art.sceneryKeys[region]));
+keys.forEach(key => Art.textureCanvas(key));
 const hash = value => crypto.createHash('sha256').update(JSON.stringify(value)).digest('hex');
 const ops = key => Art.textureCanvas(key).ops;
 

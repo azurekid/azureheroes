@@ -33,7 +33,7 @@ function loadScripts(files, { AH = {}, seed = 1, globals = {} } = {}) {
     seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;
     return seed / 4294967296;
   };
-  const context = vm.createContext({ ...globals, window: { AH }, Math: math });
+  const context = vm.createContext({ ...globals, window: { ...globals.window, AH }, Math: math });
   for (const file of files) {
     vm.runInContext(fs.readFileSync(path.join(root, file), 'utf8'), context, { filename: file });
   }

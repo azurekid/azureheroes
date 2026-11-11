@@ -7,7 +7,7 @@ const plain = value => JSON.parse(JSON.stringify(value));
 function game(raw, seed = 1) {
   let stored = raw ? JSON.stringify(raw) : null, writes = 0;
   const AH = loadScripts([...levelScripts(), 'systems/save.js', 'systems/scenes.js'], {
-    seed, globals: { Phaser: { Scene: class {} }, localStorage: {
+    seed, AH: { Art: { D: 2 } }, globals: { Phaser: { Scene: class {} }, localStorage: {
       getItem: () => stored, setItem(key, value) { stored = value; writes++; }
     } }
   });

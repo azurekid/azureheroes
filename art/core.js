@@ -42,9 +42,11 @@
     Object.assign(C, { cv, R, outline, crisp, shade, glow, upscale, reg, reg2, regArt, disc, rng, lerpCol, lg, poly, ell, rrect, limb, line, depthFace, depthGround, sprayTag, registerGraffiti, registerForeground });
     const NAVY = '#0a0720';
 
-    const D = 2;
+    const D = typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches ? 1 : 2;
 
     const defs = {};
+    const lazyTextures = new Map();
+    C.lazyTextures = lazyTextures;
 
     const density = { value: D, hd: false };
 
@@ -228,6 +230,7 @@
         const c = document.createElement('canvas');
         c.width = w;
         c.height = h;
+        c.getContext('2d', { willReadFrequently: true });
         return c;
       }
 
@@ -331,15 +334,31 @@
 
     function regArt(key, w, h, fn, opt) {
         opt = opt || {};
-        let c = cv(w * density.value, h * density.value);
-        const g = c.getContext('2d');
-        g.scale(density.value, density.value);
-        fn(g, w, h);
-        crisp(c);
-        if (opt.shade !== 0) shade(c, opt.shade === undefined ? 0.6 : opt.shade);
-        if (!opt.noOutline) { outline(c); if (density.value > D) outline(c); }
-        if (opt.glow) c = glow(c, opt.glow, 6);
-        defs[key] = c;
+        const scale = density.value;
+        const draw = () => {
+          let c = cv(w * scale, h * scale);
+          const g = c.getContext('2d');
+          g.scale(scale, scale);
+          fn(g, w, h);
+          crisp(c);
+          if (opt.shade !== 0) shade(c, opt.shade === undefined ? 0.6 : opt.shade);
+          if (!opt.noOutline) { outline(c); if (scale > D) outline(c); }
+          if (opt.glow) c = glow(c, opt.glow, 6);
+          return c;
+        };
+        if (opt.lazy || /^(?:bg_|challenge_(?:bg|far)_|bonus_bg|world_map$)/.test(key)) {
+          const entry = { canvas: null, draw };
+          lazyTextures.set(key, entry);
+          Object.defineProperty(defs, key, {
+            enumerable: true, configurable: true,
+            get() {
+              if (!entry.canvas) entry.canvas = entry.draw();
+              return entry.canvas;
+            }
+          });
+        } else {
+          defs[key] = draw();
+        }
       }
 
     function disc(g, col, cx, cy, r) {

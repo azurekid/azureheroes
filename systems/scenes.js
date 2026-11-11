@@ -30,10 +30,10 @@
     if (q && TOD[q[1]]) return q[1];
     return TOD_ORDER[Math.floor(Math.random() * TOD_ORDER.length)];
   }
-  /* Hi-res output: the canvas is VIEW_SCALE x the 640x360 logical view, so the 2x-density art is shown
+  /* Output: the canvas is VIEW_SCALE x the 640x360 logical view, so the device-density art is shown
      pixel for pixel. Every camera zooms from its top-left corner; scroll, follow, bounds and shake keep
      working in logical 640x360 units, so game code and level coordinates are unchanged. */
-  const VIEW_SCALE = AH.VIEW_SCALE = 2;
+  const VIEW_SCALE = AH.VIEW_SCALE = AH.Art.D;
   (function patchCameras() {
     const S2 = Phaser.Cameras && Phaser.Cameras.Scene2D;
     if (!S2 || S2.CameraManager.prototype._ahHiRes) return;

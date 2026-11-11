@@ -1,12 +1,119 @@
 'use strict';
 const test = require('node:test');
 const assert = require('node:assert/strict');
+const { EventEmitter } = require('node:events');
 const { artScripts, loadScripts, recordingDocument } = require('./helpers/load-game');
 
 const document = recordingDocument();
 const AH = loadScripts(artScripts(), { globals: { document } });
 const C = AH.ArtModules.context;
 const themes = ['pipelines', 'aks', 'actions', 'docker', 'entra', 'functions', 'tube', 'metro'];
+
+test('backgrounds register without allocating canvases and redraw identically after eviction', () => {
+  const game = loadScripts(artScripts(), { globals: { document: recordingDocument() } });
+  const lazy = game.ArtModules.context.lazyTextures;
+  assert.ok(lazy.size > 200, 'regional scenery and indoor layers are deferred');
+  assert.ok([...lazy.values()].every(entry => entry.canvas === null));
+  const key = 'bg_far_westeurope';
+  const first = game.Art.textureCanvas(key);
+  const ops = JSON.stringify(first.ops);
+  assert.equal(game.Art.textureCanvas(key), first, 'repeat requests reuse the canvas');
+  lazy.get(key).canvas = null;
+  const second = game.Art.textureCanvas(key);
+  assert.notEqual(first, second);
+  assert.equal(JSON.stringify(second.ops), ops, 'local seeded drawing is independent of request order');
+  assert.equal(lazy.get('bg_far_japaneast').canvas, null, 'another city stays unrendered');
+});
+
+test('texture requests load lazily and scene teardown releases only unreferenced artwork', () => {
+  class Image { setTexture() { return this; } }
+  class Sprite { setTexture() { return this; } }
+  class Factory { tileSprite() { return { setTileScale() {} }; } }
+  const game = loadScripts(artScripts(), { globals: {
+    document: recordingDocument(),
+    Phaser: { GameObjects: { Image, Sprite, GameObjectFactory: Factory } }
+  } });
+  const events = new EventEmitter(), shutdown = new EventEmitter(), children = [];
+  const loaded = new Map();
+  const textures = {
+    exists: key => loaded.has(key), get: key => loaded.get(key),
+    addCanvas(key, canvas) {
+      assert.equal(this.exists(key), false, 'upload handles its own existence check without recursion');
+      loaded.set(key, { key, canvas });
+    },
+    remove: key => loaded.delete(key)
+  };
+  const scene = {
+    textures, anims: { exists: () => false, create() {} },
+    sys: { events: shutdown, displayList: { getChildren: () => children } }
+  };
+  scene.sys.game = { events, scene: { scenes: [scene] } };
+  game.Art.generate(scene);
+  assert.equal(loaded.has('bg_far_westeurope'), false, 'boot skips city uploads');
+  const first = textures.get('bg_far_westeurope');
+  assert.ok(first.canvas.width > 0);
+  assert.equal(textures.exists('bg_far_japaneast'), true, 'optional queries see registered lazy art');
+  const unreferenced = loaded.get('bg_far_japaneast').canvas;
+  children.push({ list: [{ displayTexture: first }] });
+  shutdown.emit('shutdown'); events.emit('poststep');
+  assert.equal(loaded.has(first.key), true, 'retained container/TileSprite references keep their source');
+  assert.equal(loaded.has('bg_far_japaneast'), false);
+  assert.equal(unreferenced.width, 0, 'released canvases free their backing storage');
+  children.length = 0;
+  shutdown.emit('shutdown'); events.emit('poststep');
+  assert.equal(loaded.has(first.key), false);
+  assert.equal(game.ArtModules.context.lazyTextures.get(first.key).canvas, null);
+  assert.ok(textures.get(first.key).canvas.width > 0, 'revisiting rebuilds an evicted texture');
+});
+
+test('touch artwork retains every texture with a bounded startup memory footprint', () => {
+  const mobile = loadScripts(artScripts(), {
+    globals: {
+      document: recordingDocument(),
+      matchMedia(query) {
+        assert.equal(query, '(pointer: coarse)');
+        return { matches: true };
+      }
+    }
+  }).Art;
+  assert.equal(AH.Art.D, 2, 'desktop density remains unchanged');
+  assert.equal(mobile.D, 1, 'touch devices use logical-resolution artwork');
+  assert.deepEqual(Array.from(mobile.textureKeys), Array.from(AH.Art.textureKeys));
+  const bytes = (art) => art.textureKeys.reduce((sum, key) => {
+    const canvas = art.textureCanvas(key);
+    return sum + canvas.width * canvas.height * 4;
+  }, 0);
+  assert.ok(bytes(mobile) < 128 * 1024 * 1024, 'touch startup canvases stay below 128 MiB');
+  assert.ok(bytes(mobile) <= bytes(AH.Art) * 0.27, 'canvas bytes fall by at least 73 percent');
+  for (const [key, w, h] of [['bg_sky', 640, 360], ['hero_idle', 32, 48], ['roof_top', 32, 8]]) {
+    const canvas = mobile.textureCanvas(key);
+    assert.deepEqual([canvas.width, canvas.height], [w, h], key + ' preserves logical bounds');
+  }
+});
+
+test('artwork canvases select readback-friendly contexts before drawing', () => {
+  const calls = [];
+  const isolated = loadScripts(['art/core.js'], { globals: {
+    document: { createElement: () => ({
+      getContext(type, options) { calls.push({ type, options }); return {}; }
+    }) }
+  } });
+  const context = isolated.ArtModules.context;
+  isolated.ArtModules.stages['art.core.0'](context);
+  const canvas = context.cv(32, 48);
+  assert.deepEqual([canvas.width, canvas.height], [32, 48]);
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0].type, '2d');
+  assert.equal(calls[0].options.willReadFrequently, true);
+});
+
+test('fine-pointer browsers keep desktop density', () => {
+  const isolated = loadScripts(['art/core.js'], { globals: {
+    matchMedia: () => ({ matches: false })
+  } });
+  isolated.ArtModules.stages['art.core.0'](isolated.ArtModules.context);
+  assert.equal(isolated.ArtModules.context.D, 2);
+});
 
 test('painted depth helpers stay within their supplied rectangles and consume no random values', () => {
   const isolated = loadScripts(['art/core.js'], { globals: { document } });

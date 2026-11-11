@@ -21,61 +21,93 @@
       const forced = /[?&]touch=1/.test(location.search);
       this.isTouch = forced || scene.sys.game.device.input.touch;
       if (this.isTouch) this.buildTouch();
+      scene.events.once('shutdown', () => this.destroy());
     }
 
-    addButton(x, y, label, key, scale, o) {
-      const s = this.scene;
-      const img = s.add.image(x, y, 'btn').setScrollFactor(0).setDepth(1000).setScale((scale || 1) / AH.Art.D).setAlpha(0.85);
-      const txt = new AH.PixelText(s, x, y, label, { scale: (o && o.ts) || 1, color: '#ffffff', ox: 0.5, oy: 0.5 }).setScrollFactor(0).setDepth(1001);
-      img.setInteractive();
+    addButton(label, key) {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.textContent = label;
+      button.dataset.action = key;
+      button.setAttribute('aria-label', label);
+      button.setAttribute('aria-pressed', 'false');
+      const pointers = new Set();
       const set = (v) => {
         if (v) {
           if (key === 'jump') this.tJump = true;
           else if (key === 'punch') this.tPunch = true;
           else if (key === 'kick') this.tKick = true;
+          else if (key === 'pause') this.tPause = true;
+          else if (key === 'help') this.tHelp = true;
           else if (key === 'attack') { this.tFire = true; this.t.attack = true; } else this.t[key] = true;
         } else this.t[key] = false;
-        img.setTexture(v ? 'btn_down' : 'btn');
+        button.setAttribute('aria-pressed', String(v));
       };
-      img.on('pointerdown', () => { AH.Audio.init(); set(true); });
-      img.on('pointerup', () => set(false));
-      img.on('pointerout', () => set(false));
-      img.on('pointerupoutside', () => set(false));
-      this.buttons.push({ img, txt, key, set });
+      button.addEventListener('pointerdown', (event) => {
+        event.preventDefault();
+        button.setPointerCapture(event.pointerId);
+        AH.Audio.init();
+        pointers.add(event.pointerId);
+        set(true);
+      });
+      const release = (event) => {
+        pointers.delete(event.pointerId);
+        if (!pointers.size) set(false);
+      };
+      for (const event of ['pointerup', 'pointercancel', 'lostpointercapture'])
+        button.addEventListener(event, release);
+      const reset = () => { pointers.clear(); set(false); };
+      this.dock.appendChild(button);
+      this.buttons.push({ button, key, set, reset });
       return this.buttons[this.buttons.length - 1];
     }
 
     buildTouch() {
-      const s = this.scene;
-      s.input.addPointer(3);
-      const o = this.opts;
-      if (o.fly) {
-        this.addButton(78, 224, '^', 'up', 1, { ts: 3 });
-        this.addButton(36, 270, '<', 'left', 1, { ts: 3 });
-        this.addButton(120, 270, '>', 'right', 1, { ts: 3 });
-        this.addButton(78, 296, 'V', 'down', 0.85, { ts: 3 });
-      } else {
-        this.addButton(44, 288, '<', 'left', 1, { ts: 3 });
-        this.addButton(116, 288, '>', 'right', 1, { ts: 3 });
-        this.addButton(190, 288, 'DUCK', 'down', 0.85);
-        this.addButton(592, 286, 'JUMP', 'jump', 1);
-        this.addButton(365, 286, 'PUNCH', 'punch', 0.85);
-        this.addButton(440, 286, 'KICK', 'kick', 0.85);
-      }
-      this.addButton(520, 296, 'BLAST', 'attack', 1);
-      this.addButton(592, 222, 'BOOST', 'boost', 0.85);
-      if (o.shield) this.addButton(520, 234, 'SHIELD', 'shield', 0.85);
-      this.pauseBtn = new AH.PixelText(s, 630, 112, 'PAUSE', { scale: 1, color: '#c9a0ff', ox: 1 }).setScrollFactor(0).setDepth(1500);
-      this.pauseBtn.setInteractive({ useHandCursor: true });
-      this.pauseBtn.on('pointerdown', () => { this.tPause = true; });
-      this.helpBtn = new AH.PixelText(s, 630, 126, 'HELP', { scale: 1, color: '#7fe8ff', ox: 1 }).setScrollFactor(0).setDepth(1500);
-      this.helpBtn.setInteractive({ useHandCursor: true });
-      this.helpBtn.on('pointerdown', () => { this.tHelp = true; });
+      this.dock = document.createElement('div');
+      this.dock.id = 'touch-controls';
+      this.dock.dataset.mode = this.opts.fly ? 'fly' : 'run';
+      this.dock.setAttribute('role', 'group');
+      this.dock.setAttribute('aria-label', 'Game controls');
+      document.body.appendChild(this.dock);
+      document.body.classList.add('touch-play');
+      const controls = this.opts.fly
+        ? [['LEFT', 'left'], ['UP', 'up'], ['RIGHT', 'right'], ['BLAST', 'attack'], ['BOOST', 'boost'], ['PAUSE', 'pause'],
+          ['DOWN', 'down'], ['HELP', 'help']]
+        : [['LEFT', 'left'], ['RIGHT', 'right'], ['DUCK', 'down'], ['JUMP', 'jump'], ['BLAST', 'attack'], ['PAUSE', 'pause'],
+          ['PUNCH', 'punch'], ['KICK', 'kick'], ['BOOST', 'boost'], ['HELP', 'help']];
+      if (this.opts.shield) controls.push(['SHIELD', 'shield']);
+      controls.forEach(([label, key]) => this.addButton(label, key));
+      this.releaseTouch = () => {
+        this.buttons.forEach(button => button.reset());
+        this.tJump = this.tFire = this.tPunch = this.tKick = this.tPause = this.tHelp = false;
+        if (this.scene.player) this.scene.player.cancelCharge();
+      };
+      this.onVisibility = () => { if (document.hidden) this.releaseTouch(); };
+      window.addEventListener('blur', this.releaseTouch);
+      document.addEventListener('visibilitychange', this.onVisibility);
+      this.onResize = () => {
+        const bounds = this.scene.sys.game.canvas.getBoundingClientRect();
+        Object.assign(this.dock.style, {
+          left: bounds.left + 'px', top: bounds.top + 'px',
+          width: bounds.width + 'px', height: bounds.height + 'px'
+        });
+      };
+      this.scene.scale.on('resize', this.onResize);
+      this.scene.scale.setParentSize(this.scene.scale.parent.clientWidth, this.scene.scale.parent.clientHeight);
+      this.onResize();
     }
 
     destroy() {
-      this.buttons.forEach((b) => { b.img.destroy(); b.txt.destroy(); });
+      if (!this.dock) return;
+      this.releaseTouch();
+      window.removeEventListener('blur', this.releaseTouch);
+      document.removeEventListener('visibilitychange', this.onVisibility);
+      this.scene.scale.off('resize', this.onResize);
+      this.dock.remove();
+      this.dock = null;
+      document.body.classList.remove('touch-play');
       this.buttons = [];
+      this.scene.scale.setParentSize(this.scene.scale.parent.clientWidth, this.scene.scale.parent.clientHeight);
     }
 
     read() {

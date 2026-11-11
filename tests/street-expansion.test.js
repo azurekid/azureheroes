@@ -95,7 +95,7 @@ test('four varied main-route weapons remain safe and distributed across all worl
 
 test('fall/offscreen cleanup recovers unfinished carriers without granting a token or healing them', () => {
   const files = localScripts().filter(f => ['systems/mission.js', 'systems/scenes.js'].includes(f));
-  const AH = loadScripts(files, { AH: { Levels: { ids: [1] }, Audio: { play() {} } },
+  const AH = loadScripts(files, { AH: { Levels: { ids: [1] }, Art: { D: 2 }, Audio: { play() {} } },
     globals: { Phaser: { Scene: class {} } } });
   const scene = new AH.Scenes[5](), calls = [];
   const L = { mode: 'run', width: 4000, mission: { objectives: [], gems: [], gemQuota: 0,
@@ -140,7 +140,7 @@ test('spray walls and human enemy appearances use real registered drawing module
 
 test('actual enemy cleanup keeps falling and offscreen token carriers alive until defeat', () => {
   const AH = loadScripts(localScripts().filter(f => ['systems/mission.js', 'systems/scenes.js'].includes(f)),
-    { AH: { Levels: { ids: [1] }, Audio: { play() {} } }, globals: { Phaser: { Scene: class {} } } });
+    { AH: { Levels: { ids: [1] }, Art: { D: 2 }, Audio: { play() {} } }, globals: { Phaser: { Scene: class {} } } });
   for (const mode of ['run', 'fly']) {
     const scene = new AH.Scenes[5](), def = { id: 'required', x: 1200, y: 200 };
     const L = { mode, exit: { x: 4000, y: 200, w: 40, h: 90 }, mission: {
@@ -171,7 +171,7 @@ test('actual enemy cleanup keeps falling and offscreen token carriers alive unti
 
 test('new weapon-drop definitions are built as real collectible scene pickups', () => {
   const AH = loadScripts(localScripts().filter(f => f === 'systems/scenes.js'),
-    { AH: { Levels: { ids: [1] } }, globals: { Phaser: { Scene: class {} } } });
+    { AH: { Levels: { ids: [1] }, Art: { D: 2 } }, globals: { Phaser: { Scene: class {} } } });
   const scene = new AH.Scenes[5](), keys = [];
   scene.L = { powerups: [{ kind: 'copilot', x: 100, y: 200 }],
     weaponDrops: [{ kind: 'spread', x: 600, y: 200 }, { kind: 'pierce', x: 1400, y: 180 }] };
@@ -411,7 +411,7 @@ test('New York sewer steam is grounded, bounded, signposted and frozen indoors o
 
 test('steam heat uses the actual player damage cooldown and never burns in paused or indoor states', () => {
   const AH = loadScripts(localScripts().filter(f => ['systems/player.js', 'systems/scenes.js'].includes(f)),
-    { AH: { Levels: { ids: [11] }, Audio: { play() {} } }, globals: { Phaser: { Scene: class {} } } });
+    { AH: { Levels: { ids: [11] }, Art: { D: 2 }, Audio: { play() {} } }, globals: { Phaser: { Scene: class {} } } });
   const s = new AH.Scenes[5](), p = Object.create(AH.Player.prototype);
   Object.assign(p, { sprite: { x: 200, y: 280, body: { x: 193, y: 260, width: 14, height: 40 },
     setVelocity() {} }, mode: 'run', scene: { cameras: { main: { shake() {} } }, burst() {} },

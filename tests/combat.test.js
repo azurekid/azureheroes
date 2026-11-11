@@ -149,7 +149,7 @@ test('input reports held fire for keyboard and touch and consumes SPACE only onc
 });
 
 test('spread fans out, charged shots hurt more, beams hit each target once and stop at walls', () => {
-  const AH = load('systems/scenes.js', { Levels: { ids: [1] } }, { Phaser: { Scene: class {} } });
+  const AH = load('systems/scenes.js', { Levels: { ids: [1] }, Art: { D: 2 } }, { Phaser: { Scene: class {} } });
   const s = new AH.Scenes[5]();
   Object.assign(s, { add: { image: display }, blasts: [], enemies: [], rects: [], mode: 'run',
     cameras: { main: { scrollX: 0 } }, burst() {}, shootDownBolt() { return false; } });
@@ -185,7 +185,7 @@ test('spread fans out, charged shots hurt more, beams hit each target once and s
 test('losing a life restores defeated enemies away from the respawn point', () => {
   const made = [];
   class Enemy { constructor(scene, d) { this.def = d; this.dead = false; made.push(d); } remove() { this.dead = true; this.removed = true; } }
-  const AH = load('systems/scenes.js', { Levels: { ids: [1] }, Enemy }, { Phaser: { Scene: class {} } });
+  const AH = load('systems/scenes.js', { Levels: { ids: [1] }, Art: { D: 2 }, Enemy }, { Phaser: { Scene: class {} } });
   const s = new AH.Scenes[5]();
   const defs = [{ x: 100 }, { x: 250 }, { x: 900 }, { x: 1500 }];
   const survivor = new Enemy(s, defs[3]);

@@ -14,6 +14,26 @@
     body { display: flex; align-items: center; justify-content: center; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; touch-action: none; }
     #game { width: 100vw; height: 100vh; height: 100dvh; display: flex; align-items: center; justify-content: center; }
     canvas { image-rendering: pixelated; image-rendering: crisp-edges; display: block; touch-action: none; }
+    body.touch-play #game { display: block; }
+    #touch-controls { --touch-size: clamp(44px, 6vw, 56px); --touch-step: calc(var(--touch-size) + 8px); position: fixed; z-index: 4; pointer-events: none; touch-action: none; }
+    #touch-controls[hidden] { display: none; }
+    #touch-controls button { position: absolute; width: var(--touch-size); height: var(--touch-size); padding: 0; border: 1px solid rgba(255, 255, 255, 0.35); border-radius: 50%; background: rgba(10, 7, 32, 0.12); color: rgba(255, 255, 255, 0.8); font: bold 10px monospace; text-shadow: 0 1px 3px #0a0720; pointer-events: auto; touch-action: none; user-select: none; -webkit-user-select: none; }
+    #touch-controls button[aria-pressed="true"] { background: rgba(39, 224, 255, 0.24); border-color: rgba(127, 232, 255, 0.8); color: #ffffff; }
+    #touch-controls [data-action="left"] { left: 12px; bottom: calc(16.667% + var(--touch-step) + 4px); }
+    #touch-controls [data-action="right"] { left: calc(12px + var(--touch-step)); bottom: calc(16.667% + var(--touch-step) + 4px); }
+    #touch-controls [data-action="down"] { left: calc(12px + var(--touch-step) * 2); bottom: calc(16.667% + var(--touch-step) + 4px); }
+    #touch-controls [data-action="up"] { left: calc(12px + var(--touch-step) / 2); bottom: calc(16.667% + 4px); }
+    #touch-controls [data-action="jump"] { right: 12px; bottom: calc(16.667% + 4px); }
+    #touch-controls [data-action="attack"] { right: calc(12px + var(--touch-step)); bottom: calc(16.667% + 4px); }
+    #touch-controls [data-action="kick"] { right: calc(12px + var(--touch-step) * 2); bottom: calc(16.667% + 4px); }
+    #touch-controls [data-action="boost"] { right: 12px; bottom: calc(16.667% + var(--touch-step) + 4px); }
+    #touch-controls [data-action="shield"] { right: calc(12px + var(--touch-step)); bottom: calc(16.667% + var(--touch-step) + 4px); }
+    #touch-controls [data-action="punch"] { right: calc(12px + var(--touch-step) * 2); bottom: calc(16.667% + var(--touch-step) + 4px); }
+    #touch-controls [data-action="pause"] { right: 12px; top: calc(12.778% + 4px); }
+    #touch-controls [data-action="help"] { right: calc(12px + var(--touch-step)); top: calc(12.778% + 4px); }
+    #touch-controls[data-mode="fly"] [data-action="left"], #touch-controls[data-mode="fly"] [data-action="right"] { bottom: calc(16.667% + 4px); }
+    #touch-controls[data-mode="fly"] [data-action="up"] { left: calc(12px + var(--touch-step) * 2); bottom: calc(16.667% + var(--touch-step) + 4px); }
+    #touch-controls[data-mode="fly"] [data-action="down"] { bottom: calc(16.667% + 4px); }
     #rotate { display: none; position: fixed; left: 0; right: 0; top: 0; padding: 8px; text-align: center; background: #0b0830; color: #ffe14a; font: bold 13px monospace; letter-spacing: 1px; border-bottom: 2px solid #27e0ff; z-index: 5; }
     @media (orientation: portrait) and (pointer: coarse) { #rotate { display: block; } }
     noscript { color: #fff; font: 16px monospace; }

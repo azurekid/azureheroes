@@ -3,13 +3,116 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const { localScripts, loadScripts } = require('./helpers/load-game');
 
-function game() {
+function game(density = 2) {
   return loadScripts(localScripts().filter(file =>
     ['systems/input.js', 'systems/player.js', 'systems/scenes.js'].includes(file)), {
-    AH: { Levels: { ids: [1] }, Art: { D: 2 }, Audio: { play() {} } },
+    AH: { Levels: { ids: [1] }, Art: { D: density }, Audio: { play() {} } },
     globals: { Phaser: { Scene: class {}, Math: { Clamp: (v, lo, hi) => Math.max(lo, Math.min(hi, v)) } } }
   });
 }
+
+test('scene output follows artwork density without changing logical gameplay dimensions', () => {
+  for (const density of [1, 2]) {
+    const AH = game(density);
+    assert.equal(AH.VIEW_SCALE, density);
+    assert.equal(AH.Art.D, density);
+  }
+});
+
+test('touch overlays track the canvas and support captured pointers, cancellation, blur and shutdown', () => {
+  class Element extends EventTarget {
+    constructor() { super(); this.dataset = {}; this.style = {}; this.attributes = {}; this.children = []; }
+    setAttribute(key, value) { this.attributes[key] = value; }
+    appendChild(child) { this.children.push(child); child.parent = this; }
+    remove() { this.parent.children = this.parent.children.filter(child => child !== this); }
+    setPointerCapture(id) { this.capture = id; }
+    pointer(type, pointerId) {
+      const event = new Event(type, { cancelable: true });
+      event.pointerId = pointerId;
+      this.dispatchEvent(event);
+      return event;
+    }
+  }
+  for (const fly of [false, true]) {
+    const doc = new EventTarget(), win = new EventTarget(), classes = new Set();
+    doc.body = new Element();
+    doc.body.classList = { add: value => classes.add(value), remove: value => classes.delete(value) };
+    doc.createElement = () => new Element();
+    let shutdown, resized = 0, cancelled = 0, resize;
+    let bounds = { left: 76, top: 0, width: 699, height: 393 };
+    const AH = loadScripts(localScripts().filter(file => file === 'systems/input.js'), {
+      AH: { Audio: { init() {} } },
+      globals: { document: doc, location: { search: '?touch=1' },
+        window: { addEventListener: win.addEventListener.bind(win), removeEventListener: win.removeEventListener.bind(win) },
+        Phaser: { Input: { Keyboard: { JustDown: () => false } } } }
+    });
+    const scene = {
+      sys: { game: { device: { input: { touch: false } }, canvas: { getBoundingClientRect: () => bounds } } },
+      input: { keyboard: { addKeys: () => Object.fromEntries('LEFT RIGHT UP DOWN A D W S SPACE F SHIFT E P R M N ENTER ESC H Q J K'.split(' ').map(key => [key, { isDown: false }])), addCapture() {} } },
+      events: { once(name, cb) { assert.equal(name, 'shutdown'); shutdown = cb; } },
+      scale: { parent: { clientWidth: 852, clientHeight: 393 },
+        on(name, cb) { assert.equal(name, 'resize'); resize = cb; },
+        off(name, cb) { assert.equal(name, 'resize'); assert.equal(cb, resize); resize = null; },
+        setParentSize(w, h) { assert.equal(w, 852); assert.equal(h, 393); resized++; } },
+      player: { cancelCharge() { cancelled++; } }
+    };
+    const input = new AH.Input(scene, { fly, shield: true });
+    assert.equal(input.dock.id, 'touch-controls');
+    assert.equal(input.dock.dataset.mode, fly ? 'fly' : 'run');
+    assert.equal(input.dock.style.width, '699px');
+    bounds = { left: 0, top: 300, width: 393, height: 221 };
+    resize();
+    assert.equal(input.dock.style.left, '0px');
+    assert.equal(input.dock.style.top, '300px');
+    assert.equal(input.dock.style.height, '221px');
+    assert.equal(doc.body.children.length, 1);
+    assert.equal(classes.has('touch-play'), true);
+    const button = action => input.buttons.find(b => b.key === action).button;
+    const required = fly ? ['up', 'down', 'left', 'right', 'attack', 'boost', 'shield', 'pause', 'help']
+      : ['left', 'right', 'down', 'jump', 'attack', 'punch', 'kick', 'boost', 'shield', 'pause', 'help'];
+    const command = { jump: 'jumpPressed', attack: 'fireHeld' };
+    required.forEach(action => {
+      button(action).pointer('pointerdown', 100);
+      assert.equal(input.read()[command[action] || action], true, action);
+      button(action).pointer('pointerup', 100);
+      assert.equal(input.read()[command[action] || action], false, action);
+    });
+    assert.equal(button('right').pointer('pointerdown', 1).defaultPrevented, true);
+    button('right').pointer('pointerdown', 2);
+    button('attack').pointer('pointerdown', 3);
+    let cmd = input.read();
+    assert.equal(cmd.right, true); assert.equal(cmd.fireHeld, true); assert.equal(cmd.fire, true);
+    button('right').pointer('pointerup', 1);
+    assert.equal(input.read().right, true);
+    button('right').pointer('lostpointercapture', 2);
+    assert.equal(input.read().right, false);
+    button('attack').pointer('pointercancel', 3);
+    assert.equal(input.read().fireHeld, false);
+    assert.equal(button('attack').attributes['aria-pressed'], 'false');
+    const pressed = fly ? 'up' : 'jump';
+    button(pressed).pointer('pointerdown', 4);
+    cmd = input.read();
+    assert.equal(cmd[fly ? 'up' : 'jumpPressed'], true);
+    if (!fly) assert.equal(input.read().jumpPressed, false);
+    button('pause').pointer('pointerdown', 5);
+    button('help').pointer('pointerdown', 6);
+    cmd = input.read();
+    assert.equal(cmd.pause, true); assert.equal(cmd.help, true);
+    assert.equal(input.read().pause, false);
+    win.dispatchEvent(new Event('blur'));
+    assert.equal(input.read().up, false);
+    assert.equal(cancelled, 1);
+    button('shield').pointer('pointerdown', 7);
+    doc.hidden = true;
+    doc.dispatchEvent(new Event('visibilitychange'));
+    assert.equal(input.read().shield, false);
+    shutdown(); input.destroy();
+    assert.equal(doc.body.children.length, 0);
+    assert.equal(classes.has('touch-play'), false);
+    assert.equal(resized, 2);
+    assert.equal(resize, null);
+  }
+});
   test('flight shielding cancels charge and boost while retaining movement and facing', () => {
     const AH = game(), p = Object.create(AH.Player.prototype), sprite = display();
     const shots = [];

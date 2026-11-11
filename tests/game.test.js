@@ -111,7 +111,7 @@ test('New York birds and neighborhood scenery retain local identity and register
 test('regional secret rooms route underground music and restore street music on return', () => {
   const music = [], bounds = [], positions = [];
   const AH = load('systems/scenes.js', {
-    Levels: { ids: [11] }, Audio: { play() {}, music(...args) { music.push(args); } }
+    Levels: { ids: [11] }, Art: { D: 2 }, Audio: { play() {}, music(...args) { music.push(args); } }
   }, 1, { Phaser: { Scene: class {} } });
   const scene = new AH.Scenes[5](), L = levels(2027).make(11);
   scene.L = L;
@@ -192,7 +192,7 @@ test('challenge platforms use finite exact-size art without changing collision g
   const display = { setOrigin() { return this; }, setDepth() { return this; } };
   const AH = load('systems/scenes.js', {
     Levels: { ids: [1] },
-    Art: { buildCloudPlatform(scene, p) { calls.push(['cargo', p.w, p.h]); return 'cargo'; } }
+    Art: { D: 2, buildCloudPlatform(scene, p) { calls.push(['cargo', p.w, p.h]); return 'cargo'; } }
   }, 1, { Phaser: { Scene: class {} } });
   const scene = new AH.Scenes[5]();
   scene.L = { theme: 'roof' };

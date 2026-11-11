@@ -380,9 +380,25 @@ Flight has ranged combat and shield, not ground melee. New hero `punch` and
 `kick` frames preserve the shared rig, all wardrobes and collision dimensions.
 `AH.Input.read()` returns `help`, `quit`, `esc` and `nav` (-1/0/1 page turns) besides the movement flags.
 Touch run controls include DUCK, SHIELD, PAUSE and HELP. On the title screen E opens the Hero Lab and H opens help.
+Touch gameplay controls use translucent circular DOM overlays aligned to the canvas
+edges, with no reserved dock. Leave the centre, ground contact line and bottom HUD
+clear; place the movement pad above the spawn area. The full 640x360 logical view
+and collision coordinates stay unchanged through resize/rotation. Pointer capture supports simultaneous
+held actions and releases them on cancellation, focus loss and scene shutdown.
 
 ## Addendum: rendering, hero art, suits, threat identity
 
+- Backgrounds, room layers, the world map and regional scenery register lazy local
+  drawing factories, not startup canvases. Texture queries materialize only requested
+  artwork. Scene transitions release unreferenced lazy canvases/GPU textures after
+  display-list teardown; retained/sleeping scenes keep their referenced artwork.
+  Factories use captured immutable palettes and local seeded RNG, never mutable hero
+  looks or gameplay RNG. Keys, dimensions and explicit script order remain unchanged.
+- Touch devices with a coarse primary pointer use 1x artwork density to bound startup
+  canvas and GPU memory; desktop retains 2x. `AH.Art.D` and `AH.VIEW_SCALE` use the
+  same density, preserving the 640x360 logical view, collision sizes and controls.
+  Choose density once at startup, not on orientation changes. Artwork canvases use
+  readback-friendly 2D contexts for their pixel-processing passes.
 - The canvas is `640 * AH.VIEW_SCALE` by `360 * AH.VIEW_SCALE`; a camera patch in `systems/scenes.js` zooms every camera so all game logic,
   layouts and coordinates stay in the 640x360 space. Never hard-code the physical canvas size.
 - `AH.Art.buildHeroHD(scene, look, frame)` returns a high-detail hero texture key; it is not auto-scaled, so callers use `setScale(size / AH.Art.HD)`.
