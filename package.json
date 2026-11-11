@@ -6,7 +6,7 @@
   "main": "server.js",
   "dependencies": {
     "@azure/data-tables": "13.3.1",
-    "@azure/identity": "4.10.0"
+    "@azure/identity": "4.14.1"
   },
   "overrides": {
     "@azure/abort-controller": "2.1.2",
