@@ -77,7 +77,7 @@
 
   AH.Run = { score: 0, lives: 3, startScore: 0, startLives: 3 };
 
-  /* Documented easter egg (README "Gold Mode"): typing the Konami code on the title screen arms a
+  /* Documented easter egg (README "Hacker Mode"): Konami keys or ten quick title-logo taps arm a
      session-only Hacker sandbox run with every world open, Cloud Hacker and 30 lives. Sandbox runs never save or submit
      run progress: no leaderboard submission, local bests, unlocks, resume or cloud progress. */
   AH.Gold = {
@@ -85,6 +85,21 @@
     lives: 30,
     armed: false,
     position: 0,
+    taps: 0,
+    tapStart: 0,
+    tapLast: 0,
+    tap(now) {
+      if (this.armed) return false;
+      if (!this.taps || now - this.tapLast > 400 || now - this.tapStart > 3500 || now < this.tapLast) {
+        this.taps = 0;
+        this.tapStart = now;
+      }
+      this.tapLast = now;
+      this.taps++;
+      if (this.taps !== 10) return false;
+      this.taps = 0;
+      return true;
+    },
     step(n, code) {
       if (code === this.codes[n]) return n + 1;
       return code === this.codes[0] ? (n === 2 ? 2 : 1) : 0;
@@ -101,7 +116,7 @@
       if (complete) this.position = 0;
       return { active: wasActive || this.position > 0 || code === this.codes[0], complete };
     },
-    reset() { this.position = 0; },
+    reset() { this.position = 0; this.taps = 0; this.tapStart = this.tapLast = 0; },
     run() { return !!(AH.Run && AH.Run.gold); },
     look(look) { return this.run() ? Object.assign({}, look, { suit: AH.Art.hero.hackerSuit, hat: 'none', gear: 'none' }) : look; }
   };
@@ -207,6 +222,14 @@
         this.cameras.main.flash(300, 120, 28, 64);
         T(this, 320, 322, 'HACKER MODE: ALL WORLDS - 30 LIVES - SCORES NOT SAVED', { scale: 1, color: '#ff7a9a', ox: 0.5, shadow: '#3a1020' }).setDepth(30);
       };
+      this.add.zone(24, 54, 390, 180).setOrigin(0).setInteractive()
+        .on('pointerup', pointer => {
+          if (this.help || AH.Gold.armed) return;
+          if (!pointer.wasTouch) { go(); return; }
+          if (pointer.getDuration() > 300 || pointer.getDistance() > 12) { AH.Gold.taps = 0; return; }
+          AH.Audio.init();
+          if (AH.Gold.tap(this.time.now)) armGold();
+        });
       this.input.keyboard.on('keydown', (e) => {
         if (!this.help && !AH.Gold.armed) {
           const result = AH.Gold.feed(e);

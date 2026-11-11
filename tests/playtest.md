@@ -1,5 +1,30 @@
 # Playtest report - Microsoft Azure Heroes 2027
 
+## Larger joystick and touch Hacker Mode activation
+
+- Joystick base now targets 128-164px (18vw), capped at 42% of actual canvas
+  height to preserve HUD/ground clearance in compact portrait layouts.
+  Browser measurements: 153px at 852x393 (previously 102), 93px at 393x852
+  (previously 88), 164px at 1024x768 (previously 116), and 138px at 768x1024
+  (previously 92). All four layouts kept targets disjoint and the stick between
+  the top HUD and ground contact line. Existing gesture thresholds are unchanged.
+- Title-screen touch PASS: nine actual browser touch taps on the large logo
+  left Hacker Mode inactive and the title open; the tenth armed it without
+  navigating away or changing saved data. A 500ms gap restarted the count,
+  a 350ms hold and a 40px drag cleared it, and reload removed the armed mode.
+  The gesture uses the same activation path as keyboard Konami; sandbox powers
+  and no-progress/no-score writes are unchanged.
+- Automated PASS: targeted wardrobe/input suite 21/21, full `npm test` 185/185,
+  JavaScript syntax and diff checks. Regression coverage includes nine versus ten,
+  the 400ms inter-tap limit, 3.5s total limit, reset/reentry, already-armed rejection,
+  unchanged keyboard sequence and existing sandbox persistence protections.
+- Assistance/gaps: local Chrome touch emulation with explicit device metrics;
+  browser scripts selected the level for size measurements. Initial attempts used
+  stale cached scene code and mismatched emulation metrics; fresh module delivery
+  and explicit viewport overrides resolved the harness issues before final checks.
+  No runtime errors in final scenarios. No full combat/room traversal or physical
+  Safari test this round. No deployment performed; maintainer review remains required.
+
 ## Left virtual joystick and right actions
 
 - Request: replace LEFT/RIGHT/JUMP/DUCK circles with one translucent virtual stick.

@@ -15,11 +15,11 @@
     #game { width: 100vw; height: 100vh; height: 100dvh; display: flex; align-items: center; justify-content: center; }
     canvas { image-rendering: pixelated; image-rendering: crisp-edges; display: block; touch-action: none; }
     body.touch-play #game { display: block; }
-    #touch-controls { --touch-size: clamp(44px, 6vw, 56px); --touch-step: calc(var(--touch-size) + 8px); position: fixed; z-index: 4; pointer-events: none; touch-action: none; }
+    #touch-controls { --touch-size: clamp(44px, 6vw, 56px); --touch-step: calc(var(--touch-size) + 8px); position: fixed; z-index: 4; pointer-events: none; touch-action: none; container-type: size; }
     #touch-controls[hidden] { display: none; }
     #touch-controls button { position: absolute; width: var(--touch-size); height: var(--touch-size); padding: 0; border: 1px solid rgba(255, 255, 255, 0.35); border-radius: 50%; background: rgba(10, 7, 32, 0.12); color: rgba(255, 255, 255, 0.8); font: bold 10px monospace; text-shadow: 0 1px 3px #0a0720; pointer-events: auto; touch-action: none; user-select: none; -webkit-user-select: none; }
     #touch-controls button[aria-pressed="true"] { background: rgba(39, 224, 255, 0.24); border-color: rgba(127, 232, 255, 0.8); color: #ffffff; }
-    #touch-joystick { position: absolute; left: 12px; bottom: calc(16.667% + var(--touch-step) + 4px); width: clamp(88px, 12vw, 116px); aspect-ratio: 1; box-sizing: border-box; border: 1px solid rgba(255, 255, 255, 0.35); border-radius: 50%; background: rgba(10, 7, 32, 0.12); pointer-events: auto; touch-action: none; }
+    #touch-joystick { position: absolute; left: 12px; bottom: calc(16.667% + var(--touch-step) + 4px); width: min(clamp(128px, 18vw, 164px), 42cqh); aspect-ratio: 1; box-sizing: border-box; border: 1px solid rgba(255, 255, 255, 0.35); border-radius: 50%; background: rgba(10, 7, 32, 0.12); pointer-events: auto; touch-action: none; }
     .joystick-thumb { position: absolute; left: 32%; top: 32%; width: 36%; height: 36%; box-sizing: border-box; border: 1px solid rgba(255, 255, 255, 0.5); border-radius: 50%; background: rgba(255, 255, 255, 0.12); pointer-events: none; }
     .joystick-label { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: rgba(255, 255, 255, 0.65); font: bold 10px monospace; text-shadow: 0 1px 3px #0a0720; pointer-events: none; }
     #touch-joystick[data-active="true"] { border-color: rgba(127, 232, 255, 0.8); }

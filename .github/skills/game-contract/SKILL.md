@@ -138,6 +138,9 @@ description: Use before any game code change. Defines the shared interfaces for 
   all-world access, 30 lives and no-persistence/no-score-submission rules remain.
   No new cheat, account privilege or invulnerability is introduced. Sandbox
   wardrobe pickups never persist or upload collection progress.
+- Touch alternative for that same sandbox: ten quick taps on the title logo,
+  at most 400ms between taps and 3.5s overall. Holds/drags do not count.
+  Keyboard Konami remains available; this adds no new sandbox powers or writes.
 - Faster firing: uncharged blast cooldown is 0.10s (previously 0.16s);
   fully charged cooldown is 0.30s. Keep 1.2s charge/release, Boost costs,
   projectile velocities, keyboard/touch parity and no held-fire auto-repeat.
@@ -382,7 +385,9 @@ Flight has ranged combat and shield, not ground melee. New hero `punch` and
 Touch run controls use a left virtual joystick and right BLAST, SHIELD, BOOST,
 PUNCH, KICK, PAUSE and HELP buttons. On the title screen E opens the Hero Lab and H opens help.
 The fixed translucent stick owns one captured pointer; other fingers may operate
-actions independently. Each axis activates at 35% travel and releases at 20%
+actions independently. Its base targets 128-164 CSS pixels, capped at 42% of the
+canvas height to fit portrait screens without hiding the HUD.
+Each axis activates at 35% travel and releases at 20%
 (hysteresis), with a clamped visual thumb. Left/right move; down ducks and diagonal
 down slides. On foot, entering up emits one `jumpPressed` and holds `jumpHeld`;
 returning the vertical axis toward centre rearms up for a double/wall jump.

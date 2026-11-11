@@ -29,6 +29,7 @@ The small code modules still load in the explicit HTML dependency order.
 On phones and tablets, subtle translucent circular controls float at the edges
 of the game view. A virtual joystick on the left replaces the direction, jump
 and duck buttons; shooting, shield, boost and melee actions stay on the right.
+The larger joystick targets 128-164px, limited by canvas height on compact screens.
 Push sideways to move, up to jump, and down to duck (down-diagonal to slide).
 Return the vertical axis toward centre then push up again for a double or wall jump;
 holding up does not auto-jump. In flight, the stick moves freely in all directions.
@@ -240,7 +241,9 @@ which hides the selected hair, or choose a hat or hijab to wear that instead.
 
 **Hacker Mode (formerly Gold Mode, easter egg).** On the title screen type Up, Up, Down, Down, Left,
 Right, Left, Right, A. You get access to every world, the Cloud Hacker outfit and 30 lives
-for that browser session. Worlds are not marked cleared and wardrobe rewards
+for that browser session. On touch screens, instead tap the large AZURE HEROES title
+logo ten times quickly (no more than 400ms between taps, within 3.5 seconds).
+Worlds are not marked cleared and wardrobe rewards
 are not unlocked.
 Hacker runs are a sandbox: their scores are never submitted to the leaderboard and
 run progress is not saved (no bests, wardrobe collection, unlocks or continue point).

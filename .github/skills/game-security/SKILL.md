@@ -33,7 +33,8 @@ description: 'Apply Azure Heroes secure contribution checks. Use for all game ch
   Regional start IDs and route sets must be bounded to represented worlds;
   registration start is immutable. Test malformed/oversized route data and
   unauthorized writes. Region choice requires no geolocation service or permission.
-  Keep the sandbox tests in `tests/wardrobe.test.js` green; do not add other sequences.
+  Keep the sandbox tests in `tests/wardrobe.test.js` green. The documented touch
+  equivalent is ten quick title-logo taps; do not add other sequences or powers.
 - No `eval`, `new Function`, execution of remote text, encoded executable payloads or
   shell construction from user data. Do not add silent error suppression to hide failures.
 - Keep server authorization on every private operation, strong password hashing,
