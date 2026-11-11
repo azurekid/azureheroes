@@ -5,7 +5,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const read = file => fs.readFileSync(path.join(__dirname, '..', file), 'utf8');
 
-test('infrastructure is private, keyless and disabled until the separate server adapter is ready', () => {
+test('infrastructure is private, keyless and disabled until the explicit release gate passes', () => {
   const main = read('infra/main.bicep'), web = read('infra/modules/web.bicep');
   const storage = read('infra/modules/storage.bicep'), access = read('infra/modules/table-access.bicep');
   const network = read('infra/modules/network.bicep');
@@ -53,14 +53,18 @@ test('infrastructure is private, keyless and disabled until the separate server 
   }
 });
 
-test('documentation blocks JSON fallback and distinguishes player credentials from service identity', () => {
+test('documentation gates release and separates player, storage and deployment identities', () => {
   const doc = read('docs/deployment-azure-web-app.md');
-  assert.match(doc, /Production blocker/);
+  assert.match(doc, /First release gate/);
   assert.match(doc, /SCM basic authentication/);
-  assert.match(doc, /current `server\.js` ignores them and still uses JSON/);
-  assert.match(doc, /Table Storage has no automatic session TTL/);
-  assert.match(doc, /ETags/);
-  assert.match(doc, /cannot perform the existing in-memory `ORDER BY score`/);
+  assert.match(doc, /uses `ManagedIdentityCredential`/);
+  assert.match(doc, /does not silently fall back to JSON/);
+  assert.match(doc, /automatic entity TTL or backup/);
+  assert.match(doc, /GitHub OIDC deployment/);
+  assert.match(doc, /AZURE_CLIENT_ID/);
+  assert.match(doc, /Website Contributor/);
+  assert.match(doc, /four table-scoped data roles/);
+  assert.doesNotMatch(doc, /AZURE_WEBAPP_PUBLISH_PROFILE/);
   assert.match(doc, /Key Vault is for application secrets/);
   assert.match(doc, /az deployment group what-if/);
   assert.match(doc, /--mode Incremental/);

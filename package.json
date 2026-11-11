@@ -4,6 +4,22 @@
   "private": true,
   "description": "Microsoft Azure Heroes 2027 - 16-bit side-scroller with player accounts and a global high score dashboard (Azure App Service).",
   "main": "server.js",
+  "dependencies": {
+    "@azure/data-tables": "13.3.1",
+    "@azure/identity": "4.10.0"
+  },
+  "overrides": {
+    "@azure/abort-controller": "2.1.2",
+    "@azure/core-auth": "1.9.0",
+    "@azure/core-client": "1.9.4",
+    "@azure/core-paging": "1.6.2",
+    "@azure/core-rest-pipeline": "1.20.0",
+    "@azure/core-tracing": "1.2.0",
+    "@azure/core-util": "1.12.0",
+    "@azure/core-xml": "1.4.5",
+    "@azure/logger": "1.2.0",
+    "@typespec/ts-http-runtime": "0.2.2"
+  },
   "scripts": {
     "start": "node server.js",
     "test": "node --test tests/*.test.js"

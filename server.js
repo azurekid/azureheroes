@@ -1,11 +1,12 @@
 /* Microsoft Azure Heroes 2027 - Azure App Service host.
    Serves the static game and a small JSON API for player accounts, progress sync and the
-   global high score dashboard. Zero npm dependencies: `node server.js` (or `npm start`).
+   global high score dashboard. Local development uses JSON; Azure uses managed identity
+   and Azure Table Storage.
 
    Env:
      PORT       port to listen on (App Service sets this)
-     DATA_DIR   folder for the JSON store. On App Service use a path under /home (persistent),
-                e.g. /home/data. Default: ./data
+     DATA_DIR   folder for the local JSON store. Default: ./data
+     PERSISTENCE_PROVIDER  `json` locally or `azure-tables` in Azure
 */
 'use strict';
 const http = require('http');
@@ -31,7 +32,12 @@ const cleanText = (s, max) => String(s || '').toUpperCase().replace(/[^A-Z0-9 .,
 
 let db = { users: {}, tokens: {} };
 function load() {
-  try { db = Object.assign({ users: {}, tokens: {} }, JSON.parse(fs.readFileSync(DB_FILE, 'utf8'))); } catch (e) { /* fresh store */ }
+  try {
+    db = Object.assign({ users: {}, tokens: {} }, JSON.parse(fs.readFileSync(DB_FILE, 'utf8')));
+  } catch (error) {
+    if (error.code === 'ENOENT') return;
+    throw error;
+  }
 }
 let saveTimer = null;
 function save() {
@@ -57,9 +63,9 @@ function checkPassword(pw, u) {
   return h.length === ref.length && crypto.timingSafeEqual(h, ref);
 }
 const sha = (s) => crypto.createHash('sha256').update(s).digest('hex');
-function issueToken(key) {
+async function issueToken(key, store) {
   const tok = crypto.randomBytes(32).toString('base64url');
-  db.tokens[sha(tok)] = { user: key, exp: Date.now() + TOKEN_TTL };
+  await store.createSession(sha(tok), key, Date.now() + TOKEN_TTL);
   return tok;
 }
 function userFromReq(req) {
@@ -69,12 +75,96 @@ function userFromReq(req) {
   if (!t || t.exp < Date.now()) return null;
   return db.users[t.user] || null;
 }
-function pruneTokens() {
-  const now = Date.now();
-  Object.keys(db.tokens).forEach((k) => { if (db.tokens[k].exp < now) delete db.tokens[k]; });
-}
+const publicProfile = (u) => ({
+  name: u.name,
+  location: u.location,
+  best: u.best,
+  progress: u.progress || sanitizeProgress({}),
+  startLevel: u.startLevel
+});
 
-const publicProfile = (u) => ({ name: u.name, location: u.location, best: u.best, progress: u.progress, startLevel: u.startLevel });
+function createJsonStore() {
+  return {
+    async initialize() {},
+    async getUser(key) {
+      const user = db.users[key];
+      return user ? Object.assign({ key }, user) : null;
+    },
+    async createUser(key, user) {
+      if (db.users[key]) return false;
+      db.users[key] = user;
+      save();
+      return true;
+    },
+    async createSession(tokenHash, userKey, expiresAt) {
+      db.tokens[tokenHash] = { user: userKey, exp: expiresAt };
+      save();
+    },
+    async getUserByToken(tokenHash) {
+      const token = db.tokens[tokenHash];
+      if (!token) return null;
+      if (token.exp < Date.now()) {
+        delete db.tokens[tokenHash];
+        save();
+        return null;
+      }
+      return this.getUser(token.user);
+    },
+    async deleteSession(tokenHash) {
+      if (db.tokens[tokenHash]) {
+        delete db.tokens[tokenHash];
+        save();
+      }
+    },
+    async mergeProgress(key, incoming, merge) {
+      const user = db.users[key];
+      user.progress = merge(incoming, user.progress);
+      save();
+      return user.progress;
+    },
+    async updateScore(key, input) {
+      const user = db.users[key];
+      if (input.score > (user.best || 0)) {
+        user.best = input.score;
+        user.bestAt = input.date;
+        user.bestLevel = input.level;
+        user.bestCity = input.city;
+        save();
+      }
+      const rank = user.best > 0
+        ? 1 + Object.values(db.users).filter((entry) => entry.best > user.best).length
+        : null;
+      return { best: user.best, rank };
+    },
+    async getLeaderboard(limit) {
+      const rows = Object.values(db.users).filter((user) => user.best > 0)
+        .sort((a, b) => b.best - a.best || a.bestAt - b.bestAt).slice(0, limit)
+        .map((user, i) => ({
+          rank: i + 1,
+          name: user.name,
+          location: user.location,
+          score: user.best,
+          level: user.bestLevel || 1,
+          city: user.bestCity || '',
+          date: user.bestAt || 0
+        }));
+      return { rows, players: Object.keys(db.users).length };
+    },
+    async pruneExpiredSessions() {
+      const now = Date.now();
+      let removed = 0;
+      Object.keys(db.tokens).forEach((key) => {
+        if (db.tokens[key].exp < now) {
+          delete db.tokens[key];
+          removed++;
+        }
+      });
+      if (removed) save();
+      return removed;
+    }
+  };
+}
+const jsonStore = createJsonStore();
 
 /* ------------------------------------------------------------------ helpers */
 const hits = new Map();
@@ -87,7 +177,7 @@ function limited(req, bucket, max, windowMs) {
   hits.set(key, h);
   return h.n > max;
 }
-setInterval(() => { const now = Date.now(); hits.forEach((v, k) => { if (now - v.t > 3600000) hits.delete(k); }); pruneTokens(); }, 600000).unref();
+setInterval(() => { const now = Date.now(); hits.forEach((v, k) => { if (now - v.t > 3600000) hits.delete(k); }); }, 600000).unref();
 
 function send(res, code, obj) {
   const body = JSON.stringify(obj);
@@ -162,16 +252,13 @@ function sanitizeProgress(p, old) {
 }
 
 /* ------------------------------------------------------------------ api */
-async function api(req, res, url) {
+async function api(req, res, url, store) {
   const route = req.method + ' ' + url.pathname;
   if (route === 'GET /api/health') return send(res, 200, { ok: true, game: 'azure-heroes-2027' });
 
   if (route === 'GET /api/leaderboard') {
     const limit = int(url.searchParams.get('limit') || 20, 1, LEADERBOARD_SIZE);
-    const rows = Object.values(db.users).filter((u) => u.best > 0)
-      .sort((a, b) => b.best - a.best || a.bestAt - b.bestAt).slice(0, limit)
-      .map((u, i) => ({ rank: i + 1, name: u.name, location: u.location, score: u.best, level: u.bestLevel || 1, city: u.bestCity || '', date: u.bestAt || 0 }));
-    return send(res, 200, { rows, players: Object.keys(db.users).length });
+    return send(res, 200, await store.getLeaderboard(limit));
   }
 
   if (route === 'POST /api/register' || route === 'POST /api/login') {
@@ -182,7 +269,6 @@ async function api(req, res, url) {
     if (!NAME_RE.test(name)) return send(res, 400, { error: 'NAME: 3-15 LETTERS OR DIGITS' });
     if (pw.length < 6 || pw.length > 128) return send(res, 400, { error: 'PASSWORD: 6+ CHARACTERS' });
     if (route === 'POST /api/register') {
-      if (db.users[key]) return send(res, 409, { error: 'NAME ALREADY TAKEN' });
       const location = cleanText(b.location, 20);
       if (location.length < 2) return send(res, 400, { error: 'ENTER YOUR LOCATION' });
       if (b.startLevel !== undefined && (!Number.isInteger(b.startLevel) || b.startLevel < 1 || b.startLevel > WORLD_COUNT))
@@ -196,24 +282,40 @@ async function api(req, res, url) {
         progress.updated = Date.now();
       }
       const h = hashPassword(pw);
-      db.users[key] = { name, location, startLevel: b.startLevel, salt: h.salt, hash: h.hash, created: Date.now(), best: 0, bestAt: 0, progress };
-      const token = issueToken(key);
-      save();
-      return send(res, 201, { token, profile: publicProfile(db.users[key]) });
+      const user = {
+        key,
+        name,
+        location,
+        startLevel: b.startLevel,
+        salt: h.salt,
+        hash: h.hash,
+        created: Date.now(),
+        best: 0,
+        bestAt: 0,
+        progress
+      };
+      if (!(await store.createUser(key, user))) return send(res, 409, { error: 'NAME ALREADY TAKEN' });
+      const token = await issueToken(key, store);
+      return send(res, 201, { token, profile: publicProfile(user) });
     }
-    const u = db.users[key];
+    const u = await store.getUser(key);
     if (!u || !checkPassword(pw, u)) return send(res, 401, { error: 'WRONG NAME OR PASSWORD' });
-    const token = issueToken(key);
-    save();
+    const token = await issueToken(key, store);
     return send(res, 200, { token, profile: publicProfile(u) });
   }
 
-  const user = userFromReq(req);
+  const authorization = req.headers.authorization;
+  const token = typeof authorization === 'string' && authorization.startsWith('Bearer ')
+    ? authorization.slice(7)
+    : '';
+  const tokenHash = token ? sha(token) : '';
+  const user = tokenHash ? await store.getUserByToken(tokenHash) : null;
   if (!user) return send(res, 401, { error: 'PLEASE LOG IN' });
 
   if (route === 'GET /api/me') return send(res, 200, { profile: publicProfile(user) });
 
   if (route === 'POST /api/logout') {
+    await store.deleteSession(tokenHash);
     const m = /^Bearer (.+)$/.exec(req.headers.authorization || '');
     delete db.tokens[sha(m[1])];
     save();
@@ -223,22 +325,22 @@ async function api(req, res, url) {
   if (route === 'PUT /api/progress') {
     if (limited(req, 'prog', 120, 60000)) return send(res, 429, { error: 'SLOW DOWN' });
     const b = await readJson(req);
-    user.progress = sanitizeProgress(b, user.progress);
-    save();
-    return send(res, 200, { profile: publicProfile(user) });
+    await store.mergeProgress(user.key, b, sanitizeProgress);
+    return send(res, 200, { profile: publicProfile(await store.getUser(user.key)) });
   }
 
   if (route === 'POST /api/score') {
     if (limited(req, 'score', 30, 60000)) return send(res, 429, { error: 'SLOW DOWN' });
     const b = await readJson(req);
     const score = int(b.score, 0, MAX_SCORE), level = int(b.level, 1, MAX_LEVEL);
-    let rank = null;
-    if (score > (user.best || 0)) {
-      user.best = score; user.bestAt = Date.now(); user.bestLevel = level; user.bestCity = cleanText(b.city, 16);
-      save();
-    }
-    if (user.best > 0) rank = 1 + Object.values(db.users).filter((u) => u.best > user.best).length;
-    return send(res, 200, { best: user.best, rank });
+    return send(res, 200, await store.updateScore(user.key, {
+      score,
+      level,
+      city: cleanText(b.city, 16),
+      date: Date.now(),
+      name: user.name,
+      location: user.location
+    }));
   }
 
   return send(res, 404, { error: 'NOT FOUND' });
@@ -267,11 +369,16 @@ function serveStatic(req, res, url) {
   });
 }
 
-function createServer() {
+function createServer(options = {}) {
+  const store = options.store || jsonStore;
   return http.createServer((req, res) => {
     const url = new URL(req.url, 'http://localhost');
     if (url.pathname.startsWith('/api/')) {
-      api(req, res, url).catch((e) => send(res, e.code || 500, { error: e.code ? e.message : 'SERVER ERROR' }));
+      api(req, res, url, store).catch((error) => {
+        const status = Number.isInteger(error.code) && error.code >= 400 && error.code <= 599 ? error.code : 500;
+        if (status >= 500) console.error('API request failed:', error.name || 'Error', error.statusCode || '');
+        send(res, status, { error: status < 500 ? error.message : 'SERVER ERROR' });
+      });
       return;
     }
     if (req.method !== 'GET' && req.method !== 'HEAD') { res.writeHead(405); return res.end(); }
@@ -279,11 +386,62 @@ function createServer() {
   });
 }
 
-load();
-if (require.main === module) {
-  createServer().listen(PORT, () => console.log('Azure Heroes 2027 on http://localhost:' + PORT + '  (data: ' + DB_FILE + ')'));
-  const bye = () => { if (saveTimer) flush(); process.exit(0); };
-  process.on('SIGTERM', bye);
-  process.on('SIGINT', bye);
+function createConfiguredStore(env = process.env) {
+  const provider = env.PERSISTENCE_PROVIDER || 'json';
+  if (provider === 'json') return jsonStore;
+  if (provider !== 'azure-tables') throw configError('Unsupported PERSISTENCE_PROVIDER');
+
+  const endpointText = env.AZURE_TABLE_ENDPOINT;
+  if (!endpointText) throw configError('AZURE_TABLE_ENDPOINT is required for Azure Table Storage');
+  const endpoint = new URL(endpointText);
+  if (endpoint.protocol !== 'https:' || endpoint.username || endpoint.password || endpoint.search || endpoint.hash) {
+    throw configError('AZURE_TABLE_ENDPOINT must be a credential-free HTTPS URL');
+  }
+  const tableNames = {
+    accounts: env.AZURE_TABLE_ACCOUNTS,
+    sessions: env.AZURE_TABLE_SESSIONS,
+    progress: env.AZURE_TABLE_PROGRESS,
+    leaderboard: env.AZURE_TABLE_LEADERBOARD
+  };
+  for (const [key, name] of Object.entries(tableNames)) {
+    if (typeof name !== 'string' || !/^[A-Za-z][A-Za-z0-9]{2,62}$/.test(name)) {
+      throw configError(`AZURE_TABLE_${key.toUpperCase()} must be a valid Azure Table name`);
+    }
+  }
+  const { createAzureTableStore } = require('./table-store');
+  return createAzureTableStore({
+    endpoint: endpoint.toString(),
+    tableNames,
+    production: env.NODE_ENV === 'production'
+  });
 }
-module.exports = { createServer, flush, _db: () => db };
+
+function configError(message) {
+  return Object.assign(new Error(message), { code: 'CONFIG_ERROR' });
+}
+
+if (!process.env.PERSISTENCE_PROVIDER || process.env.PERSISTENCE_PROVIDER === 'json') load();
+if (require.main === module) {
+  const start = async () => {
+    const store = createConfiguredStore();
+    await store.initialize();
+    const cleanupTimer = setInterval(() => {
+      store.pruneExpiredSessions().catch((error) => {
+        console.error('Session cleanup failed:', error.name || 'Error', error.statusCode || '');
+      });
+    }, 6 * 60 * 60 * 1000);
+    cleanupTimer.unref();
+    createServer({ store }).listen(PORT, () => {
+      console.log(`Azure Heroes 2027 listening on port ${PORT} (${process.env.PERSISTENCE_PROVIDER || 'json'} storage)`);
+    });
+    const bye = () => { if (saveTimer) flush(); process.exit(0); };
+    process.on('SIGTERM', bye);
+    process.on('SIGINT', bye);
+  };
+  start().catch((error) => {
+    const details = error.code === 'CONFIG_ERROR' ? error.message : `${error.name || 'Error'} ${error.statusCode || ''}`;
+    console.error('Azure Heroes startup failed:', details);
+    process.exitCode = 1;
+  });
+}
+module.exports = { createServer, createConfiguredStore, createJsonStore, flush, _db: () => db };
