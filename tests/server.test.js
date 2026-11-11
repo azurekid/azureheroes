@@ -3,8 +3,26 @@
 const test = require('node:test');
 const assert = require('node:assert');
 const os = require('os'), fs = require('fs'), path = require('path');
+const http = require('http'), zlib = require('zlib');
 process.env.DATA_DIR = fs.mkdtempSync(path.join(os.tmpdir(), 'ah-'));
 const { createServer, flush } = require('../server.js');
+
+function getRaw(url, acceptEncoding) {
+  return new Promise((resolve, reject) => {
+    const request = http.get(url, {
+      headers: acceptEncoding ? { 'accept-encoding': acceptEncoding } : {}
+    }, (response) => {
+      const chunks = [];
+      response.on('data', (chunk) => chunks.push(chunk));
+      response.on('end', () => resolve({
+        status: response.statusCode,
+        headers: response.headers,
+        body: Buffer.concat(chunks)
+      }));
+    });
+    request.on('error', reject);
+  });
+}
 
 test('server regional bounds match the stable world catalogue', () => {
   const { levelScripts, loadScripts } = require('./helpers/load-game');
@@ -111,4 +129,33 @@ test('accounts, progress, scores and leaderboard', async (t) => {
   }
   flush();
   assert.ok(fs.existsSync(path.join(process.env.DATA_DIR, 'heroes.json')));
+});
+
+test('static text assets negotiate cached gzip without compressing binary assets', async (t) => {
+  const srv = createServer();
+  await new Promise((resolve) => srv.listen(0, resolve));
+  t.after(() => srv.close());
+  const base = 'http://localhost:' + srv.address().port;
+  const original = fs.readFileSync(path.join(__dirname, '../index.html'));
+
+  const compressed = await getRaw(base + '/', 'br, gzip;q=0.8');
+  assert.equal(compressed.status, 200);
+  assert.equal(compressed.headers['content-encoding'], 'gzip');
+  assert.match(compressed.headers.vary, /Accept-Encoding/i);
+  assert.deepEqual(zlib.gunzipSync(compressed.body), original);
+  assert.ok(compressed.body.length < original.length, 'gzip reduces the HTML response');
+
+  const cached = await getRaw(base + '/', 'gzip');
+  assert.deepEqual(cached.body, compressed.body, 'compressed response is reused');
+
+  for (const acceptEncoding of [undefined, 'gzip;q=0, *;q=1']) {
+    const identity = await getRaw(base + '/', acceptEncoding);
+    assert.equal(identity.headers['content-encoding'], undefined);
+    assert.deepEqual(identity.body, original);
+  }
+
+  const binary = await getRaw(base + '/docs/screenshots/title.png', 'gzip');
+  assert.equal(binary.status, 200);
+  assert.equal(binary.headers['content-encoding'], undefined);
+  assert.deepEqual(binary.body, fs.readFileSync(path.join(__dirname, '../docs/screenshots/title.png')));
 });

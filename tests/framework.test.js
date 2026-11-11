@@ -101,8 +101,10 @@ test('browser script entry points are explicit and the only external script has 
   const html = read('index.html');
   const scripts = [...html.matchAll(/<script\b([^>]*)>/g)].map((s) => s[1]);
   const sources = scripts.map((s) => /\bsrc="([^"]+)"/.exec(s)?.[1]).filter(Boolean);
-  assert.ok(scripts.filter((s) => /\bsrc=/.test(s)).every((s) => /\bdefer\b/.test(s)),
-    'external scripts defer execution while preserving their document order');
+  const externalScripts = scripts.filter((s) => /\bsrc=/.test(s));
+  assert.ok(externalScripts.length > 0 && externalScripts.every((s) => /\bdefer\b/.test(s)),
+    'external scripts defer execution while preserving document order');
+  assert.match(html, /<link rel="preconnect" href="https:\/\/cdn\.jsdelivr\.net" crossorigin>/);
   assert.equal(sources[0], 'https://cdn.jsdelivr.net/npm/phaser@3.80.1/dist/phaser.min.js');
   assert.equal(sources.filter((src) => /^(?:[a-z]+:|\/\/)/i.test(src)).length, 1);
   assert.equal(new Set(sources).size, sources.length, 'scripts are loaded exactly once');
@@ -126,6 +128,7 @@ test('browser script entry points are explicit and the only external script has 
   assert.equal(local.at(-1), 'systems/scenes.js', 'scene startup follows content and engines');
   assert.match(scripts[0], /integrity="sha384-Fi7F0CYQBHYa\+s2vvYJeiqvOQf3tuZ28vafRGXvMt7ijxNTVf3\+eXPkNRIUi9JD2"/);
   assert.match(scripts[0], /crossorigin="anonymous"/);
+  assert.match(scripts[0], /\bfetchpriority="high"/);
 });
 
 test('Azure deployment packages every browser module without account data or contributor files', () => {

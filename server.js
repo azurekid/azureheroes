@@ -13,6 +13,7 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
+const zlib = require('zlib');
 
 const ROOT = __dirname;
 const PORT = Number(process.env.PORT) || 8080;
@@ -349,6 +350,31 @@ async function api(req, res, url, store) {
 /* ------------------------------------------------------------------ static */
 const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css', '.png': 'image/png', '.md': 'text/markdown; charset=utf-8', '.json': 'application/json', '.ico': 'image/x-icon', '.svg': 'image/svg+xml' };
 const PUBLIC = ['index.html', 'art/', 'audio/', 'worlds/', 'ui/', 'levels/', 'systems/', 'docs/screenshots/'];
+const gzipCache = new Map();
+
+function acceptsGzip(req) {
+  const encodings = new Map(String(req.headers['accept-encoding'] || '').split(',').map((part) => {
+    const [encoding, ...parameters] = part.toLowerCase().split(';').map((value) => value.trim());
+    const quality = parameters.map((parameter) => /^q=([0-9.]+)$/.exec(parameter.trim()))
+      .find(Boolean)?.[1];
+    return [encoding, quality === undefined ? 1 : Number(quality)];
+  }));
+  return encodings.has('gzip') ? encodings.get('gzip') > 0 : (encodings.get('*') || 0) > 0;
+}
+
+function sendStatic(res, rel, data, encoding) {
+  res.writeHead(200, {
+    'content-type': TYPES[path.extname(rel)] || 'application/octet-stream',
+    'cache-control': rel === 'index.html' ? 'no-cache' : 'public, max-age=3600',
+    'x-content-type-options': 'nosniff',
+    'referrer-policy': 'no-referrer',
+    'content-security-policy': "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'; media-src 'self' data: blob:",
+    vary: 'Accept-Encoding',
+    ...(encoding ? { 'content-encoding': encoding } : {})
+  });
+  res.end(data);
+}
+
 function serveStatic(req, res, url) {
   let rel = decodeURIComponent(url.pathname).replace(/^\/+/, '');
   if (rel === '') rel = 'index.html';
@@ -358,14 +384,31 @@ function serveStatic(req, res, url) {
   }
   fs.readFile(file, (err, data) => {
     if (err) { res.writeHead(404, { 'content-type': 'text/plain' }); return res.end('Not found'); }
-    res.writeHead(200, {
-      'content-type': TYPES[path.extname(file)] || 'application/octet-stream',
-      'cache-control': rel === 'index.html' ? 'no-cache' : 'public, max-age=3600',
-      'x-content-type-options': 'nosniff',
-      'referrer-policy': 'no-referrer',
-      'content-security-policy': "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'; media-src 'self' data: blob:"
+    const compressible = /^text\/|^(?:application\/(?:javascript|json|xml)|image\/svg\+xml)$/.test(
+      TYPES[path.extname(file)] || ''
+    );
+    if (!compressible || !acceptsGzip(req)) return sendStatic(res, rel, data);
+
+    fs.stat(file, (statError, stats) => {
+      if (statError) {
+        console.error('Static asset metadata failed:', statError.name || 'Error');
+        res.writeHead(500, { 'content-type': 'text/plain; charset=utf-8' });
+        return res.end('Internal server error');
+      }
+      const signature = `${stats.size}:${stats.mtimeMs}`;
+      const cached = gzipCache.get(file);
+      if (cached && cached.signature === signature) return sendStatic(res, rel, cached.data, 'gzip');
+
+      zlib.gzip(data, { level: zlib.constants.Z_BEST_SPEED }, (compressionError, compressed) => {
+        if (compressionError) {
+          console.error('Static asset compression failed:', compressionError.name || 'Error');
+          res.writeHead(500, { 'content-type': 'text/plain; charset=utf-8' });
+          return res.end('Internal server error');
+        }
+        gzipCache.set(file, { signature, data: compressed });
+        sendStatic(res, rel, compressed, 'gzip');
+      });
     });
-    res.end(data);
   });
 }
 

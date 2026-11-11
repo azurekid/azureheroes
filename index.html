@@ -8,6 +8,7 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="theme-color" content="#0a0720">
   <meta name="description" content="Microsoft Azure Heroes 2027 - a 16-bit synthwave side-scrolling adventure.">
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
   <style>
     html, body { margin: 0; height: 100%; background: #0a0720; overflow: hidden; overscroll-behavior: none; }
     body { display: flex; align-items: center; justify-content: center; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; touch-action: none; }
@@ -54,7 +55,7 @@
     </form>
   </div>
 
-  <script defer src="https://cdn.jsdelivr.net/npm/phaser@3.80.1/dist/phaser.min.js" integrity="sha384-Fi7F0CYQBHYa+s2vvYJeiqvOQf3tuZ28vafRGXvMt7ijxNTVf3+eXPkNRIUi9JD2" crossorigin="anonymous"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/phaser@3.80.1/dist/phaser.min.js" integrity="sha384-Fi7F0CYQBHYa+s2vvYJeiqvOQf3tuZ28vafRGXvMt7ijxNTVf3+eXPkNRIUi9JD2" crossorigin="anonymous" fetchpriority="high"></script>
   <script defer src="worlds/catalogue.js"></script>
   <script defer src="worlds/amsterdam/world.js"></script>
   <script defer src="worlds/london/world.js"></script>
