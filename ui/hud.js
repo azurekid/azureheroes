@@ -195,7 +195,8 @@
             ['SHIFT', 'BOOST JETS - FLY UP FOR A MOMENT'], ['DOWN ON A PIPE', 'WARP INTO A CLOUD CHALLENGE'],
             ['P / ESC', 'PAUSE MENU'], ['Q', 'QUIT TO THE TITLE SCREEN'], ['R', 'RESUME IF PAUSED / OTHERWISE RESTART'], ['H   M   N', 'HELP   MUTE   CHANGE MUSIC']
           ].forEach((r, k) => { btxt(44, 90 + k * 18, r[0], { color: '#ffe14a' }); btxt(232, 90 + k * 18, r[1]); });
-          btxt(320, 314, 'FLIGHT: LEFT / RIGHT AIM BLASTS. E SHIELDS. F FIRES.', { color: '#7fe8ff', ox: 0.5 });
+          btxt(320, 308, 'TOUCH STICK: MOVE / UP: JUMP / DOWN: DUCK - RIGHT: ACTIONS', { color: '#7fe8ff', ox: 0.5 });
+          btxt(320, 322, 'CENTRE THEN UP: DOUBLE JUMP. IN FLIGHT: STICK TO FLY.', { color: '#7fe8ff', ox: 0.5 });
         } else if (page === 1) {
           const SPEC = (AH.Enemy && AH.Enemy.SPEC) || {}, CATS = (AH.Enemy && AH.Enemy.CATS) || {};
           let x = 52;

@@ -27,11 +27,17 @@ Touch devices use 1x artwork; desktop keeps 2x. The logical view stays 640x360.
 The small code modules still load in the explicit HTML dependency order.
 
 On phones and tablets, subtle translucent circular controls float at the edges
-of the game view. The centre, ground contact line and bottom HUD stay clear;
-the movement pad sits above the starting hero. There is no separate control dock.
+of the game view. A virtual joystick on the left replaces the direction, jump
+and duck buttons; shooting, shield, boost and melee actions stay on the right.
+Push sideways to move, up to jump, and down to duck (down-diagonal to slide).
+Return the vertical axis toward centre then push up again for a double or wall jump;
+holding up does not auto-jump. In flight, the stick moves freely in all directions.
+The centre, ground contact line and bottom HUD stay clear; the joystick sits above
+the ground spawn area. There is no separate control dock.
 The complete game view fits either orientation; landscape gives the largest view.
-Hold direction and an action together using multiple fingers. Buttons release
-on touch cancellation, leaving the app or ending the level.
+Hold the joystick and an action together using multiple fingers. A dead zone and
+hysteresis filter small thumb movements. Controls reset on cancellation, rotation,
+leaving the app or ending the level.
 
 Every level start or restart generates a fresh randomized layout. Losing a life keeps
 the current layout and mission state; artwork caching never caches level layouts.

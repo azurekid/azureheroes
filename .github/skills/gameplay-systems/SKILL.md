@@ -11,6 +11,10 @@ description: 'Build Azure Heroes movement, charged shots, duck/slide combat, clo
   the outdoor state on return. Reuse persistent display layers, never allocate
   lighting objects every update. City section art/data follow game-contract.
 - Movement: Arrow/WASD, Space jump, double jump, Shift flight boost, F Azure Blast.
+- Touch: left virtual joystick moves; upward threshold emits one ground jump,
+  vertical return toward centre rearms double/wall jump, down ducks and diagonal
+  down slides. Flight uses held stick directions. Right action buttons remain
+  independently usable; cancellation/blur/resize/shutdown release the stick.
 - R resumes a paused level without resetting it; outside pause it still restarts.
 - Flight Left/A and Right/D set facing and blast direction, including touch;
   vertical-only movement and release retain facing so trailing birds remain shootable.

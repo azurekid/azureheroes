@@ -19,16 +19,21 @@ test('scene output follows artwork density without changing logical gameplay dim
   }
 });
 
-test('touch overlays track the canvas and support captured pointers, cancellation, blur and shutdown', () => {
+test('touch joystick thresholds, jump rearming, capture and overlay lifecycle preserve command parity', () => {
   class Element extends EventTarget {
     constructor() { super(); this.dataset = {}; this.style = {}; this.attributes = {}; this.children = []; }
     setAttribute(key, value) { this.attributes[key] = value; }
     appendChild(child) { this.children.push(child); child.parent = this; }
     remove() { this.parent.children = this.parent.children.filter(child => child !== this); }
     setPointerCapture(id) { this.capture = id; }
-    pointer(type, pointerId) {
+    hasPointerCapture(id) { return this.capture === id; }
+    releasePointerCapture() { this.capture = null; }
+    getBoundingClientRect() { return this.bounds || { left: 10, top: 20, width: 100, height: 100 }; }
+    pointer(type, pointerId, clientX = 60, clientY = 70) {
       const event = new Event(type, { cancelable: true });
       event.pointerId = pointerId;
+      event.clientX = clientX;
+      event.clientY = clientY;
       this.dispatchEvent(event);
       return event;
     }
@@ -68,32 +73,73 @@ test('touch overlays track the canvas and support captured pointers, cancellatio
     assert.equal(doc.body.children.length, 1);
     assert.equal(classes.has('touch-play'), true);
     const button = action => input.buttons.find(b => b.key === action).button;
-    const required = fly ? ['up', 'down', 'left', 'right', 'attack', 'boost', 'shield', 'pause', 'help']
-      : ['left', 'right', 'down', 'jump', 'attack', 'punch', 'kick', 'boost', 'shield', 'pause', 'help'];
-    const command = { jump: 'jumpPressed', attack: 'fireHeld' };
+    const required = fly ? ['attack', 'boost', 'shield', 'pause', 'help']
+      : ['attack', 'punch', 'kick', 'boost', 'shield', 'pause', 'help'];
+    const command = { attack: 'fireHeld' };
     required.forEach(action => {
       button(action).pointer('pointerdown', 100);
       assert.equal(input.read()[command[action] || action], true, action);
       button(action).pointer('pointerup', 100);
       assert.equal(input.read()[command[action] || action], false, action);
     });
-    assert.equal(button('right').pointer('pointerdown', 1).defaultPrevented, true);
-    button('right').pointer('pointerdown', 2);
+    assert.equal(input.buttons.length, required.length);
+    const stick = input.joystick;
+    assert.equal(stick.pointer('pointerdown', 1, 92, 70).defaultPrevented, true);
+    stick.pointer('pointerdown', 2, 28, 70);
+    stick.pointer('pointermove', 2, 28, 70);
+    assert.equal(input.read().right, true, 'second finger cannot steal the joystick');
     button('attack').pointer('pointerdown', 3);
     let cmd = input.read();
     assert.equal(cmd.right, true); assert.equal(cmd.fireHeld, true); assert.equal(cmd.fire, true);
-    button('right').pointer('pointerup', 1);
+    stick.pointer('pointerup', 2);
     assert.equal(input.read().right, true);
-    button('right').pointer('lostpointercapture', 2);
+    stick.pointer('lostpointercapture', 1);
     assert.equal(input.read().right, false);
     button('attack').pointer('pointercancel', 3);
     assert.equal(input.read().fireHeld, false);
     assert.equal(button('attack').attributes['aria-pressed'], 'false');
-    const pressed = fly ? 'up' : 'jump';
-    button(pressed).pointer('pointerdown', 4);
+    stick.pointer('pointerdown', 4, 60, 38);
     cmd = input.read();
     assert.equal(cmd[fly ? 'up' : 'jumpPressed'], true);
     if (!fly) assert.equal(input.read().jumpPressed, false);
+    assert.equal(input.read().jumpHeld, !fly);
+    stick.pointer('pointermove', 4, 60, 63.28);
+    assert.equal(input.read().up, true, '21% travel retains up');
+    stick.pointer('pointermove', 4, 60, 63.92);
+    assert.equal(input.read().up, false, '19% travel releases and rearms up');
+    stick.pointer('pointermove', 4, 60, 59.12);
+    assert.equal(input.read().up, false, '34% travel stays inside activation dead zone');
+    stick.pointer('pointermove', 4, 60, 58.8);
+    cmd = input.read();
+    assert.equal(cmd.up, true, '35% travel activates up');
+    assert.equal(cmd.jumpPressed, !fly, 'second up gesture is a new ground jump only');
+    stick.pointer('pointermove', 4, 92, 102);
+    cmd = input.read();
+    assert.equal(cmd.right, true); assert.equal(cmd.down, true);
+    assert.equal(cmd.left, false); assert.equal(cmd.up, false);
+    stick.pointer('pointermove', 4, -1000, 70);
+    assert.equal(input.read().left, true, 'captured dragging outside still moves');
+    assert.equal(input.read().right, false);
+    assert.equal(stick.children[0].style.transform, 'translate(-32px, 0px)', 'thumb travel is clamped');
+    stick.pointer('pointermove', 4, 60, 70);
+    assert.equal(input.read().left, false);
+    input.k.A.isDown = true;
+    assert.equal(input.read().left, true, 'keyboard remains independently available');
+    input.k.A.isDown = false;
+    stick.pointer('pointermove', 4, 60, 38);
+    stick.pointer('pointercancel', 4);
+    cmd = input.read();
+    assert.equal(cmd.jumpPressed, false, 'cancel clears unread jump');
+    assert.equal(cmd.up, false);
+    assert.equal(stick.children[0].style.transform, 'translate(0px, 0px)');
+    stick.pointer('pointerdown', 8, 92, 70);
+    resize();
+    assert.equal(input.read().right, false, 'orientation/resize releases movement');
+    assert.equal(stick.hasPointerCapture(8), false);
+    stick.pointer('pointermove', 8, 92, 70);
+    assert.equal(input.read().right, false, 'resized capture cannot restart movement');
+    stick.pointer('pointerdown', 9, 60, 38);
+    const beforeBlur = cancelled;
     button('pause').pointer('pointerdown', 5);
     button('help').pointer('pointerdown', 6);
     cmd = input.read();
@@ -101,7 +147,7 @@ test('touch overlays track the canvas and support captured pointers, cancellatio
     assert.equal(input.read().pause, false);
     win.dispatchEvent(new Event('blur'));
     assert.equal(input.read().up, false);
-    assert.equal(cancelled, 1);
+    assert.equal(cancelled, beforeBlur + 1);
     button('shield').pointer('pointerdown', 7);
     doc.hidden = true;
     doc.dispatchEvent(new Event('visibilitychange'));
@@ -113,6 +159,7 @@ test('touch overlays track the canvas and support captured pointers, cancellatio
     assert.equal(resize, null);
   }
 });
+
   test('flight shielding cancels charge and boost while retaining movement and facing', () => {
     const AH = game(), p = Object.create(AH.Player.prototype), sprite = display();
     const shots = [];

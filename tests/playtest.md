@@ -1,5 +1,50 @@
 # Playtest report - Microsoft Azure Heroes 2027
 
+## Left virtual joystick and right actions
+
+- Request: replace LEFT/RIGHT/JUMP/DUCK circles with one translucent virtual stick.
+  Implemented in `systems/input.js` and the touch CSS in `index.html`, without new
+  assets, dependencies or changes to artwork, level geometry, saves or keyboards.
+  Ground has seven right-hand action buttons; flight has five and no melee.
+- Stick behavior: fixed 88-116px base, captured thumb clamped to 32% of base width,
+  per-axis 35% activation/20% release hysteresis. Up emits one ground jump; returning
+  the vertical axis toward centre rearms the next jump. Holding up never repeats.
+  Down ducks, diagonal down slides; flight keeps all directions held. README,
+  input contract, gameplay guidance and the in-game handbook explain this mapping.
+- Automated PASS: focused input/combat tests 26/26 and `npm test` 185/185.
+  Actual-module tests cover the exact 35% activation threshold, 34% rejection,
+  21% retention/19% release, up rearming, held-jump versus flight semantics,
+  diagonal/reverse movement, thumb clamping outside the base, second-pointer
+  ownership, independent actions/keyboard, cancellation, blur, resize and shutdown.
+- Amsterdam entry integration PASS: Chrome touch emulation, density 1, phone
+  landscape 852x393. Right moved x=60 to 89; up produced one jump (feet 248),
+  continued holding kept jumps=1, centre then up gave jumps=2 (feet 190), and
+  release landed at y=300. Down ducked; down-right slid. Holding right with BLAST
+  charged fully after 1.25s and fired on release with the normal Boost cost.
+  That long right hold walked into the first gap; no terrain safety assistance
+  was used. Two additional fresh documents generated distinct layouts and
+  repeated diagonal jump/landing, with painted top, static body and feet all 300.
+- Phone/tablet layout PASS: 852x393, 393x852, 1024x768 and 768x1024. The joystick
+  and action targets stay inside the canvas, are mutually disjoint and end above
+  the ground contact line. The overlay tracks the unchanged 640x360 logical view.
+  Phone street and tablet flight screenshots were inspected. As with all in-game
+  overlays, flying/jumping characters can pass behind a translucent control.
+- Tokyo entry integration PASS: up-left raised the hero from y=190 to 168 and
+  faced backward; down-right lowered it to 188 and faced forward, with jumps=0.
+  Three simultaneous touches (left stick, SHIELD, BOOST) retained movement and
+  shielding while preventing Boost. Cancellation centred the stick and released
+  all held commands. All four viewport layouts fit without overlapping targets.
+- Lifecycle PASS: rotating while holding right released movement/capture and
+  centred the visual thumb. PAUSE then R preserved position, health and mission
+  tokens. HELP opened, and Q removed controls on return to title.
+- Assistance/gaps: browser scripts selected scenes and acknowledged briefings;
+  movement used actual browser touch events and Arcade physics, with no teleport,
+  invulnerability, refill or forced boss stun. These are entry integration tests,
+  not unassisted level/room/boss completion or physical iPad/iPhone Safari tests.
+  Browser tooling occasionally reset its tab to about:blank; fresh navigation
+  recovered it. Updated module URLs avoided stale local HTTP cache. Final browser
+  checks had no runtime errors. Maintainer review and physical-device checks remain.
+
 ## Translucent touch overlays and visible ground
 
 - Bug: Amsterdam on phones/tablets. Start a street run with touch controls.

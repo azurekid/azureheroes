@@ -379,7 +379,15 @@ once per slide for 12 HP. Boss armor/open-window rules remain unchanged.
 Flight has ranged combat and shield, not ground melee. New hero `punch` and
 `kick` frames preserve the shared rig, all wardrobes and collision dimensions.
 `AH.Input.read()` returns `help`, `quit`, `esc` and `nav` (-1/0/1 page turns) besides the movement flags.
-Touch run controls include DUCK, SHIELD, PAUSE and HELP. On the title screen E opens the Hero Lab and H opens help.
+Touch run controls use a left virtual joystick and right BLAST, SHIELD, BOOST,
+PUNCH, KICK, PAUSE and HELP buttons. On the title screen E opens the Hero Lab and H opens help.
+The fixed translucent stick owns one captured pointer; other fingers may operate
+actions independently. Each axis activates at 35% travel and releases at 20%
+(hysteresis), with a clamped visual thumb. Left/right move; down ducks and diagonal
+down slides. On foot, entering up emits one `jumpPressed` and holds `jumpHeld`;
+returning the vertical axis toward centre rearms up for a double/wall jump.
+Holding up never repeats jumps. Flight uses held up/down movement, never jump presses.
+Cancellation, focus loss, resize and shutdown centre the stick and clear pending jumps.
 Touch gameplay controls use translucent circular DOM overlays aligned to the canvas
 edges, with no reserved dock. Leave the centre, ground contact line and bottom HUD
 clear; place the movement pad above the spawn area. The full 640x360 logical view
