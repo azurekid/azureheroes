@@ -4,7 +4,7 @@ using './main.bicep'
 param location = 'eastus'
 param environmentName = 'prod'
 param storageSku = 'Standard_LRS'
-param applicationEnabled = true
+param applicationEnabled = false
 param tags = {
   project: 'azureheroes'
 }
