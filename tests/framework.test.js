@@ -101,6 +101,8 @@ test('browser script entry points are explicit and the only external script has 
   const html = read('index.html');
   const scripts = [...html.matchAll(/<script\b([^>]*)>/g)].map((s) => s[1]);
   const sources = scripts.map((s) => /\bsrc="([^"]+)"/.exec(s)?.[1]).filter(Boolean);
+  assert.ok(scripts.filter((s) => /\bsrc=/.test(s)).every((s) => /\bdefer\b/.test(s)),
+    'external scripts defer execution while preserving their document order');
   assert.equal(sources[0], 'https://cdn.jsdelivr.net/npm/phaser@3.80.1/dist/phaser.min.js');
   assert.equal(sources.filter((src) => /^(?:[a-z]+:|\/\/)/i.test(src)).length, 1);
   assert.equal(new Set(sources).size, sources.length, 'scripts are loaded exactly once');
