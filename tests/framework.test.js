@@ -129,14 +129,23 @@ test('browser script entry points are explicit and the only external script has 
 test('Azure deployment packages every browser module without account data or contributor files', () => {
   const workflow = read('.github/workflows/azure-app-service.yml');
   const entries = /run: zip -r app\.zip (.+)/.exec(workflow)[1].split(' ');
-  assert.deepEqual(entries, ['index.html', 'server.js', 'package.json',
+  assert.deepEqual(entries, ['index.html', 'server.js', 'table-store.js', 'package.json', 'package-lock.json', 'node_modules',
     'art', 'audio', 'worlds', 'ui', 'levels', 'systems', 'docs/screenshots']);
-  for (const file of ['index.html', 'server.js', 'package.json', ...localScripts()]) {
+  for (const file of ['index.html', 'server.js', 'table-store.js', 'package.json', 'package-lock.json', ...localScripts()]) {
     assert.ok(entries.some(entry => file === entry || file.startsWith(entry + '/')), file + ' is packaged');
   }
   for (const entry of entries) assert.ok(fs.existsSync(path.join(root, entry)), entry + ' exists');
+  for (const excluded of ['data', '.git', '.github', 'tests']) {
+    assert.ok(!entries.includes(excluded), excluded + ' stays out of the app package');
+  }
   assert.match(workflow, /node-version: 22/);
   assert.match(workflow, /environment: production/);
+  assert.match(workflow, /id-token: write/);
+  assert.match(workflow, /azure\/login@[0-9a-f]{40}/);
+  assert.match(workflow, /vars\.AZURE_CLIENT_ID/);
+  assert.match(workflow, /vars\.AZURE_TENANT_ID/);
+  assert.match(workflow, /vars\.AZURE_SUBSCRIPTION_ID/);
+  assert.doesNotMatch(workflow, /publish-profile|AZURE_WEBAPP_PUBLISH_PROFILE/);
 });
 
 test('city catalogue is complete and preserves progression and local ownership', () => {

@@ -105,7 +105,7 @@ test('accounts, progress, scores and leaderboard', async (t) => {
     assert.equal(response.headers.get('x-content-type-options'), 'nosniff');
   }
   for (const privatePath of ['.github/skills/game-contract/SKILL.md', 'tests/helpers/load-game.js',
-    'infra/main.bicep', '.azure/infrastructure-plan.json',
+    'infra/main.bicep', '.azure/infrastructure-plan.json', 'table-store.js', 'package-lock.json',
     'worlds/%2e%2e%2fserver.js', 'audio/%2e%2e%2fdata/heroes.json']) {
     assert.equal((await fetch(base + '/' + privatePath)).status, 404, privatePath + ' stays private');
   }

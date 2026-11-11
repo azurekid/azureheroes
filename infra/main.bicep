@@ -18,7 +18,7 @@ param environmentName string = 'prod'
 ])
 param storageSku string = 'Standard_LRS'
 
-@description('Leave false until the Table Storage adapter and migration are implemented and verified. Current server.js ignores the planned table settings and still uses JSON.')
+@description('Leave false until the OIDC application package, Table Storage permissions, and first-release checks are ready. Keep false during initial provisioning.')
 param applicationEnabled bool = false
 
 @description('Additional non-sensitive resource tags.')
@@ -86,4 +86,4 @@ output managedIdentityPrincipalId string = web.outputs.principalId
 output storageAccountName string = storage.outputs.storageAccountName
 output tableEndpoint string = storage.outputs.tableEndpoint
 output tables object = tableNames
-output applicationState string = applicationEnabled ? 'Enabled: verify the deployed adapter and data access' : 'Stopped: Table Storage server integration is not implemented'
+output applicationState string = applicationEnabled ? 'Enabled: verify application health and Table access' : 'Stopped: applicationEnabled is false'

@@ -62,8 +62,8 @@ repository settings before treating the workflow as enforced:
 - The [Table Storage infrastructure](infra/main.bicep) grants only the Web App's
   managed identity per-table data access. It provisions no developer data roles,
   storage keys or player-secret vault. Key Vault is not a user-account database.
-- [Server integration and migration](docs/deployment-azure-web-app.md#server-integration-and-migration-required-before-enabling-accounts)
-  are still required. Do not enable the new app with the existing JSON adapter
+- Follow the [Table Storage server integration and data handling guidance](docs/deployment-azure-web-app.md#table-storage-server-integration-and-data-handling)
+  before deployment. Do not enable the new app with the existing JSON adapter
   or silently fall back to local/empty data when Azure access fails.
 
 ## Limits

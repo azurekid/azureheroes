@@ -10,9 +10,10 @@ The game runs in guest mode as a static site without a game server, but needs an
 
 Open `index.html` in a browser (an internet connection is needed for the Phaser CDN). This is guest mode: progress is saved in `localStorage`.
 
-To play with accounts and the high score dashboard, run the server (Node.js 18 or later, no dependencies):
+To play with accounts and the high score dashboard, install the server dependencies and run it (Node.js 18 or later):
 
 ```bash
+npm ci
 npm start            # http://localhost:8080 (PORT and DATA_DIR env vars are optional)
 npm test             # gameplay, skills, security boundaries and API tests
 ```
@@ -512,33 +513,29 @@ Accounts only appear when the page is served by `server.js`. On a static host th
 | PUT | `/api/progress` | Merges saved progress, including `route: {start, available: [id], cleared: [id]}` and wardrobe; access/clears never go backwards and registration start is immutable |
 | POST | `/api/score` | `{ score, level, city }` returns best and rank |
 
-Passwords are hashed with salted scrypt, tokens are random, stored as SHA-256 hashes and expire after 30 days. Requests are rate limited, input is validated and only the game files are served. Data is stored in `DATA_DIR/heroes.json`.
+Passwords are hashed with salted scrypt; random bearer tokens are stored only as SHA-256 hashes and expire after 30 days. Requests are rate limited, input is validated and only the game files are served. Local JSON mode uses `DATA_DIR/heroes.json`; Azure production uses private Table Storage through the Web App's managed identity.
 
 ## Deploy
 
 ### Azure App Service (accounts + leaderboard)
 
 Follow the [Azure Web App deployment guide](docs/deployment-azure-web-app.md)
-for resource setup, persistent storage, GitHub credentials/approvals, manual ZIP
-deployment, smoke tests, backups, rollback and troubleshooting.
+for OIDC setup, GitHub environment variables/approvals, smoke tests, backups,
+rollback and troubleshooting.
 
-Use a **Linux Node 22 LTS Web App**, one instance and one Node process, with
-`DATA_DIR=/home/data` for the **legacy JSON-backed server only**. The existing
-[deployment workflow](.github/workflows/azure-app-service.yml) runs tests before
-publishing the complete game. It requires `AZURE_WEBAPP_NAME`, a protected
-`production` environment and `AZURE_WEBAPP_PUBLISH_PROFILE`.
+The [deployment workflow](.github/workflows/azure-app-service.yml) runs tests,
+packages the game and runtime dependencies, and deploys with GitHub OIDC. It
+requires the `AZURE_WEBAPP_NAME`, `AZURE_CLIENT_ID`, `AZURE_TENANT_ID` and
+`AZURE_SUBSCRIPTION_ID` Actions variables in the protected `production`
+environment. Publish-profile credentials are not used; keep SCM basic
+publishing authentication disabled.
 
-The in-memory JSON store is not safe for scale-out or overlapping writers.
-Persistent storage is not a backup. Before adding instances, workers or deployment
-slots sharing data, migrate to a concurrency-safe database.
-
-**New infrastructure:** [infra/main.bicep](infra/main.bicep) creates a new Web App,
-managed identity and private Azure Table Storage for accounts, sessions, progress
-and leaderboard entries. No storage keys or Key Vault are needed. **The server
-adapter and data migration are not implemented:** the app is stopped by default.
-The templates disable SCM basic authentication, so the existing publish-profile
-workflow must be replaced with a reviewed OIDC deployment before use with this
-app. See the [integration gates](docs/deployment-azure-web-app.md#server-integration-and-migration-required-before-enabling-accounts).
+[infra/main.bicep](infra/main.bicep) provisions the Web App's system-assigned
+managed identity and private Azure Table Storage. Azure production requires
+`PERSISTENCE_PROVIDER=azure-tables` and fails startup rather than falling back to
+local JSON if the private endpoint or table roles are unavailable. The app is
+disabled by default; enable it only after OIDC, managed identity, private DNS
+and release checks are ready. See the [Azure Web App deployment guide](docs/deployment-azure-web-app.md).
 
 ### Static hosting (guest mode)
 

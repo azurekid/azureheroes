@@ -13,7 +13,7 @@ param tableEndpoint string
 @description('Fixed account, session, progress and leaderboard table names.')
 param tableNames object
 
-@description('Default false. Enable only after deploying and verifying the future Table Storage adapter, not the current JSON-backed server.')
+@description('Default false. Enable after deploying the Table Storage adapter and verifying the production identity, private network path and release.')
 param applicationEnabled bool
 
 @description('Non-sensitive resource tags.')
@@ -67,7 +67,7 @@ resource app 'Microsoft.Web/sites@2025-03-01' = {
           name: 'SCM_DO_BUILD_DURING_DEPLOYMENT'
           value: 'false'
         }
-        // These are the future adapter's contract, not settings consumed by current server.js.
+        // The server validates these settings and fails startup rather than falling back to JSON.
         {
           name: 'PERSISTENCE_PROVIDER'
           value: 'azure-tables'
