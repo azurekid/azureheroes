@@ -32,9 +32,10 @@ description: Use before any game code change. Defines the shared interfaces for 
 - City `music.js` sets `.music`, original regional song data consumed by shared audio
   composition tools. Generic songs/styles, synthesis and scheduling remain shared.
   Save persistence belongs in `systems/save.js`, independent of audio.
-- Scripts are loaded explicitly in dependency order by `index.html`, with no runtime
-  discovery, remote imports, new packages or build step. Tests load the same ordered
-  scripts; never recover modules by slicing text out of a source file.
+- Scripts are loaded explicitly in dependency order by `index.html`, with `defer` so
+  downloads can run in parallel while browser evaluation preserves that order. Keep
+  runtime discovery, remote imports, new packages and build steps out. Tests load the
+  same ordered scripts; never recover modules by slicing text out of a source file.
 - Adding a world extends its folder, the catalogue and explicit HTML entries, not
   scattered city switches in shared engines. Shared APIs remain `AH.Art`, `AH.Levels`
   and `AH.Audio`; preserve guest play, existing controls, saves and online contracts.
