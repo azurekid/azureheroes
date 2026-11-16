@@ -33,6 +33,8 @@ description: 'Coordinate Azure Heroes community development. Use for game featur
 | Movement, slide/duck, combat, AI, save and accounts | [gameplay-systems](../gameplay-systems/SKILL.md) | `systems/`, optionally `server.js` |
 | Every new level; original music, synth voices, beat scheduling and sound effects | [music-producer](../music-producer/SKILL.md) | city `music.js`, `audio/`, `systems/audio.js` |
 | Sprites, scenery, wardrobe, read-only HUD | [sprite-artist](../sprite-artist/SKILL.md) | city art/rewards, shared `art/`, `ui/hud.js` |
+| Photo-based community hero avatars, paired classic/remix portraits | [hero-avatar](../hero-avatar/SKILL.md) | standalone promotional deliverables, not runtime assets |
+| Event-speaker portraits and paired speaker/hero remixes | [speaker-avatar](../speaker-avatar/SKILL.md) | standalone promotional deliverables, not runtime assets |
 | Verification and reproducible bug reports | [qa-playtester](../qa-playtester/SKILL.md) | `tests/` |
 | Trust boundaries, workflows, credentials and backdoor prevention | [game-security](../game-security/SKILL.md) | cross-cutting review |
 

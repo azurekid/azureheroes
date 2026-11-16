@@ -5,6 +5,14 @@ description: 'Verify Azure Heroes controls, procedural reachability, cloud rooms
 
 - Read [game-contract](../game-contract/SKILL.md) and [game-security](../game-security/SKILL.md).
 - Verification may add/update automated tests in `tests/` and evidence in `tests/playtest.md`.
+- Standalone [hero-avatar](../hero-avatar/SKILL.md) and
+  [speaker-avatar](../speaker-avatar/SKILL.md) changes need framework/link checks,
+  not gameplay traversal when no runtime code changes. For actual image requests,
+  inspect both exported 200x200 PNGs at native size and circular crops beside the bundled Azure
+  Heroes references for likeness, dimensional shading, consistent game style
+  and meaningful outfit variety. Require sample-pair approval before a batch
+  and human style/likeness approval before publication.
+  Never treat skill text or metadata tests as proof that an image was rendered.
   Do not change runtime code during the QA step; hand failures to the owning implementation step and retest.
 - Test: start screen, all controls, jump reach, enemy hits, coin collection, checkpoint, boss, game over, restart, mobile touch buttons.
 - Pause then press R: preserve position, health, mission tokens, score and timers.

@@ -4,6 +4,9 @@ description: 'Create Azure Heroes code-drawn pixel art, duck/slide poses, cloud 
 ---
 
 - Read [game-contract](../game-contract/SKILL.md) and [game-security](../game-security/SKILL.md).
+- For standalone photo-based community or event portraits, use
+  [hero-avatar](../hero-avatar/SKILL.md) or [speaker-avatar](../speaker-avatar/SKILL.md)
+  instead. Generated promotional portraits must not become runtime game sprites.
 - City art/rewards live in `worlds/<city>/`; reusable tools, hero/fighter rigs and common
   assets live in `art/`. Read only the affected city and needed helper API first.
   No drawing in scene/gameplay code. Read-only UI stays in `ui/hud.js`. Related
