@@ -92,6 +92,23 @@ include Coney Island, and make the boss a boxer from Brooklyn.
 | Regional soundtrack | `Use music-producer to score Tokyo with city-pop harmony and an original hook. Offer only trance, house and pop, and provide listening previews without copying existing songs.` |
 | Bug | `Use qa-playtester: I fall through the second boat in Amsterdam. Reproduce, fix and add a test.` |
 | Review | `Use game-security to review my branch before I open a PR.` |
+| Community avatars | `Use hero-avatar with this photo. Ask me whether the second image should be a random hero or speaker.` |
+| Event portraits | `Use speaker-avatar for our event speakers. Ask for the remix choice and talk themes before generating.` |
+
+The [hero-avatar](.github/skills/hero-avatar/SKILL.md) and
+[speaker-avatar](.github/skills/speaker-avatar/SKILL.md) skills each produce two
+images per person: a faithful synthwave portrait in everyday clothing, and a
+hero or speaker remix selected before generation. Both use the approved
+[portrait reference](.github/skills/hero-avatar/references/classic-style.png) and
+[hero reference](.github/skills/hero-avatar/references/hero-style.png) for Azure
+Heroes rendering, detail and blue-purple/cyan-magenta identity, not generic
+retro-game art. The remix varies clothing structure, accent colors and props
+within that shared game world rather than repeating one hero suit. Approve
+one sample pair before generating a batch. Both retain full-resolution masters
+and export separate circular-crop-safe 200x200 PNGs without smoothing or enlargement.
+These are standalone promotional deliverables, not external image assets for the
+code-drawn game. Keep source photos and portraits out of commits unless explicitly
+approved, and obtain likeness/style approval before publication.
 
 If a result misses the mark, give concrete feedback ("the canal houses lost their gables")
 rather than starting over; the skills keep what already works.
