@@ -78,6 +78,61 @@ test('every level-building route requires music production and listening evidenc
   assert.match(producer, /never invent an audition/);
 });
 
+test('portrait skills share a two-output workflow with a confirmed remix and image checks', () => {
+  const hero = read('.github/skills/hero-avatar/SKILL.md');
+  const speaker = read('.github/skills/speaker-avatar/SKILL.md');
+  assert.match(hero, /structured question tool and wait for the answer/);
+  assert.match(hero, /Do not generate until that selection is answered/);
+  assert.match(hero, /\*\*A\. Classic portrait:\*\*/);
+  assert.match(hero, /\*\*B\. Remix:\*\*/);
+  assert.match(hero, /at least\s+three axes/);
+  assert.match(hero, /two separate 600x600 PNG/);
+  assert.match(speaker, /two separate 200x200 PNG/);
+  assert.match(hero, /Inspect the actual masters and 600x600 exports/);
+  assert.match(hero, /Preview a circular crop/);
+  assert.match(hero, /Do not overwrite source photos or read-only attachments/);
+  assert.match(hero, /do not\s+install dependencies solely for resizing/i);
+  assert.match(speaker, /\[hero-avatar workflow\]\(\.\.\/hero-avatar\/SKILL\.md\)/);
+  assert.match(speaker, /create exactly two styles\s+per person, not two pairs/);
+  assert.match(speaker, /wait for the selection/);
+  assert.match(speaker, /not automatically a superhero/);
+  assert.match(speaker, /When \*\*hero\*\* is selected/);
+  for (const name of ['hero-avatar', 'speaker-avatar']) {
+    assert.ok(read('CONTRIBUTING.md').includes('.github/skills/' + name + '/SKILL.md'));
+    assert.ok(read('.github/skills/sprite-artist/SKILL.md').includes(name));
+    assert.ok(read('.github/skills/qa-playtester/SKILL.md').includes(name));
+  }
+});
+
+test('avatar generation anchors both styles to bundled references before batch approval', () => {
+  const hero = read('.github/skills/hero-avatar/SKILL.md');
+  const speaker = read('.github/skills/speaker-avatar/SKILL.md');
+  for (const name of ['classic-style.png', 'hero-style.png']) {
+    const file = '.github/skills/hero-avatar/references/' + name;
+    assert.deepEqual(fs.readFileSync(path.join(root, file)).subarray(0, 8),
+      Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]), file);
+    assert.ok(hero.includes('references/' + name), 'shared workflow links both references');
+    assert.ok(speaker.includes('../hero-avatar/references/' + name), 'speaker workflow reuses references');
+  }
+  assert.match(hero, /matching bundled style reference in every generation call/);
+  assert.match(hero, /photo supplies identity; the example\s+supplies rendering/);
+  assert.match(hero, /direct-to-camera pose/);
+  assert.match(hero, /simpler facial rendering/);
+  assert.match(speaker, /direct-to-camera pose by default/);
+  assert.match(hero, /Do not generate the remaining people until the sample pair is approved/);
+  assert.match(hero, /Do not prescribe a 320x320 logical grid/);
+  assert.match(hero, /Pixel-art style comes from drawing, not reducing output dimensions/);
+  assert.match(hero, /Reject blurred, smeared or photographic faces/);
+  assert.match(hero, /Use the untouched native master for style approval/);
+  assert.match(hero, /Resizing is only for delivery, never a style\s+correction/);
+  assert.match(hero, /Default avatar deliveries must not exceed 600x600/);
+  assert.match(hero, /nearest-neighbor reduction without averaging, smoothing or subsequent enlargement/);
+  assert.match(hero, /sole rendering authority/);
+  assert.match(hero, /Likeness takes priority over simplification/);
+  assert.match(hero, /return to the original source photo for the next render/);
+  assert.match(speaker, /approval of one sample pair before generating the remaining people/);
+});
+
 test('CI actions remain immutable and PR validation stays unprivileged', () => {
   for (const file of fs.readdirSync(path.join(root, '.github/workflows'))) {
     const text = read('.github/workflows/' + file);
